@@ -29,6 +29,7 @@ CREATE TABLE "demo_grant_credential" (
 	"agentId" text NOT NULL,
 	"holder" text NOT NULL,
 	"connectionId" text,
+	"clientAccessId" text,
 	"label" text NOT NULL,
 	"commitment" text NOT NULL,
 	"sealedToken" text NOT NULL,
@@ -83,6 +84,45 @@ CREATE TABLE "mcpConnectionKey" (
 	"revokedAt" timestamp with time zone,
 	"revocationReason" text,
 	CONSTRAINT "mcpConnectionKey_tokenHash_unique" UNIQUE("tokenHash")
+);
+--> statement-breakpoint
+CREATE TABLE "mcpActivity" (
+	"id" text PRIMARY KEY NOT NULL,
+	"clientAccessId" text,
+	"clientName" text NOT NULL,
+	"agentId" text NOT NULL,
+	"userId" text NOT NULL,
+	"authKind" text NOT NULL,
+	"subject" text NOT NULL,
+	"tool" text NOT NULL,
+	"status" text NOT NULL,
+	"operationId" text,
+	"detail" text,
+	"createdAt" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "mcpClientAccess" (
+	"id" text PRIMARY KEY NOT NULL,
+	"userId" text NOT NULL,
+	"agentId" text NOT NULL,
+	"name" text NOT NULL,
+	"authKind" text NOT NULL,
+	"oauthClientId" text,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"tokenHash" text,
+	"prefix" text,
+	"expiresAt" timestamp with time zone,
+	"lastUsedAt" timestamp with time zone,
+	"grantId" text,
+	"grantCorrelationId" text,
+	"grantSubmitted" boolean DEFAULT false NOT NULL,
+	"oauthQueryHash" text,
+	"revokeCorrelationId" text,
+	"revokeSubmitted" boolean DEFAULT false NOT NULL,
+	"revokedAt" timestamp with time zone,
+	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "mcpClientAccess_tokenHash_unique" UNIQUE("tokenHash")
 );
 --> statement-breakpoint
 CREATE TABLE "nearAccount" (
@@ -337,6 +377,9 @@ CREATE INDEX "demo_mcp_connection_user" ON "mcpConnection" USING btree ("userId"
 CREATE INDEX "demo_mcp_connection_agent" ON "mcpConnection" USING btree ("agentId");--> statement-breakpoint
 CREATE INDEX "demo_mcp_activity_connection" ON "mcpConnectionActivity" USING btree ("connectionId","createdAt");--> statement-breakpoint
 CREATE INDEX "demo_mcp_connection_key_connection" ON "mcpConnectionKey" USING btree ("connectionId");--> statement-breakpoint
+CREATE INDEX "demo_mcp_activity_agent" ON "mcpActivity" USING btree ("userId","agentId","createdAt");--> statement-breakpoint
+CREATE INDEX "demo_mcp_client_agent" ON "mcpClientAccess" USING btree ("userId","agentId");--> statement-breakpoint
+CREATE UNIQUE INDEX "demo_mcp_oauth_client_live" ON "mcpClientAccess" USING btree ("userId","agentId","oauthClientId") WHERE "mcpClientAccess"."status" <> 'revoked';--> statement-breakpoint
 CREATE INDEX "demo_near_account_user" ON "nearAccount" USING btree ("userId");--> statement-breakpoint
 CREATE INDEX "demo_oauth_access_client" ON "oauthAccessToken" USING btree ("clientId");--> statement-breakpoint
 CREATE INDEX "demo_oauth_consent_client" ON "oauthConsent" USING btree ("clientId","userId");--> statement-breakpoint

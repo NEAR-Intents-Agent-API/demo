@@ -1,1 +1,0 @@
-ALTER TABLE "mcpClientAccess" DROP COLUMN "grantRecipients";

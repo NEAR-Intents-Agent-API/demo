@@ -1,5 +1,5 @@
 {
-  "id": "a66e62ce-73f4-468b-bc39-1a2413ba7410",
+  "id": "b8008ecd-e770-4d8d-9f7c-4c3cd1f22478",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -111,8 +111,12 @@
           "name": "account_userId_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": ["userId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -229,6 +233,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "clientAccessId": {
+          "name": "clientAccessId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "label": {
           "name": "label",
           "type": "text",
@@ -304,8 +314,12 @@
           "name": "demo_grant_credential_userId_user_id_fk",
           "tableFrom": "demo_grant_credential",
           "tableTo": "user",
-          "columnsFrom": ["userId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -315,7 +329,9 @@
         "demo_grant_credential_commitment_unique": {
           "name": "demo_grant_credential_commitment_unique",
           "nullsNotDistinct": false,
-          "columns": ["commitment"]
+          "columns": [
+            "commitment"
+          ]
         }
       },
       "policies": {},
@@ -664,7 +680,319 @@
         "mcpConnectionKey_tokenHash_unique": {
           "name": "mcpConnectionKey_tokenHash_unique",
           "nullsNotDistinct": false,
-          "columns": ["tokenHash"]
+          "columns": [
+            "tokenHash"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.mcpActivity": {
+      "name": "mcpActivity",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "clientAccessId": {
+          "name": "clientAccessId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "clientName": {
+          "name": "clientName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agentId": {
+          "name": "agentId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "authKind": {
+          "name": "authKind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subject": {
+          "name": "subject",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tool": {
+          "name": "tool",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "operationId": {
+          "name": "operationId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "detail": {
+          "name": "detail",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "demo_mcp_activity_agent": {
+          "name": "demo_mcp_activity_agent",
+          "columns": [
+            {
+              "expression": "userId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "agentId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "createdAt",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.mcpClientAccess": {
+      "name": "mcpClientAccess",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agentId": {
+          "name": "agentId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "authKind": {
+          "name": "authKind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "oauthClientId": {
+          "name": "oauthClientId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "tokenHash": {
+          "name": "tokenHash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prefix": {
+          "name": "prefix",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expiresAt": {
+          "name": "expiresAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastUsedAt": {
+          "name": "lastUsedAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "grantId": {
+          "name": "grantId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "grantCorrelationId": {
+          "name": "grantCorrelationId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "grantSubmitted": {
+          "name": "grantSubmitted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "oauthQueryHash": {
+          "name": "oauthQueryHash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revokeCorrelationId": {
+          "name": "revokeCorrelationId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revokeSubmitted": {
+          "name": "revokeSubmitted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "revokedAt": {
+          "name": "revokedAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "demo_mcp_client_agent": {
+          "name": "demo_mcp_client_agent",
+          "columns": [
+            {
+              "expression": "userId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "agentId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "demo_mcp_oauth_client_live": {
+          "name": "demo_mcp_oauth_client_live",
+          "columns": [
+            {
+              "expression": "userId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "agentId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "oauthClientId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"mcpClientAccess\".\"status\" <> 'revoked'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "mcpClientAccess_tokenHash_unique": {
+          "name": "mcpClientAccess_tokenHash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tokenHash"
+          ]
         }
       },
       "policies": {},
@@ -742,8 +1070,12 @@
           "name": "nearAccount_userId_user_id_fk",
           "tableFrom": "nearAccount",
           "tableTo": "user",
-          "columnsFrom": ["userId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -753,7 +1085,10 @@
         "demo_near_account": {
           "name": "demo_near_account",
           "nullsNotDistinct": false,
-          "columns": ["accountId", "network"]
+          "columns": [
+            "accountId",
+            "network"
+          ]
         }
       },
       "policies": {},
@@ -878,7 +1213,9 @@
         "oauthAccessToken_token_unique": {
           "name": "oauthAccessToken_token_unique",
           "nullsNotDistinct": false,
-          "columns": ["token"]
+          "columns": [
+            "token"
+          ]
         }
       },
       "policies": {},
@@ -1118,7 +1455,9 @@
         "oauthClient_clientId_unique": {
           "name": "oauthClient_clientId_unique",
           "nullsNotDistinct": false,
-          "columns": ["clientId"]
+          "columns": [
+            "clientId"
+          ]
         }
       },
       "policies": {},
@@ -1193,7 +1532,10 @@
         "demo_oauth_client_resource": {
           "name": "demo_oauth_client_resource",
           "nullsNotDistinct": false,
-          "columns": ["clientId", "resourceId"]
+          "columns": [
+            "clientId",
+            "resourceId"
+          ]
         }
       },
       "policies": {},
@@ -1427,7 +1769,9 @@
         "oauthRefreshToken_token_unique": {
           "name": "oauthRefreshToken_token_unique",
           "nullsNotDistinct": false,
-          "columns": ["token"]
+          "columns": [
+            "token"
+          ]
         }
       },
       "policies": {},
@@ -1541,7 +1885,9 @@
         "oauthResource_identifier_unique": {
           "name": "oauthResource_identifier_unique",
           "nullsNotDistinct": false,
-          "columns": ["identifier"]
+          "columns": [
+            "identifier"
+          ]
         }
       },
       "policies": {},
@@ -1630,8 +1976,12 @@
           "name": "demo_owner_intent_userId_user_id_fk",
           "tableFrom": "demo_owner_intent",
           "tableTo": "user",
-          "columnsFrom": ["userId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1736,8 +2086,12 @@
           "name": "passkey_userId_user_id_fk",
           "tableFrom": "passkey",
           "tableTo": "user",
-          "columnsFrom": ["userId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1747,7 +2101,9 @@
         "demo_passkey_credential": {
           "name": "demo_passkey_credential",
           "nullsNotDistinct": false,
-          "columns": ["credentialID"]
+          "columns": [
+            "credentialID"
+          ]
         }
       },
       "policies": {},
@@ -1790,7 +2146,9 @@
         "rateLimit_key_unique": {
           "name": "rateLimit_key_unique",
           "nullsNotDistinct": false,
-          "columns": ["key"]
+          "columns": [
+            "key"
+          ]
         }
       },
       "policies": {},
@@ -1885,8 +2243,12 @@
           "name": "relayedTransaction_userId_user_id_fk",
           "tableFrom": "relayedTransaction",
           "tableTo": "user",
-          "columnsFrom": ["userId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2036,8 +2398,12 @@
           "name": "session_userId_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": ["userId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2047,7 +2413,9 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": ["token"]
+          "columns": [
+            "token"
+          ]
         }
       },
       "policies": {},
@@ -2111,7 +2479,9 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         }
       },
       "policies": {},
@@ -2240,8 +2610,12 @@
           "name": "walletAddress_userId_user_id_fk",
           "tableFrom": "walletAddress",
           "tableTo": "user",
-          "columnsFrom": ["userId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2251,7 +2625,10 @@
         "demo_wallet_address": {
           "name": "demo_wallet_address",
           "nullsNotDistinct": false,
-          "columns": ["address", "chainId"]
+          "columns": [
+            "address",
+            "chainId"
+          ]
         }
       },
       "policies": {},
