@@ -19,7 +19,7 @@ export async function finishOnboarding(
   if (current.operation.status === "PENDING_SIGNATURE") {
     onStage("Confirm in your wallet…");
     const signature = await signIntent(current.generated);
-    onStage("Activating agent. Gas is sponsored…");
+    onStage("Activating agent…");
     current = await agentsApi.submitOnboarding(agentId, signature);
   }
   onStage("Waiting for confirmation…");

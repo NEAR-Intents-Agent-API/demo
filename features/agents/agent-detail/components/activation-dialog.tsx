@@ -24,7 +24,7 @@ export function ActivationDialog({
         hideHeading
         step={2}
         title="Activate account"
-        description="Confirm ownership and install your account rules. Gas and storage are sponsored."
+        description="Confirm ownership and install your account rules."
       >
         <OnboardingPanel view={view} />
       </SetupFlowPanel>

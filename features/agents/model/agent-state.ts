@@ -62,7 +62,7 @@ export function agentState(agent: AgentView): AgentState {
       return {
         stage: "pending",
         label: "Needs your signature",
-        detail: "One signature binds you as owner and installs its policy. Gas is sponsored.",
+        detail: "One signature binds you as owner and installs its policy.",
         next: {
           id: "onboard",
           label: "Sign to activate",

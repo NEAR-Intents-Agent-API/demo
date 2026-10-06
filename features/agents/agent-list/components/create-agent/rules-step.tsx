@@ -51,7 +51,7 @@ export function RulesStep({
       )}
 
       <p className="border-t pt-3 text-xs leading-5 text-muted-foreground">
-        Rules apply to every client. Signature gas and storage are sponsored.
+        Rules apply to every client.
       </p>
     </div>
   );
