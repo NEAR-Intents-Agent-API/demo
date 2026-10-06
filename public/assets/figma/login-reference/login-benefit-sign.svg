@@ -1,0 +1,17 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="sign" clip-path="url(#clip0_0_91)">
+<g id="Group">
+<path id="Vector" d="M56 59.5556C70.2367 59.5556 81.7778 48.0145 81.7778 33.7778C81.7778 19.5411 70.2367 8 56 8C41.7633 8 30.2222 19.5411 30.2222 33.7778C30.2222 48.0145 41.7633 59.5556 56 59.5556Z" stroke="white" stroke-width="4.44444" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M86.2222 72.8889C77.3333 65.7778 67.5556 62.2222 56.8889 62.2222C25.7778 62.2222 8 89.7778 8 127.111C8 134.222 11.5556 139.556 19.5556 139.556H61.3333" stroke="white" stroke-width="4.44444" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M121.778 98.6667H76.4444C73.008 98.6667 70.2222 101.452 70.2222 104.889V144C70.2222 147.436 73.008 150.222 76.4444 150.222H121.778C125.214 150.222 128 147.436 128 144V104.889C128 101.452 125.214 98.6667 121.778 98.6667Z" stroke="white" stroke-width="4.44444" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_4" d="M70.2222 110.222H128M72.8889 98.6667V89.7778C72.8889 86.2222 75.5556 83.5556 79.1111 83.5556H118.222C121.778 83.5556 124.444 86.2222 124.444 89.7778V98.6667" stroke="white" stroke-width="4.44444" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<path id="Vector_5" d="M125.333 158.222C137.606 158.222 147.556 148.273 147.556 136C147.556 123.727 137.606 113.778 125.333 113.778C113.06 113.778 103.111 123.727 103.111 136C103.111 148.273 113.06 158.222 125.333 158.222Z" fill="#FB4D01" stroke="black" stroke-width="6.22222"/>
+<path id="Vector_6" d="M115.556 136L122.667 143.111L136 128" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_0_91">
+<rect width="160" height="160" fill="white"/>
+</clipPath>
+</defs>
+</svg>

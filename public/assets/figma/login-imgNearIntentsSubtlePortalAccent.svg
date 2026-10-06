@@ -1,0 +1,34 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="700" height="700" viewBox="0 0 700 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="NEAR Intents / Subtle portal accent">
+<circle id="Portal arc" cx="347" cy="347" r="324" stroke="url(#paint0_linear_0_579)" stroke-width="2"/>
+<g id="Portal arc_2" filter="url(#filter0_f_0_579)">
+<circle cx="347" cy="347" r="318" stroke="url(#paint1_linear_0_579)" stroke-width="14"/>
+</g>
+<circle id="Portal arc_3" cx="347" cy="347" r="340.5" stroke="url(#paint2_linear_0_579)"/>
+</g>
+<defs>
+<filter id="filter0_f_0_579" x="0" y="0" width="694" height="694" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="11" result="effect1_foregroundBlur_0_579"/>
+</filter>
+<linearGradient id="paint0_linear_0_579" x1="68.4286" y1="68.4286" x2="532.714" y2="532.714" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FB4D01" stop-opacity="0.18"/>
+<stop offset="0.38" stop-color="#FDEB8F" stop-opacity="0.081"/>
+<stop offset="0.68" stop-color="#FB4D01" stop-opacity="0"/>
+<stop offset="1" stop-opacity="0"/>
+</linearGradient>
+<linearGradient id="paint1_linear_0_579" x1="68.4286" y1="68.4286" x2="532.714" y2="532.714" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FB4D01" stop-opacity="0.1"/>
+<stop offset="0.38" stop-color="#FDEB8F" stop-opacity="0.045"/>
+<stop offset="0.68" stop-color="#FB4D01" stop-opacity="0"/>
+<stop offset="1" stop-opacity="0"/>
+</linearGradient>
+<linearGradient id="paint2_linear_0_579" x1="54.7143" y1="54.7143" x2="541.857" y2="541.857" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FB4D01" stop-opacity="0.08"/>
+<stop offset="0.38" stop-color="#FDEB8F" stop-opacity="0.036"/>
+<stop offset="0.68" stop-color="#FB4D01" stop-opacity="0"/>
+<stop offset="1" stop-opacity="0"/>
+</linearGradient>
+</defs>
+</svg>

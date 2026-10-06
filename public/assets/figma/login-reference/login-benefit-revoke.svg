@@ -1,0 +1,20 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="revoke">
+<g id="Group">
+<path id="Vector" d="M24.8889 47.1108L80 23.9997C84.4444 22.222 88 23.9997 89.7778 27.5553L96.8889 45.3331" stroke="white" stroke-width="4.44444" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M107.556 72.8887V58.6664C107.556 52.4442 104 48.8887 97.7778 48.8887H24C16 48.8887 12.4444 53.3331 12.4444 60.4442V114.666C12.4444 121.778 16.8889 126.222 24 126.222H76.4444" stroke="white" stroke-width="4.44444" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="Group_2">
+<path id="Vector_3" d="M122.667 95.9999H91.5555C85.6645 95.9999 80.8889 100.776 80.8889 106.667V129.778C80.8889 135.669 85.6645 140.444 91.5555 140.444H122.667C128.558 140.444 133.333 135.669 133.333 129.778V106.667C133.333 100.776 128.558 95.9999 122.667 95.9999Z" fill="black" stroke="#FB4D01" stroke-width="4.44444" stroke-linejoin="round"/>
+<g id="Vector_4">
+<path d="M92.4444 95.9999V87.1111C92.4444 66.6666 121.778 66.6666 121.778 87.1111V95.9999" fill="black"/>
+<path d="M92.4444 95.9999V87.1111C92.4444 66.6666 121.778 66.6666 121.778 87.1111V95.9999" stroke="#FB4D01" stroke-width="4.44444" stroke-linejoin="round"/>
+</g>
+</g>
+<path id="Vector_5" d="M107.556 119.111C110.501 119.111 112.889 116.723 112.889 113.778C112.889 110.832 110.501 108.444 107.556 108.444C104.61 108.444 102.222 110.832 102.222 113.778C102.222 116.723 104.61 119.111 107.556 119.111Z" fill="white"/>
+<g id="Vector_6">
+<path d="M107.556 117.333V124.444Z" fill="black"/>
+<path d="M107.556 117.333V124.444" stroke="white" stroke-width="3.55556" stroke-linecap="round"/>
+</g>
+</g>
+</svg>

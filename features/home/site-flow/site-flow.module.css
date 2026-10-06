@@ -1,0 +1,263 @@
+.diagram {
+  --flow-card: var(--card);
+  --flow-border: var(--border);
+  display: grid;
+  gap: 64px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--foreground);
+}
+
+:global(.dark) .diagram {
+  --flow-card: #080808;
+  --flow-border: #52525b;
+}
+.lightAsset {
+  display: block;
+}
+.darkAsset {
+  display: none;
+}
+:global(.dark) .lightAsset {
+  display: none;
+}
+:global(.dark) .darkAsset {
+  display: block;
+}
+
+.step {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  min-width: 0;
+  margin-inline: auto;
+  container-type: inline-size;
+}
+
+/* Keep card widths; scale artwork while type follows the page's UI sizes. */
+.card {
+  --flow-unit: calc(100cqw / 430);
+  display: flex;
+  height: clamp(358px, calc(520 * var(--flow-unit) - 32px), 488px);
+  flex-direction: column;
+  gap: 12px;
+  padding: clamp(20px, calc(28 * var(--flow-unit)), 28px);
+  border: 1px solid var(--flow-border);
+  border-radius: 12px;
+  background: var(--flow-card);
+}
+.card > p,
+.card > h3 {
+  margin: 0;
+  flex-shrink: 0;
+}
+.number {
+  height: 18px;
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0.8px;
+}
+.title {
+  height: 28px;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 28px;
+  letter-spacing: -0.35px;
+}
+.description {
+  min-height: 66px;
+  color: var(--muted-foreground);
+  font-size: 14px;
+  line-height: 22px;
+}
+.visual,
+.limits,
+.agent {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+}
+.owner {
+  width: calc(240 * var(--flow-unit));
+  height: auto;
+}
+.limits {
+  flex-direction: column;
+  gap: 10px;
+}
+.setting {
+  display: flex;
+  width: 100%;
+  height: clamp(44px, calc(60 * var(--flow-unit)), 60px);
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding-inline: 12px;
+  border: 1px solid var(--flow-border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+}
+.label {
+  min-width: 0;
+  flex: 1;
+}
+.logos {
+  display: flex;
+  flex-shrink: 0;
+  gap: calc(8 * var(--flow-unit));
+}
+.tokenLogo {
+  width: calc(32 * var(--flow-unit));
+  height: calc(32 * var(--flow-unit));
+  border: calc(2 * var(--flow-unit)) solid var(--flow-border);
+  border-radius: 50%;
+  background: #fff;
+  object-fit: contain;
+}
+.chevron,
+.actionIcon {
+  width: 16px;
+  height: auto;
+  flex-shrink: 0;
+}
+.budget {
+  width: calc(150 * var(--flow-unit));
+  height: auto;
+  flex-shrink: 0;
+}
+.destinations {
+  width: calc(128 * var(--flow-unit));
+  height: auto;
+  flex-shrink: 0;
+}
+.agent {
+  flex-direction: column;
+  gap: 8px;
+}
+.agentIcon {
+  width: calc(160 * var(--flow-unit));
+  height: auto;
+  flex-shrink: 0;
+}
+.actions {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.action {
+  display: grid;
+  height: 30px;
+  grid-template-columns: 16px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding-inline: 12px;
+  border: 1px solid var(--flow-border);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+}
+.action > span {
+  white-space: nowrap;
+}
+.network {
+  position: relative;
+  width: calc(240 * var(--flow-unit));
+  aspect-ratio: 12 / 11;
+}
+.routes {
+  width: calc(240 * var(--flow-unit));
+  height: auto;
+}
+.network > ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.networkLogo {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+.chainIcon,
+.centerIcon {
+  width: calc(48 * var(--flow-unit));
+  height: calc(48 * var(--flow-unit));
+  border: calc(2.526 * var(--flow-unit)) solid var(--flow-border);
+  border-radius: 50%;
+  box-shadow: none;
+}
+.centerIcon {
+  width: calc(64 * var(--flow-unit));
+  height: calc(64 * var(--flow-unit));
+  border-width: calc(2.462 * var(--flow-unit));
+}
+.networkLogo:nth-child(1) {
+  left: 50%;
+  top: 11.818%;
+}
+.networkLogo:nth-child(2) {
+  left: 82.083%;
+  top: 30.909%;
+}
+.networkLogo:nth-child(3) {
+  left: 82.083%;
+  top: 69.091%;
+}
+.networkLogo:nth-child(4) {
+  left: 50%;
+  top: 88.182%;
+}
+.networkLogo:nth-child(5) {
+  left: 17.917%;
+  top: 69.091%;
+}
+.networkLogo:nth-child(6) {
+  left: 17.917%;
+  top: 30.909%;
+}
+.networkCenter {
+  left: 50%;
+  top: 50%;
+}
+.connector {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  transform: translateX(-50%) rotate(90deg);
+}
+.arrow {
+  width: 40px;
+  height: auto;
+}
+
+@media (min-width: 1280px) {
+  .diagram {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3.34728%;
+  }
+  .connector {
+    top: 50%;
+    left: 100%;
+    width: calc(64 / 430 * 100cqw);
+    height: calc(40 / 430 * 100cqw);
+    transform: translateY(-50%);
+  }
+  .arrow {
+    width: calc(40 / 430 * 100cqw);
+  }
+}

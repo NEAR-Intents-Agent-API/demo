@@ -1,0 +1,13 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="240" height="190" viewBox="0 0 240 190" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Illustration / agent">
+<g id="Group">
+<path id="Vector" d="M48 50L142 21C147 19 150 21 152 26L162 55" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M130 132H44C37 132 32 127 32 120V66C32 59 37 54 44 54H159C166 54 171 59 171 66V84" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<path id="Vector_3" d="M204 112H155C147.82 112 142 117.82 142 125V150C142 157.18 147.82 163 155 163H204C211.18 163 217 157.18 217 150V125C217 117.82 211.18 112 204 112Z" fill="#080808" stroke="#FB4D01" stroke-width="5"/>
+<path id="Vector_4" d="M182 104C185.866 104 189 100.866 189 97C189 93.134 185.866 90 182 90C178.134 90 175 93.134 175 97C175 100.866 178.134 104 182 104Z" stroke="#FB4D01" stroke-width="4"/>
+<path id="Vector_5" d="M182 105V112" stroke="#FB4D01" stroke-width="4"/>
+<path id="Vector_6" d="M165 141C167.209 141 169 139.209 169 137C169 134.791 167.209 133 165 133C162.791 133 161 134.791 161 137C161 139.209 162.791 141 165 141Z" fill="white"/>
+<path id="Vector_7" d="M195 141C197.209 141 199 139.209 199 137C199 134.791 197.209 133 195 133C192.791 133 191 134.791 191 137C191 139.209 192.791 141 195 141Z" fill="white"/>
+</g>
+</svg>
