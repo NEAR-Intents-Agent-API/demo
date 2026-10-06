@@ -1,0 +1,22 @@
+name: near-intents-agent-demo
+
+services:
+  database:
+    container_name: near-intents-agent-api-demo-database
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: near_intents_agent_demo
+      POSTGRES_USER: near_intents_agent_demo
+      POSTGRES_PASSWORD: near_intents_agent_demo
+    ports:
+      - "5435:5432"
+    volumes:
+      - near_intents_agent_demo_database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U near_intents_agent_demo -d near_intents_agent_demo"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  near_intents_agent_demo_database:

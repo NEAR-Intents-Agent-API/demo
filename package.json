@@ -14,8 +14,12 @@
     "test": "pnpm test:unit && pnpm test:integration",
     "test:unit": "node --import tsx --test \"tests/unit/**/*.test.ts\"",
     "test:integration": "node --import tsx --test --test-concurrency 4 \"tests/integration/**/*.test.ts\"",
-    "test:postgres": "node --import tsx --env-file-if-exists=../../tests/integration/.env --test tests/postgres/demo-storage.test.ts",
-    "test:http": "pnpm build && node --import tsx --env-file-if-exists=../../tests/integration/.env --test tests/e2e/http.test.ts"
+    "test:postgres": "node --import tsx --env-file-if-exists=tests/.env --test tests/postgres/demo-storage.test.ts",
+    "test:http": "pnpm build && node --import tsx --env-file-if-exists=tests/.env --test tests/e2e/http.test.ts",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "docker:up": "docker compose up -d --wait database",
+    "docker:down": "docker compose down"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -52,15 +56,26 @@
     "zod": "^4.6.4"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.12",
+    "@electric-sql/pglite": "^0.3.14",
     "@hookform/resolvers": "^5.9.1",
+    "@noble/curves": "2.4.0",
+    "@noble/hashes": "2.4.0",
+    "@scure/base": "^2.4.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24.12.0",
+    "@types/pg": "^8.18.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/pg": "^8.18.0",
-    "@electric-sql/pglite": "^0.3.14",
     "drizzle-kit": "^0.31.4",
+    "esbuild": "0.28.2",
+    "near-api-js": "7.2.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5"
+  },
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=24"
   }
 }

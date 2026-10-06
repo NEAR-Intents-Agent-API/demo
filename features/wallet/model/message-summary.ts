@@ -15,7 +15,7 @@ import { formatDelayMs } from "@/lib/format/delay";
  * an unrecognised or malformed envelope returns `null` so the dialog falls back to showing
  * only the bytes.
  *
- * Domain strings come from `packages/contracts`; a change there should show up here as a
+ * Domain strings come from the API's owner-signed message formats; a change there should show up here as a
  * fallback to raw JSON rather than as a confidently wrong summary.
  */
 

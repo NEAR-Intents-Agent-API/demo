@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { ownerWalletSchema } from "@/lib/agent-api/schemas";
-import { cosePublicKeyFromSpki } from "../../../../apps/server/src/shared/owner-auth/index";
 import { authFailureMessage } from "../../features/auth/errors";
 import { decideAgentAccess } from "../../lib/agent-api/decision";
 import { agentBelongsToUser } from "../../lib/agent-api/ownership";
 import * as demoPasskeys from "../../lib/auth/passkey-metadata";
+import { cosePublicKeyFromSpki } from "../support/cose.js";
 import { externalOwnerFixture } from "../support/owner-fixtures.js";
 import { syntheticPasskey } from "../support/passkey-registration-fixture.js";
 

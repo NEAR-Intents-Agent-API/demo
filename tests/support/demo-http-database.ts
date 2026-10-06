@@ -1,13 +1,20 @@
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
-import { createDatabase } from "../../../../packages/database/src/client.js";
+import { Pool } from "pg";
 import { requireTestEnv } from "./env.js";
+
+/** One plain pool plus its Drizzle handle; closing the handle ends the pool. */
+function createDatabase(url: string) {
+  const pool = new Pool({ connectionString: url });
+  return { db: drizzle(pool), close: () => pool.end() };
+}
 
 /** Creates and drops only this run's database; never migrates the configured source database. */
 export async function createDemoHttpDatabase() {
-  const source = requireTestEnv("TEST_DATABASE_URL");
+  const source = requireTestEnv("TEST_DEMO_DATABASE_URL");
   const admin = createDatabase(source);
   const name = `demo_http_${randomUUID().replaceAll("-", "")}`;
   const url = new URL(source);

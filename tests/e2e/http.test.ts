@@ -116,7 +116,6 @@ async function depositFlow(stub: Awaited<ReturnType<typeof startStubAgentApi>>) 
   const path = `/api/agents/${stub.ownerAgentId}/funds`;
   const args = {
     source_asset: "nep141:btc.omft.near",
-    chain: "btc",
     amount: "100",
     refund_address: "bc1qfunder",
     idempotencyKey: "demo-deposit",

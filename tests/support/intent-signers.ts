@@ -19,7 +19,7 @@ import {
   type KeyPair,
   Signature,
 } from "near-api-js";
-import { ownerNep413SigningDigest } from "../../../../packages/relayer/src/owner-message.js";
+import { ownerNep413SigningDigest } from "./nep413.js";
 
 /**
  * Wallet doubles for generated intents. Each returns exactly what a real wallet returns for the

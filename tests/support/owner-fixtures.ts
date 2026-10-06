@@ -1,11 +1,23 @@
 import { createHash, generateKeyPairSync, randomBytes, sign } from "node:crypto";
+import type { OwnerWallet } from "@near-intents-agent-api/sdk";
 import { secp256k1 } from "@noble/curves/secp256k1.js";
 import { keccak_256 } from "@noble/hashes/sha3.js";
-import {
-  canonical,
-  type OwnerProof,
-  type OwnerWallet,
-} from "../../../../packages/contracts/src/index.js";
+
+/** The wallet output sent with an owner-signed request: a signature or a WebAuthn assertion. */
+type OwnerProof = { signature: string } | { authentication: Record<string, unknown> };
+
+/** Sorted-key JSON, the exact bytes the API asks owners to sign. */
+function canonical(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  if (value !== null && typeof value === "object")
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonical((value as Record<string, unknown>)[key])}`)
+      .join(",")}}`;
+  const result = JSON.stringify(value);
+  if (result === undefined) throw new Error("Value is not JSON");
+  return result;
+}
 
 export function externalOwnerFixture(
   type: "evm" | "passkey",
