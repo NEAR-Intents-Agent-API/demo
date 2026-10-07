@@ -14,6 +14,7 @@ export function NetworkDeposit({ view }: { view: ReturnType<typeof useDepositFlo
         agentId={funds.agent.id}
         operationId={tracking.id}
         title={tracking.title}
+        token={tracking.token}
         onDone={finish}
         onOpenActivity={funds.openActivity}
       />
