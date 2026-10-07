@@ -38,7 +38,7 @@ authorizations. Changing the API key, API URL or app origin does not change this
    it is live; an interrupted activation resumes.
 3. The agent page has three tabs. **Wallet** shows holdings with USD values (public and
    private) beside five tabs: swap, transfer (to another NEAR Intents account), deposit (a
-   one-time 1Click address for a chosen network, token and amount, or a transfer from any NEAR
+   one-time 1Click address for a chosen network and token, with an optional amount, or a transfer from any NEAR
    Intents account), withdraw, and shield/unshield. Swap, transfer, deposit and withdraw each
    choose the public or private balance. A flow the rules forbid says so instead of failing at
    the provider; spending buttons ask for "Moving funds" when needed. Deposit addresses work
@@ -46,8 +46,8 @@ authorizations. Changing the API key, API URL or app origin does not change this
    owner. **Rules** shows the rules in force, edits them in place, and holds the emergency stop,
    USD budget and execution delay.
 4. Deposits need only the signed-in owner's session. Public and confidential address creation
-   requires no grant signature; refund addresses are entered directly and validated on the source
-   chain. Swaps, sends, withdrawals and shield/unshield need "Authorize dashboard": one owner
+   requires no grant signature; a failed or late deposit refunds into the agent's own balance, so no
+   refund address is asked. Swaps, sends, withdrawals and shield/unshield need "Authorize dashboard": one owner
    signature on a `grant_issue` for the dashboard's own grant token with a 1, 7 or 30 day expiry.
    The dialog shows the live account rules: that is exactly what the dashboard may do, and what
    every other grant may do too. The agent's native chain addresses are never offered for deposits: only NEAR
