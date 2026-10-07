@@ -85,7 +85,9 @@ export function rulesFromPolicy(policy: Policy | null): Rules {
 
 /**
  * The complete policy for these rules. Anything the editor does not expose (the hourly, daily
- * and monthly per-token buckets) is carried over from `current` untouched.
+ * and monthly per-token buckets, and the identity signing recipients in `sign`) is carried over
+ * from `current` untouched, so saving other rules never turns signing off. A new agent
+ * (`current` null) never signs.
  */
 export function policyFromRules(current: Policy | null, rules: Rules): Policy {
   const { abilities } = rules;
@@ -101,6 +103,7 @@ export function policyFromRules(current: Policy | null, rules: Rules): Policy {
     budget: budgetFromRules(rules),
     timelock_ms: delayMsFromRules(rules),
     ...(rules.schedule ? { schedule: rules.schedule } : {}),
+    ...(current?.sign ? { sign: structuredClone(current.sign) } : {}),
   };
 }
 

@@ -154,6 +154,21 @@ test("a schedule round-trips through the policy, and any time omits it", () => {
   assert.equal("schedule" in policyFromRules(policy, rules({ schedule: null })), false);
 });
 
+test("editing other rules keeps identity signing, and a new agent never signs", () => {
+  assert.equal("sign" in policyFromRules(null, rules()), false);
+  const current = policySchema.parse({
+    ...policyFromRules(null, rules()),
+    sign: { recipients: ["login.example.near"] },
+  });
+  const next = policyFromRules(current, {
+    ...rulesFromPolicy(current),
+    budget: { dailyUsd: "50", weeklyUsd: "", monthlyUsd: "" },
+    delaySeconds: "60",
+  });
+  assert.deepEqual(next.sign, { recipients: ["login.example.near"] });
+  assert.notEqual(next.sign, current.sign);
+});
+
 test("a schedule the API would refuse is named before signing", () => {
   const window = { days: ["mon" as const], start: "09:00", end: "17:00" };
   const schedule = { mode: "except" as const, time_zone: "UTC", windows: [window] };
