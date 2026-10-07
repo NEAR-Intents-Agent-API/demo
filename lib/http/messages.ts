@@ -89,6 +89,8 @@ export const errorMessages: Record<string, string> = {
   wallet_frozen: "The owner froze this account. Executions resume once the owner unfreezes it.",
   spend_budget_exceeded:
     "Account spending limit reached. Open Rules > Edit policy, sign a new limit, then retry. You and all connected clients share this limit.",
+  policy_schedule_denied:
+    "The account's schedule holds money actions at the time this would run. Nothing was sent; try again once the schedule opens, or change it in Rules.",
   spend_price_unavailable:
     "No current USD price for this asset, so the account's USD budget cannot count it. Try again later.",
   invalid_request: "The request was rejected as invalid.",

@@ -11,6 +11,7 @@ import { LimitRules } from "./limit-rules";
 import { PolicyControlsFields } from "./policy-controls-fields";
 import type { Rules } from "./rules";
 import { rulesProblem } from "./rules";
+import { ScheduleRules } from "./schedule-rules";
 import { TokenRules } from "./token-rules";
 
 type Catalog = { tokens: readonly CatalogOption[]; lookup: (assetId: string) => CatalogOption };
@@ -47,6 +48,7 @@ export function RulesEditor({
       <LimitRules rules={rules} onChange={onChange} catalog={catalog} />
     </>
   );
+  const schedule = <ScheduleRules rules={rules} onChange={onChange} />;
   const destinations = (
     <>
       <DestinationRules rules={rules} onChange={onChange} />
@@ -57,12 +59,15 @@ export function RulesEditor({
     <fieldset disabled={disabled} className="@container/rules flex min-w-0 flex-col gap-4">
       {grouped ? (
         <Tabs defaultValue="actions" className="min-w-0 gap-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="actions" className="px-2 text-xs sm:px-3">
               Permissions
             </TabsTrigger>
             <TabsTrigger value="spending" className="px-2 text-xs sm:px-3">
               Limits
+            </TabsTrigger>
+            <TabsTrigger value="schedule" className="px-2 text-xs sm:px-3">
+              Schedule
             </TabsTrigger>
             <TabsTrigger value="destinations" className="px-2 text-xs sm:px-3">
               Destinations
@@ -83,6 +88,13 @@ export function RulesEditor({
             {spending}
           </TabsContent>
           <TabsContent
+            value="schedule"
+            keepMounted
+            className="flex flex-col gap-4 data-hidden:hidden"
+          >
+            {schedule}
+          </TabsContent>
+          <TabsContent
             value="destinations"
             keepMounted
             className="flex flex-col gap-4 data-hidden:hidden"
@@ -94,6 +106,7 @@ export function RulesEditor({
         <>
           {actions}
           {spending}
+          {schedule}
           {destinations}
         </>
       )}

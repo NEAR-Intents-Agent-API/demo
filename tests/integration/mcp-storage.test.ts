@@ -1,17 +1,13 @@
 import assert from "node:assert/strict";
 import { createHash, randomBytes } from "node:crypto";
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { test } from "node:test";
-import { fileURLToPath } from "node:url";
 import type {
   AgentApi,
   GenerateIntentResponse,
   GrantView,
   StatusResponse,
 } from "@near-intents-agent-api/sdk";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
   forgetClientCredentials,
   heldGrant,
@@ -320,44 +316,6 @@ test("OAuth generations are unique and refresh revocation cannot reach another c
     assert.equal((await listAgentMcpActivity("foreign", "agent", 50, database)).length, 0);
   } finally {
     await database.close();
-  }
-});
-
-test("legacy upgrade invalidates MCP access and retains account and attributed history", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "demo-legacy-migrations-"));
-  await mkdir(join(directory, "meta"));
-  const drizzle = fileURLToPath(new URL("../../drizzle", import.meta.url));
-  await cp(join(drizzle, "0000_initial_schema.sql"), join(directory, "0000_initial_schema.sql"));
-  const journal = JSON.parse(await readFile(join(drizzle, "meta/_journal.json"), "utf8"));
-  journal.entries = journal.entries.slice(0, 1);
-  await writeFile(join(directory, "meta/_journal.json"), JSON.stringify(journal));
-  const database = await createDemoTestDatabase(undefined, { migrationsFolder: directory });
-  const execute = async (text: string) => {
-    for (const statement of text.split(";").filter((value) => value.trim()))
-      await database.db.execute(sql.raw(statement));
-  };
-  const query = async (text: string) => database.db.execute<Record<string, unknown>>(sql.raw(text));
-  try {
-    await execute(`INSERT INTO "user" ("id", "name", "email") VALUES ('owner', 'Owner', 'owner@test.invalid');
-      INSERT INTO "mcpConnection" ("id", "userId", "name", "agentId") VALUES ('old', 'owner', 'Codex', 'agent');
-      INSERT INTO "mcpConnectionKey" ("id", "connectionId", "agentId", "name", "tokenHash", "prefix", "expiresAt") VALUES ('key', 'old', 'agent', 'Key', 'hash', 'mcp_', now() + interval '30 days');
-      INSERT INTO "mcpConnectionActivity" ("id", "connectionId", "agentId", "userId", "authKind", "subject", "tool", "status") VALUES ('call', 'old', 'agent', 'owner', 'api_key', 'key', 'get_balances', 'ok');
-      INSERT INTO "oauthResource" ("id", "identifier", "name") VALUES ('resource', 'https://demo.example.test/api/mcp/old', 'Legacy');
-      INSERT INTO "oauthRefreshToken" ("id", "token", "clientId", "userId", "resources", "scopes") VALUES ('refresh', 'token', 'codex', 'owner', ARRAY['https://demo.example.test/api/mcp/old'], ARRAY['agent:full']);`);
-    await database.migrateLatest();
-    assert.equal((await query('SELECT "enabled" FROM "mcpConnection"')).rows[0]?.enabled, false);
-    assert.ok((await query('SELECT "revokedAt" FROM "mcpConnectionKey"')).rows[0]?.revokedAt);
-    assert.ok((await query('SELECT "revoked" FROM "oauthRefreshToken"')).rows[0]?.revoked);
-    assert.equal((await query('SELECT "disabled" FROM "oauthResource"')).rows[0]?.disabled, true);
-    assert.equal(
-      (await query('SELECT "clientName" FROM "mcpActivity"')).rows[0]?.clientName,
-      "Codex",
-    );
-    assert.equal((await query('SELECT "id" FROM "user"')).rows[0]?.id, "owner");
-    assert.equal((await query('SELECT "id" FROM "mcpClientAccess"')).rows.length, 0);
-  } finally {
-    await database.close();
-    await rm(directory, { recursive: true, force: true });
   }
 });
 

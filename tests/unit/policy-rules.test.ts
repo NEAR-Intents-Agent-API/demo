@@ -141,3 +141,35 @@ test("destinations are the account's one rule, in the API's own shape", () => {
   );
   assert.match(rulesProblem(rules({ tokens: [] })) ?? "", /token/);
 });
+
+test("a schedule round-trips through the policy, and any time omits it", () => {
+  const schedule = {
+    mode: "only" as const,
+    time_zone: "Europe/Berlin",
+    windows: [{ days: ["sat" as const, "sun" as const], start: "00:00", end: "24:00" }],
+  };
+  const policy = policySchema.parse(policyFromRules(null, rules({ schedule })));
+  assert.deepEqual(policy.schedule, schedule);
+  assert.deepEqual(rulesFromPolicy(policy).schedule, schedule);
+  assert.equal("schedule" in policyFromRules(policy, rules({ schedule: null })), false);
+});
+
+test("a schedule the API would refuse is named before signing", () => {
+  const window = { days: ["mon" as const], start: "09:00", end: "17:00" };
+  const schedule = { mode: "except" as const, time_zone: "UTC", windows: [window] };
+  assert.equal(rulesProblem(rules({ schedule })), null);
+  assert.match(
+    rulesProblem(rules({ schedule: { ...schedule, windows: [{ ...window, days: [] }] } })) ?? "",
+    /at least one day/,
+  );
+  for (const bad of [
+    { ...schedule, windows: [{ ...window, end: "09:00" }] },
+    { ...schedule, windows: [{ ...window, start: "" }] },
+    { ...schedule, time_zone: "Mars/Olympus" },
+  ])
+    assert.match(
+      rulesProblem(rules({ schedule: bad })) ?? "",
+      /start and end/,
+      JSON.stringify(bad),
+    );
+});

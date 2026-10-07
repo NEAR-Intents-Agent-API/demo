@@ -8,6 +8,7 @@ export type RuleSettingId =
   | "limits"
   | BudgetSettingId
   | "delay"
+  | "schedule"
   | "destinations"
   | "approval";
 export type RuleSetting = { id: RuleSettingId; title: string; description: string };
@@ -61,6 +62,11 @@ export const RULE_SETTING_GROUPS: readonly {
         id: "delay",
         title: "Execution delay",
         description: "Waiting time after API acceptance, before an execution may proceed.",
+      },
+      {
+        id: "schedule",
+        title: "Schedule",
+        description: "Hours on your clock when money actions may run. Deposits are never held.",
       },
     ],
   },

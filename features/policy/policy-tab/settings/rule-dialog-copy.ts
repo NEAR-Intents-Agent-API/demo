@@ -11,6 +11,8 @@ export function ruleDialogDescription(id: RuleSettingId): string {
       return "Choose tokens this account may swap, transfer or withdraw.";
     case "delay":
       return "Set how long an accepted execution must wait.";
+    case "schedule":
+      return "Choose when swaps, transfers and withdrawals may run, on your clock.";
     case "destinations":
       return "Choose where transfers and withdrawals may go.";
     default:

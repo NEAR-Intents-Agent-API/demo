@@ -1,4 +1,4 @@
-import type { DestinationRule, Policy } from "@near-intents-agent-api/sdk";
+import type { DestinationRule, Policy, Schedule } from "@near-intents-agent-api/sdk";
 import { defaultDestinationRule, policySchema } from "@/lib/agent-api/schemas";
 
 /**
@@ -35,6 +35,8 @@ export type Rules = {
   budget: { dailyUsd: string; weeklyUsd: string; monthlyUsd: string };
   /** The execution delay as typed, in seconds; stored in milliseconds. */
   delaySeconds: string;
+  /** When money actions may run, on the owner's clock; `null` means any time. */
+  schedule: Schedule | null;
 };
 
 /**
@@ -51,6 +53,7 @@ export const defaultRules: Rules = {
   frozen: false,
   budget: { dailyUsd: "", weeklyUsd: "", monthlyUsd: "" },
   delaySeconds: "0",
+  schedule: null,
 };
 
 export function rulesFromPolicy(policy: Policy | null): Rules {
@@ -76,6 +79,7 @@ export function rulesFromPolicy(policy: Policy | null): Rules {
       monthlyUsd: policy.budget.monthly_usd ?? "",
     },
     delaySeconds: String(policy.timelock_ms / 1000),
+    schedule: policy.schedule ? structuredClone(policy.schedule) : null,
   };
 }
 
@@ -96,6 +100,7 @@ export function policyFromRules(current: Policy | null, rules: Rules): Policy {
     destinations: rules.destinations,
     budget: budgetFromRules(rules),
     timelock_ms: delayMsFromRules(rules),
+    ...(rules.schedule ? { schedule: rules.schedule } : {}),
   };
 }
 
@@ -139,6 +144,10 @@ export function rulesProblem(rules: Rules): string | null {
     return "Pick at least one token, or allow any token.";
   if (rules.limits.some((limit) => !/^[1-9][0-9]*$/.test(limit.perTransaction)))
     return "Enter an amount for every capped token, or remove the cap.";
+  if (rules.schedule && !policySchema.shape.schedule.safeParse(rules.schedule).success)
+    return rules.schedule.windows.some((window) => window.days.length === 0)
+      ? "Pick at least one day for every schedule window."
+      : "Every schedule window needs a start and end that differ, in a known time zone.";
   const perHour = rules.maxPerHour.trim();
   if (perHour && !/^[1-9][0-9]{0,6}$/.test(perHour))
     return "Actions per hour must be a whole number, or empty for no cap.";

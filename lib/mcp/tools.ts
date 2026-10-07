@@ -233,10 +233,12 @@ export function toolResult(payload: unknown) {
   };
 }
 
-export function toolError(code: string) {
+/** `available_at` is the earliest time to submit again, when the API names one. */
+export function toolError(code: string, availableAt?: string) {
+  const error = availableAt ? { code, available_at: availableAt } : { code };
   return {
     isError: true as const,
-    content: [{ type: "text" as const, text: JSON.stringify({ error: { code } }) }],
+    content: [{ type: "text" as const, text: JSON.stringify({ error }) }],
   };
 }
 
