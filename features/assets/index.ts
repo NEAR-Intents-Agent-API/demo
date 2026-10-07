@@ -6,7 +6,6 @@ export {
   compareChains,
   DEPOSIT_CHAINS,
   knownChains,
-  REFUND_ADDRESS_CHAINS,
 } from "./chains";
 export { ChainGrid } from "./components/chain-grid";
 export { ChainPicker } from "./components/chain-picker";

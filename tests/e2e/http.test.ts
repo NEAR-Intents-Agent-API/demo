@@ -117,7 +117,6 @@ async function depositFlow(stub: Awaited<ReturnType<typeof startStubAgentApi>>) 
   const args = {
     source_asset: "nep141:btc.omft.near",
     amount: "100",
-    refund_address: "bc1qfunder",
     idempotencyKey: "demo-deposit",
   };
   const body = { tool: "create_cross_chain_deposit", args };
@@ -1443,8 +1442,8 @@ async function startStubAgentApi(): Promise<{
     {
       match: (url) => url.pathname.endsWith("/deposit"),
       respond: (_url, body) => {
-        const input = body as { confidential: boolean; refund_to: string };
-        assert.equal(input.refund_to, "bc1qfunder");
+        const input = body as { confidential: boolean; refund_to?: string };
+        assert.equal(input.refund_to, undefined, "refunds go to the agent; none is named");
         const correlationId = "de".repeat(31) + (++depositCount).toString(16).padStart(2, "0");
         const status = {
           correlation_id: correlationId,
