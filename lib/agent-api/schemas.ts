@@ -194,6 +194,9 @@ const nearRecipient = nearAccount.regex(
 );
 
 /** The owner's complete rulebook for one agent account, signed as a whole. */
+/** The NEAR Intents contracts; the API never signs for them. */
+const intentsContracts = ["intents.near", "intents.far"];
+
 export const policySchema = z.strictObject({
   frozen: z.boolean(),
   actions: z
@@ -218,13 +221,17 @@ export const policySchema = z.strictObject({
   }),
   timelock_ms: z.number().int().min(0).max(maxTimelockMs),
   schedule: scheduleSchema.optional(),
-  sign_message: z
+  sign: z
     .strictObject({
       recipients: z
         .array(nearRecipient)
         .min(1)
         .max(256)
-        .refine((list) => new Set(list).size === list.length, "Recipients must be unique"),
+        .refine((list) => new Set(list).size === list.length, "Recipients must be unique")
+        .refine(
+          (list) => !list.some((account) => intentsContracts.includes(account)),
+          "intents.near and intents.far can never be signing recipients",
+        ),
     })
     .optional(),
 });
