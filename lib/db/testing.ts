@@ -13,16 +13,14 @@ import { schema } from "./schema";
  */
 export async function createDemoTestDatabase(
   directory?: string,
-  options: { migrationsFolder?: string } = {},
-): Promise<DemoDatabase & { close: () => Promise<void>; migrateLatest: () => Promise<void> }> {
+): Promise<DemoDatabase & { close: () => Promise<void> }> {
   const client = directory ? new PGlite(resolve(directory, "postgres")) : new PGlite();
   const db = drizzle(client, { schema });
   const migrationsFolder = fileURLToPath(new URL("../../drizzle", import.meta.url));
-  await migrate(db, { migrationsFolder: options.migrationsFolder ?? migrationsFolder });
+  await migrate(db, { migrationsFolder });
   return {
     checkConnection: async () => {},
     db: db as unknown as DemoDatabase["db"],
     close: () => client.close(),
-    migrateLatest: () => migrate(db, { migrationsFolder }),
   };
 }
