@@ -202,13 +202,12 @@ export const toolDefinitions = {
   },
   create_cross_chain_deposit: {
     description:
-      "Get a one-time deposit address that funds this agent account inside NEAR Intents, without a spending grant. Refund addresses need no grant approval. `source_asset` is required: the exact `assetId` from get_tokens of the token being sent, never a symbol or chain name (it fixes the source chain and token, e.g. `nep141:eth.omft.near` is ETH on Ethereum, while `nep141:base.omft.near` is ETH on Base). HOT bridge `nep245:` assets cannot be deposited. Pass `refund_address` on that chain when the source chain is not NEAR, an EVM chain or Solana; pass the same id as `destination_asset` to be credited that token, since the default is USDC. `amount` is in the source token's smallest unit. The user sends exactly that amount once to `deposit.depositAddress` and nowhere else; if it is null, no funds are sent. `correlationId` is the tracking id for get_deposit_status, never an address. Poll get_deposit_status until SUCCESS. `confidential: true` credits the private balance. Never tell a user to send funds to the agent's own chain address: only NEAR Intents balances are usable.",
+      "Get a deposit address that funds this agent account inside NEAR Intents, without a spending grant. `source_asset` is required: the exact `assetId` from get_tokens of the token being sent, never a symbol or chain name (it fixes the source chain and token, e.g. `nep141:eth.omft.near` is ETH on Ethereum, while `nep141:base.omft.near` is ETH on Base). Omit `amount` to accept any amount at or above `deposit.minAmount` until `deposit.expiresAt`; pass `amount` (the source token's smallest unit) for an exact deposit. The agent is credited `source_asset` unless `destination_asset` names another token. The user sends only to `deposit.depositAddress`, with `deposit.memo` when it is set; if the address is null, no funds are sent. A failed or late deposit refunds into this agent's own balance; there is no refund address to ask for. `correlationId` is the tracking id for get_deposit_status, never an address. Poll get_deposit_status until SUCCESS. `confidential: true` credits the private balance. Never tell a user to send funds to the agent's own chain address: only NEAR Intents balances are usable.",
     inputSchema: z
       .object({
-        amount,
+        amount: amount.optional(),
         source_asset: text,
         destination_asset: text.optional(),
-        refund_address: text.optional(),
         confidential: z.boolean().default(false),
         ...writeArgs,
       })
@@ -244,20 +243,24 @@ export function toolError(code: string) {
 /**
  * A deposit is funded at exactly one place. The payload names it `depositAddress`, offers it only
  * while the deposit waits for funds, and carries no other id or account (the agent's own NEAR
- * account, the provider intent id) that a reader could mistake for a destination.
+ * account, where refunds go) that a reader could mistake for a destination.
  */
 function depositFunding(operation: Extract<StatusResponse, { type: "deposit" }>) {
-  const { deposit_address: depositAddress, expires_at: expiresAt } = operation.details;
+  const details = operation.details;
+  const text = (value: unknown) => (typeof value === "string" && value ? value : null);
   const waiting = operation.status === "PENDING_DEPOSIT";
-  const address =
-    waiting && typeof depositAddress === "string" && depositAddress ? depositAddress : null;
+  const address = waiting ? text(details.deposit_address) : null;
+  const exact = text(details.amount);
   return {
     depositAddress: address,
-    expiresAt: typeof expiresAt === "string" ? expiresAt : null,
+    memo: address ? text(details.memo) : null,
+    amount: exact,
+    minAmount: text(details.min_amount),
+    expiresAt: text(details.expires_at),
     instructions: !waiting
       ? "This deposit no longer accepts funds. Do not send anything for it."
       : address
-        ? "Send the exact quoted amount once to depositAddress, on the source asset's network, before expiresAt. correlationId is only for get_deposit_status and is never an address."
+        ? `${exact ? "Send exactly amount" : "Send any amount at or above minAmount"} to depositAddress (with memo when set), on the source asset's network, before expiresAt. A failed or late deposit refunds into this agent's balance. correlationId is only for get_deposit_status and is never an address.`
         : "No deposit address was issued. Do not send funds; poll get_deposit_status.",
   };
 }
@@ -403,10 +406,9 @@ export async function runWriteTool(
       result = await client.deposit(
         agentId,
         {
-          amount: String(args.amount),
+          amount: optionalString(args.amount),
           origin_asset: String(args.source_asset),
           destination_asset: optionalString(args.destination_asset),
-          refund_to: optionalString(args.refund_address),
           confidential: Boolean(args.confidential),
         },
         options,

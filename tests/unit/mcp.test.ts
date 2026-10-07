@@ -55,7 +55,7 @@ test("MCP maps execution fields and header options, returns owner approval link"
   assert.match(JSON.stringify(result.result), /tab=activity/);
 });
 
-test("MCP deposits pass both modes and refund addresses without recipient grants", async () => {
+test("MCP deposits pass both modes, an optional amount and no refund address", async () => {
   const calls: unknown[][] = [];
   const client = {
     deposit: async (...args: unknown[]) => {
@@ -63,30 +63,34 @@ test("MCP deposits pass both modes and refund addresses without recipient grants
       return { ...operation, type: "deposit", status: "PENDING_DEPOSIT" };
     },
   } as unknown as McpAgentClient;
-  for (const confidential of [false, true]) {
-    await runWriteTool(
-      "create_cross_chain_deposit",
-      {
+  for (const confidential of [false, true])
+    for (const amount of ["100", undefined]) {
+      const args = toolDefinitions.create_cross_chain_deposit.inputSchema.parse({
         source_asset: "nep141:btc.omft.near",
-        amount: "100",
-        refund_address: "bc1qfunder",
+        ...(amount ? { amount } : {}),
         confidential,
-        idempotencyKey: `mcp-deposit-${confidential}`,
-      },
-      { agentId, client },
-    );
-    assert.deepEqual(calls.at(-1), [
-      agentId,
-      {
-        amount: "100",
-        origin_asset: "nep141:btc.omft.near",
-        destination_asset: undefined,
-        refund_to: "bc1qfunder",
-        confidential,
-      },
-      { idempotencyKey: `mcp-deposit-${confidential}` },
-    ]);
-  }
+        idempotencyKey: `mcp-deposit-${confidential}-${amount}`,
+      });
+      await runWriteTool("create_cross_chain_deposit", args, { agentId, client });
+      assert.deepEqual(calls.at(-1), [
+        agentId,
+        {
+          amount,
+          origin_asset: "nep141:btc.omft.near",
+          destination_asset: undefined,
+          confidential,
+        },
+        { idempotencyKey: `mcp-deposit-${confidential}-${amount}` },
+      ]);
+    }
+  // Refunds always go to the agent's own balance; the tool has no field to send them elsewhere.
+  assert.throws(() =>
+    toolDefinitions.create_cross_chain_deposit.inputSchema.parse({
+      source_asset: "nep141:btc.omft.near",
+      refund_address: "bc1qfunder",
+      idempotencyKey: "mcp-deposit-refund",
+    }),
+  );
 });
 
 test("MCP deposit payload names one destination, only while the deposit waits for funds", async () => {
@@ -107,7 +111,8 @@ test("MCP deposit payload names one destination, only while the deposit waits fo
         deposit_address: depositAddress,
         expires_at: "2026-10-05T12:00:00.000Z",
         near_account_id: "c".repeat(64),
-        intent_id: "intent-1",
+        refund_to: "c".repeat(64),
+        min_amount: "90",
       },
     };
     const client = {
@@ -130,9 +135,9 @@ test("MCP deposit payload names one destination, only while the deposit waits fo
       const funding = payload.deposit as Record<string, unknown>;
       assert.equal(funding.depositAddress, sendTo);
       assert.equal(funding.expiresAt, "2026-10-05T12:00:00.000Z");
-      // No other account or id rides along to be mistaken for the destination.
+      assert.equal(funding.minAmount, "90");
+      // No other account (the agent itself, where refunds go) rides along as a destination.
       assert.ok(!JSON.stringify(payload).includes("c".repeat(64)));
-      assert.ok(!JSON.stringify(payload).includes("intent-1"));
       assert.match(
         String(funding.instructions),
         sendTo ? /never an address/ : /(Do not send|no longer accepts funds)/,

@@ -141,6 +141,3 @@ export const DEPOSIT_CHAINS = [
   "hood",
   "hypercore",
 ] as const;
-
-/** Deposit chains where the agent has no address of its own, so a failed deposit needs one. */
-export const REFUND_ADDRESS_CHAINS: ReadonlySet<string> = new Set(["btc"]);

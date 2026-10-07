@@ -24,7 +24,12 @@ test("deposit address renders while observation is still waiting for settlement"
     updated_at: "2026-10-05T00:00:00.000Z",
     dispatch_committed_at: "2026-10-05T00:00:00.000Z",
     grant: null,
-    details: { action: "cross_chain_deposit", deposit_address: address },
+    details: {
+      action: "cross_chain_deposit",
+      deposit_address: address,
+      memo: "memo-42",
+      min_amount: "10000000000000000000000",
+    },
   };
   const original = fundsApi.operation;
   let reads = 0;
@@ -48,7 +53,8 @@ test("deposit address renders while observation is still waiting for settlement"
         createElement(DepositTicket, {
           agentId,
           operationId,
-          title: "0.01 wNEAR on Near",
+          title: "wNEAR on Near",
+          token: { symbol: "wNEAR", decimals: 24 },
           onDone: () => {},
           onOpenActivity: () => {},
         }),
@@ -71,7 +77,10 @@ test("deposit address renders while observation is still waiting for settlement"
     await setImmediate();
     assert.equal(reads, 2, "observation continues after receiving the pending address");
     assert.deepEqual(waits, [0, 25_000], "read the address before starting long-poll observation");
-    assert.ok(render().includes(address), "pending deposit must show its funding address");
+    const markup = render();
+    assert.ok(markup.includes(address), "pending deposit must show its funding address");
+    assert.ok(markup.includes("Send at least 0.01 wNEAR"), "an open deposit names its minimum");
+    assert.ok(markup.includes("memo-42"), "a memo the chain needs is shown with the address");
     assert.ok(settle);
     settle({ ...pending, status: "SUCCESS" });
     await setImmediate();
