@@ -4,6 +4,7 @@ import { DelayField } from "../../rules/delay-field";
 import { DestinationRules } from "../../rules/destination-rules";
 import { LimitRules } from "../../rules/limit-rules";
 import type { Rules } from "../../rules/rules";
+import { ScheduleRules } from "../../rules/schedule-rules";
 import type { SummaryCatalog } from "../../rules/summary/summary-types";
 import { TokenRules } from "../../rules/token-rules";
 import { AbilitySettingEditor } from "./ability-setting-editor";
@@ -33,6 +34,7 @@ export function RuleSettingEditor({
   else if (isBudgetSetting(id))
     fields = <BudgetFields field={id} rules={rules} onChange={onChange} />;
   else if (id === "delay") fields = <DelayField rules={rules} onChange={onChange} />;
+  else if (id === "schedule") fields = <ScheduleRules embedded rules={rules} onChange={onChange} />;
   else if (id === "destinations")
     fields = <DestinationRules embedded rules={rules} onChange={onChange} />;
   else fields = <ApprovalRule embedded rules={rules} onChange={onChange} />;

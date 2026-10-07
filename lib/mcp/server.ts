@@ -89,7 +89,7 @@ export function createAgentMcpServer(scope: McpToolScope): McpServer {
             status: "error",
             detail: code,
           });
-          return toolError(code);
+          return toolError(code, error instanceof AgentApiError ? error.availableAt : undefined);
         }
       },
     );

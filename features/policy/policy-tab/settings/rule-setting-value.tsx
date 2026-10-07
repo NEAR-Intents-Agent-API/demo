@@ -1,5 +1,6 @@
 import type { PolicyView } from "@near-intents-agent-api/sdk";
 import type { Rules } from "../../rules/rules";
+import { describeSchedule } from "../../rules/schedule";
 import type { SummaryCatalog } from "../../rules/summary/summary-types";
 import { AbilitySettingValue } from "./ability-setting-value";
 import { isBudgetSetting } from "./budget-setting-utils";
@@ -26,6 +27,7 @@ export function RuleSettingValue({
   if (id === "destinations") return <DestinationsSettingValue rules={rules} />;
   if (id === "delay")
     return <span>{rules.delaySeconds === "0" ? "No delay" : `${rules.delaySeconds} seconds`}</span>;
+  if (id === "schedule") return <span>{describeSchedule(rules.schedule)}</span>;
   if (id === "approval")
     return <span>{rules.approval ? "Required for every move" : "Not required"}</span>;
   return isBudgetSetting(id) ? <BudgetSettingValue field={id} rules={rules} usage={usage} /> : null;

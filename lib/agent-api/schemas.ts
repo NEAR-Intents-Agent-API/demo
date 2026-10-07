@@ -6,6 +6,7 @@ import type {
   IntentType,
   OwnerWallet,
   Policy,
+  Schedule,
   SignedData,
   Status,
 } from "@near-intents-agent-api/sdk";
@@ -142,6 +143,40 @@ export const destinationRuleSchema = z
   });
 assertType<Equal<z.infer<typeof destinationRuleSchema>, DestinationRule>>();
 
+const clock = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+const knownTimeZone = (timeZone: string) => {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/** Weekly windows on the owner's clock when money actions may run (`only`) or pause (`except`). */
+export const scheduleSchema = z.strictObject({
+  mode: z.enum(["only", "except"]),
+  time_zone: z.string().min(1).max(64).refine(knownTimeZone, "Unknown time zone"),
+  windows: z
+    .array(
+      z
+        .strictObject({
+          days: z
+            .array(z.enum(["mon", "tue", "wed", "thu", "fri", "sat", "sun"]))
+            .min(1)
+            .max(7)
+            .refine((days) => new Set(days).size === days.length, "Days must be unique"),
+          start: z.string().regex(clock),
+          end: z.string().regex(clock).or(z.literal("24:00")),
+        })
+        .refine((window) => window.start !== window.end, "A window cannot start where it ends"),
+    )
+    .min(1)
+    .max(28),
+});
+assertType<Equal<z.infer<typeof scheduleSchema>, Schedule>>();
+
 /** A new account sends nowhere until the owner lists a destination. */
 export const defaultDestinationRule: DestinationRule = { mode: "only", list: [] };
 
@@ -182,6 +217,7 @@ export const policySchema = z.strictObject({
     monthly_usd: usdAmount.nullable(),
   }),
   timelock_ms: z.number().int().min(0).max(maxTimelockMs),
+  schedule: scheduleSchema.optional(),
   sign_message: z
     .strictObject({
       recipients: z

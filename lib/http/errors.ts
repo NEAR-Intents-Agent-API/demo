@@ -61,6 +61,7 @@ const errorStatus: Record<string, number> = {
   provider_refused: 409,
   provider_rate_limited: 429,
   spend_budget_exceeded: 403,
+  policy_schedule_denied: 403,
   spend_price_unavailable: 503,
   idle: 409,
   internal_error: 500,
