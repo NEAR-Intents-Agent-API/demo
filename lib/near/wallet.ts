@@ -1,11 +1,13 @@
 import type { NearConnector } from "@hot-labs/near-connect";
+import { nearLoginMessage } from "./login";
 
 /**
  * One NEAR Connect instance for the whole app.
  *
  * Login and owner signing must share a connector: two instances attach duplicate global
  * listeners, share wallet storage and race over the selected wallet. This module owns the
- * single instance, the SIWN login ceremony and the account checks signing depends on.
+ * single instance, the SIWN login ceremony and the account checks signing depends on. It loads
+ * lazily, so passkey and EVM sessions never touch it.
  */
 
 export type OwnerConnector = Pick<NearConnector, "getConnectedWallet" | "connect" | "disconnect">;
@@ -47,63 +49,64 @@ export async function connectedWallet(
   return { wallet, accounts };
 }
 
-/** The recipient every login message commits to; the server compares it against its authority. */
-export function nearLoginRecipient(): string {
-  return window.location.host;
-}
-
-/** SIWN message the owner signs; the server rebuilds this exact string from the same recipient. */
-export function nearLoginMessage(recipient: string): string {
-  return `Sign in to ${recipient}`;
-}
-
 /**
  * A 32-byte NEP-413 nonce with the current time in its first 8 bytes. The verifier reads that
  * timestamp, so a nonce generated any other way is rejected as expired.
  */
-export function nearLoginNonce(): Uint8Array {
+function loginNonce(): Uint8Array {
   const nonce = new Uint8Array(32);
   new DataView(nonce.buffer).setBigUint64(0, BigInt(Date.now()), false);
   nonce.set(crypto.getRandomValues(new Uint8Array(24)), 8);
   return nonce;
 }
 
-export function toHex(bytes: Uint8Array): string {
+function toHex(bytes: Uint8Array): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-type SignedLogin = { signedMessage: { accountId: string; publicKey: string; signature: string } };
+type SignedLogin = { accountId: string; publicKey: string; signature: string };
 
 /**
- * The SIWN sign-in ceremony on the shared connector: reuse the connected wallet when there is
- * one, otherwise connect and sign in a single prompt. The signed message is captured from the
- * connector's `wallet:signInAndSignMessage` event, which is the only path that returns it.
+ * The SIWN ceremony on the shared connector: reuse the connected wallet when there is one,
+ * otherwise connect and sign in a single prompt. The signed message is captured from the
+ * connector's `wallet:signInAndSignMessage` event, the only path that returns it. The result is
+ * the exact body `/near/verify` expects; the message and recipient name the host.
  */
-export async function nearSignIn(input: {
+export async function signNearLogin(): Promise<{
+  signedMessage: SignedLogin;
+  accountId: string;
   message: string;
   recipient: string;
-  nonce: Uint8Array;
-}): Promise<SignedLogin> {
+  nonce: string;
+}> {
+  const recipient = window.location.host;
+  const message = nearLoginMessage(recipient);
+  const nonce = loginNonce();
+  const input = { message, recipient, nonce };
   const instance = await nearConnector();
   const connected = await instance.getConnectedWallet().catch(() => null);
+  let signedMessage: SignedLogin | null = null;
   if (connected?.accounts.length) {
-    const signedMessage = await connected.wallet.signMessage({ ...input, network: "mainnet" });
-    return { signedMessage };
+    signedMessage = await connected.wallet.signMessage({ ...input, network: "mainnet" });
+  } else {
+    const handler = (event: { accounts: Array<{ signedMessage?: SignedLogin }> }) => {
+      signedMessage = event.accounts[0]?.signedMessage ?? null;
+    };
+    instance.on("wallet:signInAndSignMessage", handler);
+    try {
+      await instance.connect({ signMessageParams: input });
+    } finally {
+      instance.off("wallet:signInAndSignMessage", handler);
+    }
   }
-  let signed: SignedLogin["signedMessage"] | null = null;
-  const handler = (event: {
-    accounts: Array<{ signedMessage?: SignedLogin["signedMessage"] }>;
-  }) => {
-    signed = event.accounts[0]?.signedMessage ?? null;
+  if (!signedMessage) throw new Error("Wallet sign-in was cancelled or failed");
+  return {
+    signedMessage,
+    accountId: (signedMessage as SignedLogin).accountId,
+    message,
+    recipient,
+    nonce: toHex(nonce),
   };
-  instance.on("wallet:signInAndSignMessage", handler);
-  try {
-    await instance.connect({ signMessageParams: input });
-  } finally {
-    instance.off("wallet:signInAndSignMessage", handler);
-  }
-  if (!signed) throw new Error("Wallet sign-in was cancelled or failed");
-  return { signedMessage: signed };
 }
 
 /** Drops the retained wallet selection so the next ceremony starts from a fresh picker. */

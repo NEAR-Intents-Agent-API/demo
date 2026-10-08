@@ -1,38 +1,20 @@
 import { createSiweMessage } from "viem/siwe";
 import { authClient } from "@/lib/auth/client";
 import type { EvmRequest } from "@/lib/evm/wallet";
-import {
-  nearLoginMessage,
-  nearLoginNonce,
-  nearLoginRecipient,
-  nearSignIn,
-  toHex,
-} from "@/lib/near/wallet";
-import { authApi } from "./api";
-
 /**
  * NEAR login (SIWN). The app's single NEAR Connect instance performs connect → sign the exact
- * NEP-413 message → verify; the plugin checks network, recipient, timestamp and replay before
- * it creates the session. Owner signing later reuses the same instance and wallet selection.
+ * NEP-413 message; the server checks its recipient and message, then the plugin verifies
+ * network, timestamp and replay before it creates the session. Owner signing later reuses the
+ * same instance and wallet selection.
  */
 export async function nearLogin(): Promise<void> {
-  const recipient = nearLoginRecipient();
-  const nonce = nearLoginNonce();
-  const message = nearLoginMessage(recipient);
-  const { signedMessage } = await nearSignIn({ message, recipient, nonce });
-  await authApi.verifyNear({
-    signedMessage,
-    message,
-    recipient,
-    nonce: toHex(nonce),
-  });
+  unwrap(await authClient.signIn.near());
 }
 
 /**
  * EVM login through Better Auth's SIWE plugin. The plugin issues the nonce and verifies the
- * ERC-4361 message (domain, chain, single use) before it creates the session. Afterwards the
- * recovered public key is stored for owner proofs; that metadata write can fail without
- * invalidating the session.
+ * ERC-4361 message (domain, chain, single use) before it creates the session; the server then
+ * records the recovered public key for owner proofs.
  */
 export async function evmLogin(address: string, ethereumRequest: EvmRequest): Promise<void> {
   const { nonce } = unwrap(await authClient.siwe.nonce());
@@ -64,7 +46,6 @@ export async function evmLogin(address: string, ethereumRequest: EvmRequest): Pr
     }),
   );
   unwrap(await authClient.siwe.verify({ message, signature }));
-  await authApi.storeEvmKey({ message, signature });
 }
 
 /**

@@ -1,4 +1,3 @@
-export { authApi } from "./api";
 export { AuthenticatedShell } from "./authenticated-shell";
 export { DemoFooter } from "./demo-footer";
 export { DemoShell } from "./demo-shell";

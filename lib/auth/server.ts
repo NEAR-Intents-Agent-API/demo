@@ -8,19 +8,21 @@ import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { mcp } from "@better-auth/mcp";
 import { passkey } from "@better-auth/passkey";
 import { betterAuth } from "better-auth";
-import { APIError } from "better-auth/api";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { jwt, siwe } from "better-auth/plugins";
 import { siwn } from "better-near-auth";
-import { recoverMessageAddress } from "viem";
+import { eq } from "drizzle-orm";
+import { hashMessage, recoverMessageAddress, recoverPublicKey } from "viem";
 import { authAuthority, authOrigin, passkeyRpId } from "@/lib/auth/authority";
 import { createChallengeStore } from "@/lib/auth/challenges";
 import { coseAlgorithmFromRegistration } from "@/lib/auth/passkey-metadata";
 import { resolvePasskeyRegistration } from "@/lib/auth/passkey-registration";
 import type { DemoEnv } from "@/lib/config/env";
 import type { DemoDatabase } from "@/lib/db/client";
-import { schema } from "@/lib/db/schema";
+import { schema, walletAddress } from "@/lib/db/schema";
 import { MCP_SCOPES } from "@/lib/mcp/config";
 import { mcpAccessClaims, oauthConsentReference } from "@/lib/mcp/oauth";
+import { nearLoginMessage } from "@/lib/near/login";
 
 export type DemoAuth = ReturnType<typeof createDemoAuth>;
 
@@ -64,6 +66,31 @@ export function createDemoAuth(database: DemoDatabase, config: DemoEnv) {
       },
     },
     rateLimit: { enabled: true, storage: "database", window: 60, max: 60 },
+    hooks: {
+      // The SIWN plugin verifies the signature over whatever recipient and message the browser
+      // sends, so a login signed for another site would otherwise create a session here.
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/near/verify") return;
+        const { recipient, message } = (ctx.body ?? {}) as { recipient?: string; message?: string };
+        if (recipient !== authority || message !== nearLoginMessage(authority))
+          throw APIError.from("UNAUTHORIZED", {
+            code: "NEAR_LOGIN_MISMATCH",
+            message: "near_login_mismatch",
+          });
+      }),
+      // Owner proofs need the wallet's public key, which a SIWE login is the only place to
+      // recover (from the signature over the exact message the owner just signed).
+      after: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/siwe/verify" || !ctx.context.newSession) return;
+        const { message, signature } = ctx.body as { message: string; signature: `0x${string}` };
+        const recovered = await recoverPublicKey({ hash: hashMessage(message), signature });
+        const address = await recoverMessageAddress({ message, signature });
+        await database.db
+          .update(walletAddress)
+          .set({ publicKey: `0x${recovered.slice(4)}` })
+          .where(eq(walletAddress.address, address));
+      }),
+    },
     plugins: [
       jwt(),
       siwn({

@@ -1,13 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-test("EVM login signs the issued SIWE nonce and stores the recovered key", async () => {
+test("EVM login signs the issued SIWE nonce and verifies it through the auth client", async () => {
   const nonce = "ABC12345";
   const address = `0x${"a".repeat(40)}`;
   const previousFetch = globalThis.fetch;
   const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
   let signedMessage = "";
-  let storedKey = false;
   Object.defineProperty(globalThis, "window", {
     configurable: true,
     value: {
@@ -27,10 +26,6 @@ test("EVM login signs the issued SIWE nonce and stores the recovered key", async
             { status: 401 },
           );
     }
-    if (url.endsWith("/api/auth/evm-key")) {
-      storedKey = true;
-      return Response.json({ stored: true });
-    }
     throw new Error(`unexpected_request:${url}`);
   };
   try {
@@ -46,7 +41,6 @@ test("EVM login signs the issued SIWE nonce and stores the recovered key", async
       throw new Error("unexpected_wallet_method");
     });
     assert.match(signedMessage, new RegExp(`Nonce: ${nonce}`));
-    assert.equal(storedKey, true, "recovered key is stored after login");
   } finally {
     globalThis.fetch = previousFetch;
     if (previousWindow) Object.defineProperty(globalThis, "window", previousWindow);

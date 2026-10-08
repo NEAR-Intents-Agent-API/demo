@@ -2,23 +2,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { GenerateIntentResponse } from "@near-intents-agent-api/sdk";
 import { signIntent } from "../../features/wallet/sign-intent";
+import { nearLoginMessage } from "../../lib/near/login";
 import type { OwnerConnector } from "../../lib/near/wallet";
-import { nearLoginRecipient } from "../../lib/near/wallet";
 
-test("NEAR login recipient matches browser authority, including local port", () => {
-  const previous = Object.getOwnPropertyDescriptor(globalThis, "window");
-  try {
-    for (const host of ["localhost:3001", "demo.example.com"]) {
-      Object.defineProperty(globalThis, "window", {
-        configurable: true,
-        value: { location: { host } },
-      });
-      assert.equal(nearLoginRecipient(), host);
-    }
-  } finally {
-    if (previous) Object.defineProperty(globalThis, "window", previous);
-    else Reflect.deleteProperty(globalThis, "window");
-  }
+test("login message names the host, including a local port", () => {
+  for (const host of ["localhost:3001", "demo.example.com"])
+    assert.equal(nearLoginMessage(host), `Sign in to ${host}`);
 });
 
 const request = {

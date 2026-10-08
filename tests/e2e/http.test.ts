@@ -59,9 +59,12 @@ test("demo HTTP suite", { concurrency: 1 }, async (t) => {
         server = await startDemoServer(agentApi.url, directory, database.url);
       });
     });
-    await t.test("NEAR verify rejects unsigned claims and evm-key needs a session", async () => {
-      await authBoundaryFlow();
-    });
+    await t.test(
+      "NEAR verify rejects forged claims and logins signed for another site",
+      async () => {
+        await authBoundaryFlow();
+      },
+    );
     await t.test("provider reads surface intents lists and structured errors", async () => {
       await providerReadFlow(agentApi);
     });
@@ -80,34 +83,32 @@ test("demo HTTP suite", { concurrency: 1 }, async (t) => {
 });
 
 /**
- * The demo's own auth routes must fail closed. A NEAR login claim without a real wallet
- * signature cannot mint a session through the plugin, and the EVM key capture refuses an
- * anonymous caller before it touches a wallet row.
+ * The demo's auth routes must fail closed. A NEAR login claim without a real wallet signature
+ * cannot mint a session, and one signed for another site or message is refused before the
+ * plugin looks at it.
  */
 async function authBoundaryFlow(): Promise<void> {
-  const near = await fetch(`${origin}/api/auth/near/verify`, {
-    method: "POST",
-    headers: { "content-type": "application/json", origin },
-    body: JSON.stringify({
-      signedMessage: {
+  const verifyNear = (recipient: string, message: string) =>
+    fetch(`${origin}/api/auth/near/verify`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin },
+      body: JSON.stringify({
+        signedMessage: {
+          accountId: "attacker.near",
+          publicKey: `ed25519:${"1".repeat(32)}`,
+          signature: "forged",
+        },
+        message,
+        recipient,
+        nonce: "00".repeat(32),
         accountId: "attacker.near",
-        publicKey: `ed25519:${"1".repeat(32)}`,
-        signature: "forged",
-      },
-      message: "Sign in to localhost:3101",
-      recipient: "localhost:3101",
-      nonce: "00".repeat(32),
-      accountId: "attacker.near",
-    }),
-  });
-  assert.notEqual(near.status, 200, await near.clone().text());
-
-  const key = await fetch(`${origin}/api/auth/evm-key`, {
-    method: "POST",
-    headers: { "content-type": "application/json", origin },
-    body: JSON.stringify({ message: "x", signature: "0x00" }),
-  });
-  assert.equal(key.status, 401, "no session, no key write");
+      }),
+    });
+  const forged = await verifyNear("localhost:3101", "Sign in to localhost:3101");
+  assert.notEqual(forged.status, 200, await forged.clone().text());
+  const foreign = await verifyNear("evil.test", "Sign in to evil.test");
+  assert.equal(foreign.status, 401);
+  assert.equal((await foreign.json()).code, "NEAR_LOGIN_MISMATCH");
 }
 
 async function depositFlow(stub: Awaited<ReturnType<typeof startStubAgentApi>>) {
@@ -187,14 +188,7 @@ async function evmSessionFlow(): Promise<void> {
   assert.match(sessionCookie, /SameSite=Lax/i);
   const cookieHeader = cookies.map((cookie) => cookie.split(";")[0]).join("; ");
 
-  // The plugin owns login; the key capture is the demo's own follow-up and needs the session.
-  const key = await fetch(`${origin}/api/auth/evm-key`, {
-    method: "POST",
-    headers: { "content-type": "application/json", origin, cookie: cookieHeader },
-    body: JSON.stringify({ message, signature }),
-  });
-  assert.equal(key.status, 200, await key.clone().text());
-
+  // The server records the wallet public key as part of SIWE login; no follow-up call.
   const sessionBody = await getJson<{
     session: { userId: string; owner: { type: string; public_key: string } };
   }>("/api/auth/session", { cookie: cookieHeader });

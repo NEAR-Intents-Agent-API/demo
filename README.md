@@ -98,10 +98,12 @@ credentials), `components/` shared UI, `lib/agent-api/` server SDK bridge, `lib/
 Better Auth instance, `lib/near/wallet.ts` the single NEAR Connect instance for login and owner
 signing, `lib/mcp/` account resources and client access and tools, `lib/db/` + `drizzle/` storage.
 
-Auth providers use Better Auth's own client actions: SIWE for EVM (RainbowKit injected-only
-connectors, no WalletConnect), passkeys for platform authenticators, and SIWN for NEAR driven by
-the app's own NEAR Connect instance so login and owner signing share one wallet selection. The
-demo's own routes are only `evm-key` (public-key metadata), `session` and `sign-out`.
+One Better Auth client (`lib/auth/client.ts`) carries every login method: SIWE for EVM (RainbowKit
+injected-only connectors, no WalletConnect), passkeys for platform authenticators, and SIWN for
+NEAR through a small client plugin (`lib/auth/near-client.ts`) that drives the app's own NEAR
+Connect instance so login and owner signing share one wallet selection. Server hooks require a
+NEAR login to name this app's host and record the EVM public key at SIWE login. The demo's own
+routes are only `session` and `sign-out`.
 
 ## Development
 
