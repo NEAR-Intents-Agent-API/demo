@@ -1,5 +1,6 @@
 import type { BalancesView, DestinationRule, StatusResponse } from "@near-intents-agent-api/sdk";
 import type { IntentStep } from "@/features/intents";
+import type { AccessView } from "@/lib/agent-api/access";
 import { request } from "@/lib/http/request";
 
 export type FundsTool =
@@ -13,13 +14,8 @@ export type FundsTool =
   | "unshield"
   | "create_cross_chain_deposit";
 
-/** What the Agent API says about a live owner grant; the signed message itself stays server-side. */
-export type AccessGrantView = {
-  grantId: string;
-  label: string;
-  issuedAt: string;
-  expiresAt: string;
-};
+/** What the Agent API says about an owner grant; the signed message itself stays server-side. */
+export type AccessGrantView = AccessView;
 
 /** The account's destination rule, shared by the dashboard and every connected client. */
 export type DestinationSettings = {
@@ -39,7 +35,7 @@ export const fundsApi = {
     request<BalancesView>(`/api/agents/${agentId}/balances?source=${source}`),
   access: (agentId: string) =>
     request<{ access: AccessGrantView | null }>(`/api/agents/${agentId}/access`),
-  enableAccess: (agentId: string, input: { days: 1 | 7 | 30 }) =>
+  enableAccess: (agentId: string, input: { label: string; expiresAt: string }) =>
     request<IntentStep>(`/api/agents/${agentId}/access`, {
       method: "POST",
       body: JSON.stringify(input),

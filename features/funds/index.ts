@@ -1,7 +1,9 @@
+export { ACCESS_STATUS_LABEL, accessWhen } from "./access/access-display";
 export { AccessPage } from "./access/access-page";
 export { AccessStatus } from "./access/access-status";
 export { DESTINATION_RULE_COPY, DestinationRuleFields } from "./access/destination-rule-fields";
 export { type DestinationContext, destinationName } from "./access/destination-utils";
+export { signedPayloadText } from "./access/signature-utils";
 export { useAccessFlow } from "./access/use-access-flow";
 export { useGrants } from "./access/use-grants";
 export {
@@ -13,6 +15,8 @@ export {
 export { FundsWorkspace } from "./flows/funds-workspace";
 export { type FlowId, MoveFunds } from "./flows/move-funds";
 export { balanceLookup, FundsProvider } from "./funds-context";
+export { humanize, statusTone } from "./operations/operation-display-utils";
 export { OperationsPanel } from "./operations/operations-panel";
+export { useOperations } from "./operations/use-operations";
 export { type Lane, Portfolio } from "./portfolio/portfolio";
 export { useAccess, useHoldings } from "./use-funds";

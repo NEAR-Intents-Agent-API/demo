@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { FlowDiagram } from "./flow-diagram";
 import { KeyRoles } from "./key-roles";
 import { MoneyMoves } from "./money-moves";
-import { NetworkStrip } from "./network-strip";
+import { CatalogNetworkStrip } from "./network-strip";
 
 export function HowItWorks() {
   return (
@@ -42,7 +42,7 @@ export function HowItWorks() {
         <h2 id="networks-title" className="text-[22px] leading-7 font-bold tracking-[-0.35px]">
           Supported Networks
         </h2>
-        <NetworkStrip />
+        <CatalogNetworkStrip />
       </section>
     </div>
   );

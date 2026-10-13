@@ -31,8 +31,8 @@ export function FlowButton({
             Authorize dashboard
           </Button>
           <p className="text-center text-xs text-muted-foreground">
-            One grant covers swaps, transfers, withdrawals and shield/unshield. Destinations are
-            account rules.
+            One grant covers swaps, transfers, withdrawals and moves between the public and private
+            balance. Destinations are account rules.
           </p>
         </div>
       </FlowFooter>

@@ -16,7 +16,7 @@ import { hashMessage, recoverMessageAddress, recoverPublicKey } from "viem";
 import { authAuthority, authOrigin, passkeyRpId } from "@/lib/auth/authority";
 import { createChallengeStore } from "@/lib/auth/challenges";
 import { coseAlgorithmFromRegistration } from "@/lib/auth/passkey-metadata";
-import { resolvePasskeyRegistration } from "@/lib/auth/passkey-registration";
+import { passkeyPlaceholderEmail, passkeyRegistrationUser } from "@/lib/auth/passkey-registration";
 import type { DemoEnv } from "@/lib/config/env";
 import type { DemoDatabase } from "@/lib/db/client";
 import { schema, walletAddress } from "@/lib/db/schema";
@@ -122,11 +122,13 @@ export function createDemoAuth(database: DemoDatabase, config: DemoEnv) {
           // registration must be allowed. With a session, the plugin attaches the new
           // credential to the signed-in demo user instead of creating another one.
           requireSession: false,
-          resolveUser: () => resolvePasskeyRegistration({ database }),
+          // Only describes the user: the row is created after the attestation verifies, so a
+          // cancelled or failed ceremony leaves nothing behind.
+          resolveUser: () => passkeyRegistrationUser(),
           // ES256 is the only algorithm `OwnerWallet` accepts. The algorithm lives in the COSE
           // key inside `attestationObject`, so the plugin's own verification result is the
           // place to read it; storing any other credential would lock the owner out later.
-          afterVerification: ({ clientData }) => {
+          afterVerification: async ({ ctx, clientData, user }) => {
             const algorithm = coseAlgorithmFromRegistration(
               clientData as unknown as Record<string, unknown>,
             );
@@ -135,6 +137,13 @@ export function createDemoAuth(database: DemoDatabase, config: DemoEnv) {
                 code: "PASSKEY_ALGORITHM_UNSUPPORTED",
                 message: "passkey_algorithm_unsupported",
               });
+            // Runs inside the plugin's registration transaction, before the credential row
+            // that references the user.
+            if (!(await ctx.context.internalAdapter.findUserById(user.id)))
+              await ctx.context.internalAdapter.createUser(
+                { id: user.id, name: user.name, email: passkeyPlaceholderEmail(user.id) },
+                { method: "passkey" },
+              );
           },
         },
         authentication: {

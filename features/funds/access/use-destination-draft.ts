@@ -24,10 +24,8 @@ export function useDestinationDraft(
       setMemo("");
       setHasMemo(false);
       setError(null);
-    } catch {
-      setError(
-        "Choose a network, enter a recipient, and fill in the memo if required. Memo values must match exactly.",
-      );
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Check the network, recipient and memo.");
     }
   };
   return {

@@ -58,10 +58,10 @@ lib/
 - `lib/near/wallet.ts` is the only NEAR Connect instance. Login and owner signing must share it;
   a second connector duplicates global listeners and wallet storage. Never cache the wallet
   object across ceremonies without checking its account against the server's signer.
-- `lib/evm/wallet.ts` must stay WalletConnect-free: `injected()` (EIP-6963 discovery),
-  `coinbaseWallet` and `safe()` only. Never add `walletConnect()` or the MetaMask SDK connector.
-  Wallet selection is our own `features/auth/evm-wallet-picker.tsx`, built on wagmi's
-  `useConnectors`/`useConnect`.
+- `lib/evm/wallet.ts` must stay WalletConnect-free: `injected()` (EIP-6963 discovery)
+  and `coinbaseWallet` only. Never add `walletConnect()`, the MetaMask SDK connector or `safe()`
+  (Safe smart-contract wallets are not supported as owners). Wallet selection
+  is our own `features/auth/evm-wallet-picker.tsx`, built on wagmi's `useConnectors`/`useConnect`.
 - Owner ceremonies are server-prepared: the browser signs exactly the payload from
   `generateIntent`/workflow routes. Do not compose signed messages in the client.
 

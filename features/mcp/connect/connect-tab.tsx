@@ -1,9 +1,12 @@
 "use client";
+import { Callout } from "@/components/shared/callout";
 import { Panel } from "@/components/shared/page";
+import { REVOKE_NOTICE_TITLE, RevokeNotice } from "@/components/shared/revoke-notice";
 import { SetupFlowPanel } from "@/components/shared/setup-flow-panel";
 import { Loading, Unavailable } from "@/components/shared/states";
 import { Button } from "@/components/ui/button";
 import { useDialogBusy, useDialogLocked } from "@/hooks/use-dialog-busy";
+import { committedAfterRevoke } from "@/lib/agent-api/committed";
 import { useMcpClients } from "../hooks/use-mcp-clients";
 import { ApiKeyDialog } from "./api-key-dialog";
 import { ConnectInstructions } from "./connect-instructions";
@@ -25,6 +28,7 @@ export function ConnectTab({
   const { view, revoke, dialog, setDialog } = useMcpClients(agentId);
   useDialogBusy(revoke.isPending || Boolean(dialog));
   const locked = useDialogLocked();
+  const committed = committedAfterRevoke(revoke.data?.operation);
   if (view.isPending) return <Loading rows={2} />;
   if (!view.data || view.error)
     return (
@@ -74,11 +78,29 @@ export function ConnectTab({
           {instructions}
         </Panel>
       )}
+      {committed ? (
+        <Callout
+          tone="warning"
+          title={REVOKE_NOTICE_TITLE}
+          className="xl:col-span-2"
+          action={
+            <Button variant="ghost" size="xs" onClick={() => revoke.reset()}>
+              Dismiss
+            </Button>
+          }
+        >
+          <RevokeNotice
+            ids={committed.ids}
+            truncated={committed.truncated}
+            activityHref={`/agents/${encodeURIComponent(agentId)}?tab=activity`}
+          />
+        </Callout>
+      ) : null}
       <ConnectedClientsPanel
         plain={plain}
         clients={view.data.clients}
         pendingId={revoke.isPending ? revoke.variables : undefined}
-        error={revoke.error?.message}
+        error={revoke.error}
         onRevoke={(id) => revoke.mutate(id)}
         onResume={(client) => setDialog({ client })}
         onRefresh={() => void view.refetch()}

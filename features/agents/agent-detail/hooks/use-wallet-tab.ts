@@ -108,9 +108,19 @@ export function useWalletTab(
     ],
   );
 
+  // The combined total needs both balances; until then only the active lane's total is shown.
+  const allHoldings = useMemo(
+    () =>
+      publicLane.query.data && privateLane.query.data
+        ? { public: publicLane.holdings, confidential: privateLane.holdings }
+        : null,
+    [publicLane.query.data, privateLane.query.data, publicLane.holdings, privateLane.holdings],
+  );
+
   return {
     lane,
     setLane,
+    allHoldings,
     flow,
     setFlow,
     active,

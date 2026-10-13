@@ -11,6 +11,9 @@ export function pendingAuthorizationUrl(search: string): string | null {
   return `/api/auth/oauth2/authorize?${forwarded.toString()}`;
 }
 
+/** Where an owner lands after signing in when no earlier destination was asked for. */
+const LANDING = "/agents";
+
 export function loginReturnTo(value: string | string[] | undefined): string {
   if (
     typeof value !== "string" ||
@@ -19,12 +22,12 @@ export function loginReturnTo(value: string | string[] | undefined): string {
     value.includes("\\") ||
     [...value].some((char) => char.charCodeAt(0) <= 32)
   )
-    return "/how-it-works";
+    return LANDING;
   const url = new URL(value, "https://demo.invalid");
   if (
     url.origin !== "https://demo.invalid" ||
     !(url.pathname === "/how-it-works" || /^\/agents(?:\/|$)/.test(url.pathname))
   )
-    return "/how-it-works";
+    return LANDING;
   return `${url.pathname}${url.search}${url.hash}`;
 }

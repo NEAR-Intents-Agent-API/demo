@@ -25,8 +25,9 @@ export function DestinationRules({
         onChange={(destinations) => onChange({ ...rules, destinations })}
       />
       <p className="max-w-2xl text-xs leading-5 text-muted-foreground">
-        Swaps, shield and unshield stay within this account. This rule applies to the dashboard and
-        every connected client; changing it does not require a new grant.
+        Swaps and moves between the public and private balance stay within this account. This rule
+        applies to the dashboard and every connected client; changing it does not require a new
+        grant.
       </p>
     </RulesSection>
   );

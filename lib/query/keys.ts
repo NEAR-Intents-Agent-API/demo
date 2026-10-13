@@ -6,6 +6,8 @@ export const queryKeys = {
   session: (userId: string | null) => ["session", userId] as const,
   catalog: () => ["catalog"] as const,
   agents: () => ["agents"] as const,
+  /** The accounts page's list, which also reads each account's frozen flag. */
+  agentsWithFrozen: () => ["agents", "with-frozen"] as const,
   agent: (agentId: string) => ["agent", agentId] as const,
   onboarding: (agentId: string) => ["onboarding", agentId] as const,
   balances: (agentId: string, source: string) => ["balances", agentId, source] as const,
@@ -18,6 +20,7 @@ export const queryKeys = {
   operations: (agentId: string) => ["operations", agentId] as const,
   operation: (agentId: string, operationId: string) => ["operation", agentId, operationId] as const,
   approvals: (agentId: string) => ["approvals", agentId] as const,
+  approval: (agentId: string, approvalId: string) => ["approvals", agentId, approvalId] as const,
   mcp: (agentId: string) => ["agent-mcp", agentId] as const,
   oauthClient: (clientId: string) => ["oauth-client", clientId] as const,
   swapQuote: (agentId: string, args: unknown) => ["swap-quote", agentId, args] as const,

@@ -13,6 +13,10 @@ export function useTimelock(agentId: string) {
     queryFn: ({ pageParam }) => policyApi.scheduled(agentId, pageParam),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (page) => page.next_cursor ?? undefined,
+    // Waiting executions release on their own; keep the list true while there are any.
+    refetchInterval: (query) =>
+      query.state.data?.pages.some((page) => page.data.length > 0) ? 15_000 : false,
+    refetchOnWindowFocus: true,
   });
   const refresh = async () => {
     await Promise.all([

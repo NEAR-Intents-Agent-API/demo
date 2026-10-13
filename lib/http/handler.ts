@@ -1,13 +1,38 @@
 import { AgentApiError, type AgentView } from "@near-intents-agent-api/sdk";
 import { NextResponse } from "next/server";
+import { agentApi } from "@/lib/agent-api/client";
 import { requireOwnedAgent } from "@/lib/agent-api/guard";
 import { currentSession, type DemoSession } from "@/lib/auth/session";
 import { guardBrowserMutation } from "@/lib/http/browser-guard";
+import type { ErrorDetails } from "@/lib/http/error-details";
 import { bffError, knownErrorCode, type RouteLog } from "@/lib/http/errors";
 import { errorFields, logger } from "@/lib/http/logger";
 
 export { guardBrowserMutation, readGuardedJson } from "@/lib/http/browser-guard";
 export { bffError, networkGateError, type RouteLog, readJson } from "@/lib/http/errors";
+
+const BUDGET_READ_TIMEOUT_MS = 2_000;
+
+/**
+ * USD left in the tightest budget window, so a budget refusal can say how much the account has.
+ * The refusal itself carries no amount; a slow or failed read only means the message goes without
+ * it, so the read is bounded well below the shared client's timeout.
+ */
+async function budgetRemainingUsd(agentId: string): Promise<string | undefined> {
+  try {
+    const policy = await agentApi().getPolicy(agentId, {
+      signal: AbortSignal.timeout(BUDGET_READ_TIMEOUT_MS),
+    });
+    const { budget } = policy.usage;
+    const left = [budget.daily, budget.weekly, budget.monthly]
+      .map((window) => window.remaining_usd)
+      .filter((remaining) => remaining !== null);
+    if (left.length === 0) return undefined;
+    return left.reduce((least, next) => (Number(next) < Number(least) ? next : least));
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * Normalizes any handler failure into the demo error envelope and logs it with a request id.
@@ -19,6 +44,7 @@ export { bffError, networkGateError, type RouteLog, readJson } from "@/lib/http/
 async function runLogged(
   route: string,
   handler: (log: RouteLog, session: DemoSession | null) => Promise<NextResponse | unknown>,
+  agentId?: string,
 ): Promise<NextResponse> {
   const context: RouteLog = { requestId: crypto.randomUUID(), route, startedAt: Date.now() };
   const session = await currentSession();
@@ -36,7 +62,10 @@ async function runLogged(
         provider_code: error.code,
         provider_status: error.status,
       });
-      return bffError(error.code, error.status, context);
+      const details: ErrorDetails = { available_at: error.availableAt };
+      if (error.code === "spend_budget_exceeded" && agentId)
+        details.budget_remaining_usd = await budgetRemainingUsd(agentId);
+      return bffError(error.code, error.status, context, details);
     }
     const code = knownErrorCode(error);
     if (code) return bffError(code, undefined, context);
@@ -93,8 +122,10 @@ export async function withAgent(
 ): Promise<NextResponse> {
   const guarded = await requireOwnedAgent(agentId);
   if (!guarded.ok) return guarded.response;
-  return runLogged(route, () =>
-    handler({ session: guarded.session, agent: guarded.agent, log: guarded.log }),
+  return runLogged(
+    route,
+    () => handler({ session: guarded.session, agent: guarded.agent, log: guarded.log }),
+    agentId,
   );
 }
 

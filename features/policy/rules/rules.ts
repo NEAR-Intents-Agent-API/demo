@@ -1,5 +1,5 @@
 import type { DestinationRule, Policy, Schedule } from "@near-intents-agent-api/sdk";
-import { defaultDestinationRule, policySchema } from "@/lib/agent-api/schemas";
+import { policySchema } from "@/lib/agent-api/schemas";
 
 /**
  * The agent's rules in the owner's words, and their translation to the API policy.
@@ -29,26 +29,23 @@ export type Rules = {
   maxPerHour: string;
   /** The account's one destination rule, shared by the dashboard and every client. */
   destinations: DestinationRule;
-  /** Every money action waits for the owner's approval. NEAR owners only. */
+  /** Every money action waits for the owner's approval. */
   approval: boolean;
   frozen: boolean;
   budget: { dailyUsd: string; weeklyUsd: string; monthlyUsd: string };
-  /** The execution delay as typed, in seconds; stored in milliseconds. */
+  /** The execution delay in seconds (the editor types it in minutes, hours or days); stored in milliseconds. */
   delaySeconds: string;
   /** When money actions may run, on the owner's clock; `null` means any time. */
   schedule: Schedule | null;
 };
 
-/**
- * A new agent can do everything NEAR Intents offers inside the account; nothing leaves it until
- * the owner approves a destination.
- */
+/** A new agent can do everything NEAR Intents offers, to any destination, until the owner narrows it. */
 export const defaultRules: Rules = {
   abilities: { swap: true, transfer: true, withdraw: true, confidential: true },
   tokens: "any",
   limits: [],
   maxPerHour: "",
-  destinations: defaultDestinationRule,
+  destinations: { mode: "any", list: [] },
   approval: false,
   frozen: false,
   budget: { dailyUsd: "", weeklyUsd: "", monthlyUsd: "" },
@@ -142,7 +139,7 @@ export function rulesProblem(rules: Rules): string | null {
   if (!policySchema.shape.budget.safeParse(budgetFromRules(rules)).success)
     return "Enter a valid USD amount with up to two decimal places, or leave the cap empty.";
   if (!policySchema.shape.timelock_ms.safeParse(delayMsFromRules(rules)).success)
-    return "Execution delay must be a number of seconds between 0 and 2592000.";
+    return "Execution delay must be between 0 and 30 days.";
   if (rules.tokens !== "any" && rules.tokens.length === 0)
     return "Pick at least one token, or allow any token.";
   if (rules.limits.some((limit) => !/^[1-9][0-9]*$/.test(limit.perTransaction)))

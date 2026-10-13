@@ -3,12 +3,13 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { authClient } from "@/lib/auth/client";
+import { disconnectEvmWallets } from "@/lib/evm/wallet";
 import { disconnectNearWallet } from "@/lib/near/wallet";
 
 /**
  * Both the account menu and the command palette share this sign-out lifecycle. The plugin
- * deletes the server session row and clears the cookie; the retained NEAR wallet selection is
- * dropped too, so the next visitor to this browser starts from the picker.
+ * deletes the server session row and clears the cookie; the retained NEAR and EVM wallet connections
+ * are dropped too, so the next visitor to this browser starts from the picker.
  */
 export function useSignOut() {
   const cache = useQueryClient();
@@ -28,7 +29,7 @@ export function useSignOut() {
       setError("Sign-out failed. Try again.");
       return;
     }
-    await disconnectNearWallet();
+    await Promise.all([disconnectNearWallet(), disconnectEvmWallets()]);
     await cache.cancelQueries();
     cache.clear();
     // Retire pending wallet callbacks and the Router Cache together with this document.

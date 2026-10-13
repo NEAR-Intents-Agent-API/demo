@@ -9,6 +9,7 @@ import {
   readGuardedJson,
   withAgentMutation,
 } from "@/lib/http/handler";
+import { recordDashboardRefusal } from "@/lib/mcp/activity";
 import { type ToolContext, ToolDeniedError } from "@/lib/mcp/tools";
 
 const requestSchema = z.strictObject({
@@ -55,6 +56,12 @@ export async function POST(request: Request, context: AgentRouteContext) {
         result: outcome.result,
       });
     } catch (error) {
+      await recordDashboardRefusal({
+        userId: session.userId,
+        agentId,
+        tool: parsed.data.tool,
+        error,
+      });
       if (error instanceof ToolDeniedError) return bffError(error.code, 403, log);
       if (error instanceof z.ZodError) return bffError("invalid_request", 400, log);
       throw error;

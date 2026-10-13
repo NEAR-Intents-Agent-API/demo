@@ -1,5 +1,5 @@
-import type { AgentView } from "@near-intents-agent-api/sdk";
 import { notFound, redirect } from "next/navigation";
+import { type AgentListItem, withoutFrozenFlag } from "@/lib/agent-api/agent-list";
 import { requireOwnedAgent } from "@/lib/agent-api/guard";
 import { currentSession } from "@/lib/auth/session";
 
@@ -11,7 +11,7 @@ import { currentSession } from "@/lib/auth/session";
 export async function requireOwnedAgentPage(
   agentId: string,
   returnTo = `/agents/${agentId}`,
-): Promise<AgentView> {
+): Promise<AgentListItem> {
   const session = await currentSession();
   if (!session) redirect(`/login?returnTo=${encodeURIComponent(returnTo)}`);
   const guarded = await requireOwnedAgent(agentId);
@@ -21,5 +21,6 @@ export async function requireOwnedAgentPage(
     if (guarded.response.status === 404) notFound();
     throw new Error("agent_page_unavailable");
   }
-  return guarded.agent;
+  // The frozen flag costs a provider read; the page's own query supplies it after load.
+  return withoutFrozenFlag(guarded.agent);
 }

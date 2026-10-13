@@ -98,8 +98,8 @@ export function DestinationsDialog({
         </fieldset>
         <p className="text-xs leading-5 text-muted-foreground">
           One signature saves this rule; it sends no funds and needs no blockchain transaction.
-          Swaps and shield/unshield need no destination. Previously queued executions become stale
-          after changes; already dispatched operations may complete.
+          Swaps and private balance moves need no destination. Previously queued executions become
+          stale after changes; already dispatched operations may complete.
         </p>
         <SignatureDetails step={prepared} />
       </div>

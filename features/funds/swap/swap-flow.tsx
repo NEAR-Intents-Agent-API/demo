@@ -49,7 +49,7 @@ export function SwapFlow({ view }: { view: ReturnType<typeof useSwapFlow> }) {
           />
         </div>
 
-        <FlowError code={quote.error?.message} />
+        <FlowError error={quote.error} />
         {outAtomic && token && view.to && source.atomic ? (
           <SwapReview
             lane={view.lane}
@@ -61,7 +61,7 @@ export function SwapFlow({ view }: { view: ReturnType<typeof useSwapFlow> }) {
           />
         ) : null}
 
-        <FlowError code={action.error?.message} />
+        <FlowError error={action.error} />
         <FlowButton
           busy={action.isPending || quote.isFetching}
           disabled={Boolean(reason) || waitingOnQuote}

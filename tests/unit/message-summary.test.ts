@@ -73,8 +73,8 @@ test("a policy envelope lists the rules that actually limit spending", () => {
   assert.equal(contents.get("Allowed tokens"), "nep141:wrap.near");
   assert.equal(contents.get("Rate limit"), "10 per hour");
   assert.equal(contents.get("Per transaction limit"), "1000000000000000000000000 nep141:wrap.near");
-  assert.equal(contents.get("USD budget a day"), "$25.00");
-  assert.equal(contents.get("Execution delay"), "90 seconds");
+  assert.equal(contents.get("USD budget (rolling 24 hours)"), "$25.00");
+  assert.equal(contents.get("Execution delay"), "1 minute 30 seconds");
   // The revision is what prevents signing against a stale policy.
   assert.equal(summary.rows.find((row) => row.label === "Expected revision")?.value, "4");
   assert.equal(summary.rows.find((row) => row.label === "Policy hash")?.value, "h".repeat(64));
@@ -176,4 +176,37 @@ test("a local policy signature shows the destination rule it installs", () => {
   const rule = policy.details.find((row) => row.label === "Where funds can go")?.value ?? "";
   assert.match(rule, /^Only: withdraw.*near.*exchange.near.*customer-123/);
   assert.equal(summarizeSignedMessage(JSON.stringify({ ...message, action: "unknown" })), null);
+});
+
+test("a destination the dashboard cannot parse is still shown as signed, never dropped", () => {
+  const message = {
+    ...control,
+    domain: "near-intents-agent-api.owner-admin.v2",
+    action: "update_policy",
+    policy: {
+      destinations: {
+        mode: "only",
+        list: [
+          {
+            action: "withdraw",
+            chain: "xrp",
+            address: "XVLhHMPHU98es4dbozjVtdWzVrDjtV5fdx1mHp98tDMoQXb",
+            memo: null,
+          },
+          {
+            action: "withdraw",
+            chain: "some-new-chain",
+            address: "x".repeat(300),
+            memo: null,
+            extra: 1,
+          },
+        ],
+      },
+    },
+  };
+  const summary = summarizeSignedMessage(JSON.stringify(message));
+  assert.ok(summary);
+  const rule = summary.details.find((row) => row.label === "Where funds can go")?.value ?? "";
+  assert.match(rule, /^Only: withdraw: xrp XVLhHMPHU98es4dbozjVtdWzVrDjtV5fdx1mHp98tDMoQXb/);
+  assert.match(rule, /some-new-chain/);
 });

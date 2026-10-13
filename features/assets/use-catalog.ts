@@ -9,15 +9,35 @@ import { canonicalChainId, chainOfAsset, compareChains } from "./chains";
 import type { TokenOption } from "./types";
 
 /** A catalogue entry as the pickers use it; each asset lives on exactly one chain. */
-export type CatalogOption = TokenOption & { priceUsd: number | null };
+export type CatalogOption = TokenOption & {
+  /** USD per whole token while the price is usable; null when unknown or expired. */
+  priceUsd: number | null;
+  /** When 1Click last updated the quote, even one too old to use. */
+  priceUpdatedAt: string | null;
+  /** A price existed but passed its expiry: unknown, not zero. */
+  priceExpired: boolean;
+};
+
+export type PriceFacts = {
+  price: number | null;
+  price_updated_at: string | null;
+  price_expires_at: string | null;
+};
 
 /**
- * The Agent API decides whether a price is usable and says until when (`priceExpiresAt`). Past
- * that instant the price is dropped, not shown, even if a refetch failed and the list is old.
+ * The Agent API decides whether a price is usable and says until when (`price_expires_at`). Past
+ * that instant the price is dropped, not shown, even if a refetch failed and the list is old. The
+ * answer says which kind of "no price" it is, so a screen can tell "expired" from "never priced".
  */
-function usablePrice(token: TokenView, now: number): number | null {
-  if (token.price === null || token.price_expires_at === null) return null;
-  return Date.parse(token.price_expires_at) > now ? token.price : null;
+export function usablePrice(
+  token: PriceFacts,
+  now: number,
+): { priceUsd: number | null; priceUpdatedAt: string | null; priceExpired: boolean } {
+  const priceUpdatedAt = token.price_updated_at;
+  if (token.price === null || token.price_expires_at === null)
+    return { priceUsd: null, priceUpdatedAt, priceExpired: false };
+  const live = Date.parse(token.price_expires_at) > now;
+  return { priceUsd: live ? token.price : null, priceUpdatedAt, priceExpired: !live };
 }
 
 function toOption(token: TokenView, now: number): CatalogOption {
@@ -29,7 +49,7 @@ function toOption(token: TokenView, now: number): CatalogOption {
     decimals: token.decimals,
     chain,
     chains: [chain],
-    priceUsd: usablePrice(token, now),
+    ...usablePrice(token, now),
   };
 }
 
@@ -45,6 +65,8 @@ export function unknownOption(assetId: string): CatalogOption {
     chain,
     chains: [chain],
     priceUsd: null,
+    priceUpdatedAt: null,
+    priceExpired: false,
   };
 }
 
@@ -68,6 +90,8 @@ export type Catalog = {
   find: (asset: string) => CatalogOption | undefined;
   lookup: (assetId: string) => CatalogOption;
   chains: string[];
+  /** The shared wall clock (refreshed every 15 s) that prices expire against. */
+  now: number;
 };
 
 /**
@@ -104,7 +128,7 @@ export function useCatalogData(): Catalog {
     () => [...new Set(tokens.map((token) => token.chain))].sort(compareChains),
     [tokens],
   );
-  return { query, tokens, byAsset, find, lookup, chains };
+  return { query, tokens, byAsset, find, lookup, chains, now };
 }
 
 /** `raw` of `token` in dollars, or null without a price or decimals. */

@@ -16,7 +16,7 @@ export function ConnectedClientsPanel({
 }: {
   clients: McpClientView[];
   pendingId?: string;
-  error?: string;
+  error?: Error | null;
   onRevoke: (id: string) => void;
   onResume: (client: McpClientView) => void;
   onRefresh: () => void;

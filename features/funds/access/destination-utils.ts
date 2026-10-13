@@ -1,6 +1,9 @@
 import type { Destination } from "@near-intents-agent-api/sdk";
+import { z } from "zod";
 import { chainInfo } from "@/features/assets";
 import { canonicalDestination } from "@/lib/agent-api/schemas";
+
+export const MEMO_MAX_LENGTH = 256;
 
 /**
  * The route an owner picks for a destination, in the words the dashboard uses: a withdrawal, a
@@ -16,28 +19,51 @@ export function destinationRoute(destination: Destination): DestinationAction {
   return destination.confidential ? "confidential_transfer" : "intents_transfer";
 }
 
-export function destinationFromDraft(input: {
+type Draft = {
   action: DestinationAction;
   chain: string;
   address: string;
   memo: string;
   hasMemo: boolean;
-}): Destination {
-  if (input.hasMemo && input.memo.length === 0) throw new Error("Memo value is required");
-  return canonicalDestination(
-    input.action === "withdraw"
-      ? {
-          action: "withdraw",
-          chain: input.chain,
-          address: input.address,
-          memo: input.hasMemo ? input.memo : null,
-        }
-      : {
-          action: "transfer",
-          address: input.address,
-          confidential: input.action === "confidential_transfer",
-        },
-  );
+};
+
+/** What is missing or wrong before the draft can even be checked against the network. */
+function draftProblem(input: Draft): string | null {
+  if (input.action !== "withdraw") return input.address.trim() ? null : "Enter an account";
+  if (!input.chain) return "Choose a network";
+  if (!input.address.trim()) return "Enter a recipient address";
+  if (input.hasMemo && input.memo.length === 0) return "Enter the memo, or choose No memo";
+  if (input.memo.length > MEMO_MAX_LENGTH) return `Memo is at most ${MEMO_MAX_LENGTH} characters`;
+  return null;
+}
+
+/**
+ * Builds the destination an owner typed, or throws an `Error` whose message says exactly what is
+ * wrong with it (missing network, malformed address, memo too long) for the form to show.
+ */
+export function destinationFromDraft(input: Draft): Destination {
+  const problem = draftProblem(input);
+  if (problem) throw new Error(problem);
+  const address = input.address.trim();
+  try {
+    return canonicalDestination(
+      input.action === "withdraw"
+        ? {
+            action: "withdraw",
+            chain: input.chain,
+            address,
+            memo: input.hasMemo ? input.memo : null,
+          }
+        : {
+            action: "transfer",
+            address,
+            confidential: input.action === "confidential_transfer",
+          },
+    );
+  } catch (cause) {
+    if (cause instanceof z.ZodError && cause.issues[0]) throw new Error(cause.issues[0].message);
+    throw cause;
+  }
 }
 
 export const DESTINATION_ACTIONS = [

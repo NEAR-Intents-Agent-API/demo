@@ -29,7 +29,7 @@ export function SiteHeader({
     >
       <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center gap-x-3 gap-y-4 px-4 pt-[18px] sm:gap-x-6 md:px-8 lg:min-h-20 lg:flex-nowrap lg:pt-0">
         <Link
-          href="/how-it-works"
+          href={identity ? "/agents" : "/login"}
           className="flex shrink-0 items-center gap-4"
           aria-label="NEAR Intents home"
         >

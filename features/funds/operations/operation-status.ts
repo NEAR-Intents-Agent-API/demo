@@ -3,6 +3,9 @@
  * rename, so this is the only place they are interpreted; everything else renders the result.
  */
 
+import { accountTimestamp } from "@/lib/format/date";
+import { errorMessage } from "@/lib/http/messages";
+
 export type OperationTone = "run" | "ok" | "wait" | "bad";
 
 export type OperationView = {
@@ -11,38 +14,66 @@ export type OperationView = {
   line: string;
 };
 
+/** Statuses where repeating the request could send funds twice: never invite another try. */
+export const UNRESOLVED_STATUSES = new Set(["UNCERTAIN", "NEEDS_REVIEW"]);
+
 export const TERMINAL_STATUSES = new Set(["SUCCESS", "FAILED", "REFUNDED"]);
 
 export const PHASES = ["Submitted", "Processing", "Settled"] as const;
 
-export function describeOperation(status: string): OperationView {
+export function describeOperation(
+  status: string,
+  options: {
+    executeAfter?: string | null;
+    /** The API's snake_case reason for a FAILED move. */
+    failureCode?: string | null;
+    /** A transaction hash is recorded, so something was submitted before it failed. */
+    hasTransaction?: boolean;
+  } = {},
+): OperationView {
   switch (status) {
     case "SUCCESS":
       return { reached: 3, tone: "ok", line: "Done. The move settled." };
     case "REFUNDED":
-      return { reached: 3, tone: "bad", line: "The route refunded your funds. Nothing was lost." };
+      return {
+        reached: 3,
+        tone: "bad",
+        line: "The route refunded your funds to the account. Nothing was lost.",
+      };
     case "FAILED":
-      return { reached: 2, tone: "bad", line: "This move did not go through." };
+      // The API's FAILED is "provably never executed, or failed with a recorded reason": say so,
+      // and only point at the balances when a transaction was recorded.
+      return {
+        reached: 2,
+        tone: "bad",
+        line: failedLine(options.failureCode, options.hasTransaction),
+      };
     case "UNCERTAIN":
       return {
         reached: 2,
         tone: "wait",
-        line: "The outcome is not known yet. Do not repeat it — this page keeps checking.",
+        line: "The outcome is not known yet. Do not repeat it: a second try could send the funds twice. This page keeps checking.",
       };
     case "NEEDS_REVIEW":
       return {
         reached: 2,
         tone: "wait",
-        line: "Provider review required. Do not repeat this move. Check again after review.",
+        line: "The provider is reviewing this move. Do not repeat it: a second try could send the funds twice. Check again after the review.",
       };
     case "QUEUED":
       return {
         reached: 1,
         tone: "wait",
-        line: "Waiting out your execution delay. You can cancel it in Rules.",
+        line: `Held by your execution delay${
+          options.executeAfter ? `, runs ${accountTimestamp(options.executeAfter)}` : ""
+        }. Nothing has been sent yet. You can cancel it in Rules until then.`,
       };
     case "PENDING_APPROVAL":
-      return { reached: 1, tone: "wait", line: "Waiting for a second approval before it can run." };
+      return {
+        reached: 1,
+        tone: "wait",
+        line: "Waiting for your approval before it can run. Approve or reject it in Activity.",
+      };
     case "PENDING_DEPOSIT":
       return {
         reached: 1,
@@ -52,4 +83,13 @@ export function describeOperation(status: string): OperationView {
     default:
       return { reached: 2, tone: "run", line: "Working on it. This usually takes under a minute." };
   }
+}
+
+function failedLine(failureCode?: string | null, hasTransaction?: boolean): string {
+  const line = failureCode
+    ? `This move did not go through: ${errorMessage(failureCode)}`
+    : "This move did not go through.";
+  return hasTransaction
+    ? `${line} A transaction was recorded for it (below), so check your balances before trying again.`
+    : line;
 }

@@ -1,8 +1,8 @@
 import { z } from "zod";
+import { listOwnedAgents } from "@/lib/agent-api/agent-list";
 import { agentApi } from "@/lib/agent-api/client";
 import { ownerIntents } from "@/lib/agent-api/intents";
 import { requireConfiguredNetwork } from "@/lib/agent-api/network";
-import { agentBelongsToUser } from "@/lib/agent-api/ownership";
 import { policySchema } from "@/lib/agent-api/schemas";
 import { demoOwnerForSession } from "@/lib/auth/owner-session";
 import {
@@ -17,14 +17,18 @@ import {
  * `GET /api/agents`: agents owned by the signed-in demo user only.
  *
  * The network gate runs first so a mainnet demo fails closed before returning any agent data
- * from an unreachable or wrong-network API, and the result is filtered again in-process.
+ * from an unreachable or wrong-network API, and the result is filtered again in-process. Every
+ * page is followed. `?frozen=1` also reads each live account's frozen flag (see
+ * `listOwnedAgents`); without it the flag is unknown, so shared chrome costs no policy reads.
  */
-export function GET() {
+export function GET(request: Request) {
+  const withFrozen = new URL(request.url).searchParams.get("frozen") === "1";
   return withSession(async (session) => {
     const gate = await requireConfiguredNetwork();
     if (!gate.ok) return networkGateError(gate, { route: "GET /api/agents" });
-    const { data: agents } = await agentApi().listAgents({ external_user_id: session.userId });
-    return { agents: agents.filter((agent) => agentBelongsToUser(agent, session.userId)) };
+    return {
+      agents: await listOwnedAgents(agentApi(), session.userId, { frozen: withFrozen }),
+    };
   }, "GET /api/agents");
 }
 

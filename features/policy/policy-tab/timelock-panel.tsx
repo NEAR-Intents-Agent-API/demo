@@ -23,8 +23,8 @@ export function TimelockPanel({
       title="Scheduled executions"
       description={
         usage.delay_ms === 0
-          ? "No execution delay. Waiting executions can be cancelled."
-          : `Executions wait ${formatDelayMs(usage.delay_ms)} after acceptance. Cancel them while they are waiting.`
+          ? "No execution delay: swaps, transfers and withdrawals run right away unless the schedule holds them. Waiting executions can be cancelled."
+          : `Swaps, transfers and withdrawals wait ${formatDelayMs(usage.delay_ms)} before they run. Cancel them while they are waiting.`
       }
     >
       <div className="space-y-3">
@@ -50,9 +50,14 @@ export function TimelockPanel({
               : ""}
           </Button>
         ) : null}
+        {cancel.isSuccess && !busy ? (
+          <p role="status" className="text-sm text-muted-foreground">
+            Execution cancelled. Nothing was sent and it does not count toward your budget.
+          </p>
+        ) : null}
         {error ? (
           <p role="alert" className="text-sm text-destructive">
-            {errorMessage(error.message)}
+            {errorMessage(error)}
           </p>
         ) : null}
       </div>

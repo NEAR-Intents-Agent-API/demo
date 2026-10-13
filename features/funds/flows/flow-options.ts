@@ -34,8 +34,8 @@ export const FLOWS = [
   },
   {
     id: "private",
-    label: "Shield",
-    hint: "Move a token between the public and private balance.",
+    label: "Private balance",
+    hint: "Make a token private, or public again, inside this account.",
     icon: ViewOffSlashIcon,
   },
 ] as const;

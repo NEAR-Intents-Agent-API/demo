@@ -4,10 +4,25 @@ import { ArrowRight01Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@/components/ui/button";
 import { formatUsd } from "@/features/assets";
+import { accountTime } from "@/lib/format/date";
 import type { Lane } from "./portfolio";
+import type { PortfolioTotal } from "./portfolio-total";
+
+/** A total that leaves out assets without a price must say so, never pass as the whole value. */
+function totalText(total: PortfolioTotal): string {
+  if (total.usd === 0 && total.unpriced > 0) return "—";
+  return formatUsd(total.usd) ?? "$0.00";
+}
+
+function unpricedNote(total: PortfolioTotal): string | null {
+  if (total.unpriced === 0) return null;
+  const noun = total.unpriced === 1 ? "asset has" : "assets have";
+  return `${total.unpriced} ${noun} no current price and ${total.unpriced === 1 ? "is" : "are"} not in the total.`;
+}
 
 export function PortfolioSummary({
   total,
+  combined,
   count,
   lane,
   loading,
@@ -20,7 +35,9 @@ export function PortfolioSummary({
   onViewAssets,
   assetsOpen,
 }: {
-  total: number;
+  total: PortfolioTotal;
+  /** Public plus private, once both balances have loaded. */
+  combined: PortfolioTotal | null;
   count: number;
   lane: Lane;
   loading: boolean;
@@ -60,9 +77,10 @@ export function PortfolioSummary({
           ) : null}
         </div>
         <p className="mt-2 text-3xl leading-tight font-medium tracking-tight tabular-nums">
-          {loading || error ? "—" : (formatUsd(total) ?? "$0.00")}
+          {loading || error ? "—" : totalText(total)}
         </p>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">{detail}</p>
+        {!loading && !error ? <TotalNotes total={total} combined={combined} /> : null}
         <Button
           type="button"
           variant="ghost"
@@ -75,6 +93,29 @@ export function PortfolioSummary({
           View all assets <HugeiconsIcon icon={ArrowRight01Icon} className="size-3.5" />
         </Button>
       </div>
+    </div>
+  );
+}
+
+/** What the headline total leaves out or rests on: unpriced assets, price age, both balances. */
+function TotalNotes({
+  total,
+  combined,
+}: {
+  total: PortfolioTotal;
+  combined: PortfolioTotal | null;
+}) {
+  const note = unpricedNote(total);
+  return (
+    <div className="mt-1 space-y-0.5 text-xs leading-5 text-muted-foreground">
+      {note ? <p>{note}</p> : null}
+      {total.asOf ? <p>Prices as of {accountTime(total.asOf)}</p> : null}
+      {combined ? (
+        <p className="tabular-nums">
+          Public + private: <span className="text-foreground">{totalText(combined)}</span>
+          {combined.unpriced > 0 ? " (unpriced assets excluded)" : ""}
+        </p>
+      ) : null}
     </div>
   );
 }

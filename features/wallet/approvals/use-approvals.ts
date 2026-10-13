@@ -1,14 +1,21 @@
 "use client";
 
 import type { ApprovalView, SignedData } from "@near-intents-agent-api/sdk";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { type IntentStep, intentsApi } from "@/features/intents";
 import { errorMessage } from "@/lib/http/messages";
 import { queryKeys } from "@/lib/query/keys";
 import { walletApi } from "../api";
 import type { ConsentChallenge, ConsentStage } from "../components/consent-dialog";
 import { signIntent } from "../sign-intent";
+import {
+  decidedApprovals,
+  readApproval,
+  readSeenApprovals,
+  rememberApprovals,
+  writeSeenApprovals,
+} from "./approval-history";
 
 export type PendingDecision = {
   approvalId: string;
@@ -27,6 +34,29 @@ export function useApprovals(agentId: string) {
   const approvals = useQuery({
     queryKey: queryKeys.approvals(agentId),
     queryFn: () => walletApi.approvals(agentId),
+    refetchOnWindowFocus: true,
+  });
+  const entries = pendingApprovals(approvals.data?.data);
+
+  // The waiting list drops a request once it is decided or expired, so the ids seen waiting are
+  // kept for the session and their outcomes are read back one by one.
+  const [seen, setSeen] = useState(() => readSeenApprovals(agentId));
+  const waitingKey = entries.map((entry) => entry.approval_id).join(",");
+  useEffect(() => {
+    setSeen((previous) => {
+      const next = rememberApprovals(previous, waitingKey ? waitingKey.split(",") : []);
+      if (next.join() === previous.join()) return previous;
+      writeSeenApprovals(agentId, next);
+      return next;
+    });
+  }, [agentId, waitingKey]);
+  const history = useQueries({
+    queries: seen
+      .filter((id) => !waitingKey.split(",").includes(id))
+      .map((id) => ({
+        queryKey: queryKeys.approval(agentId, id),
+        queryFn: () => readApproval(agentId, id),
+      })),
   });
 
   const prepare = useMutation({
@@ -49,7 +79,7 @@ export function useApprovals(agentId: string) {
       setDecision(result);
       setStage("idle");
     },
-    onError: (cause: Error) => setError(errorMessage(cause.message)),
+    onError: (cause: Error) => setError(errorMessage(cause)),
   });
 
   const vote = useMutation({
@@ -69,7 +99,7 @@ export function useApprovals(agentId: string) {
     },
     onError: (cause: Error) => {
       setStage("error");
-      setError(errorMessage(cause.message));
+      setError(errorMessage(cause));
     },
   });
 
@@ -83,13 +113,14 @@ export function useApprovals(agentId: string) {
       vote.mutate({ signedData });
     } catch (cause) {
       setStage("error");
-      setError(cause instanceof Error ? errorMessage(cause.message) : "signing_failed");
+      setError(errorMessage(cause));
     }
   };
 
   return {
     approvals,
-    entries: pendingApprovals(approvals.data?.data),
+    entries,
+    decided: decidedApprovals(history.map((entry) => entry.data)),
     prepare,
     decision,
     setDecision,

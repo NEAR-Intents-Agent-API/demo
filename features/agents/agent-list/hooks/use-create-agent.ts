@@ -3,49 +3,112 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { IntentStep } from "@/features/intents";
-import { defaultRules, policyFromRules, type Rules } from "@/features/policy/model";
-import { terminalStatuses } from "@/lib/agent-api/schemas";
+import {
+  defaultRules,
+  policyFromRules,
+  type Rules,
+  rulesFromPolicy,
+} from "@/features/policy/model";
+import { authClient } from "@/lib/auth/client";
 import { queryKeys } from "@/lib/query/keys";
+import { onboardingState } from "../../agent-detail/onboarding-state";
 import { agentsApi } from "../../api/agents-api";
 import { type CreateInput, createAgentSchema } from "../../model/schemas";
+import { clearDraft, readDraft, writeDraft } from "./create-draft";
 import { finishOnboarding } from "./finish-onboarding";
 
 export function useCreateAgent() {
   const cache = useQueryClient();
+  const userId = authClient.useSession().data?.user.id;
   const router = useRouter();
   const running = useRef(false);
-  const prepared = useRef<IntentStep | null>(null);
+  const [prepared, setPrepared] = useState<IntentStep | null>(null);
+  const [restored, setRestored] = useState(false);
   const [rules, setRules] = useState<Rules>(() => structuredClone(defaultRules));
   const [stage, setStage] = useState("");
   const form = useForm<CreateInput>({
     resolver: zodResolver(createAgentSchema),
     defaultValues: { name: "" },
   });
+  const name = form.watch("name");
+
+  // Put back what a reload or a Back press took away: the name, the rules and, if a request
+  // was already prepared for them, that request (so resuming never makes a second account).
+  useEffect(() => {
+    if (!userId) return;
+    const draft = readDraft(userId);
+    if (!draft) {
+      setRestored(true);
+      return;
+    }
+    form.reset({ name: draft.name });
+    setRules(draft.rules);
+    if (!draft.agentId) {
+      setRestored(true);
+      return;
+    }
+    let live = true;
+    agentsApi
+      .onboarding(draft.agentId)
+      .then((step) => {
+        if (!live) return;
+        const state = onboardingState(step);
+        if (state === "done") {
+          // The account is already live; the draft is spent and must not seed another one.
+          clearDraft();
+          form.reset({ name: "" });
+          setRules(structuredClone(defaultRules));
+          return;
+        }
+        if (state === "expired") return;
+        setPrepared(step);
+        // The prepared request, not the draft, is what the signature installs.
+        if (step.generated.preview.policy) setRules(rulesFromPolicy(step.generated.preview.policy));
+      })
+      .catch(() => {})
+      .finally(() => live && setRestored(true));
+    return () => {
+      live = false;
+    };
+  }, [form, userId]);
+
+  useEffect(() => {
+    if (!restored || !userId) return;
+    if (!name.trim() && !prepared && JSON.stringify(rules) === JSON.stringify(defaultRules))
+      clearDraft();
+    else writeDraft({ userId, name, rules, agentId: prepared?.generated.agent_id });
+  }, [restored, userId, name, rules, prepared]);
+
   const create = useMutation({
     mutationFn: async (input: CreateInput) => {
-      setStage(prepared.current ? "Resuming activation…" : "Creating agent account…");
-      prepared.current = prepared.current
-        ? await agentsApi.onboarding(prepared.current.generated.agent_id)
-        : await agentsApi.create(input.name, policyFromRules(null, rules));
+      setStage(prepared ? "Resuming activation…" : "Creating agent account…");
+      let step = prepared ? await agentsApi.onboarding(prepared.generated.agent_id) : null;
+      // A request that expired or failed can never be signed; ask for a fresh one.
+      if (!step || onboardingState(step) === "expired") {
+        setStage("Creating agent account…");
+        step = await agentsApi.create(input.name, policyFromRules(null, rules));
+      }
+      setPrepared(step);
       void cache.invalidateQueries({ queryKey: queryKeys.agents() });
-      return finishOnboarding(prepared.current, setStage);
+      return finishOnboarding(step, setStage);
     },
     onSuccess: (state) => {
-      prepared.current = null;
+      setPrepared(null);
+      clearDraft();
       form.reset();
       setRules(structuredClone(defaultRules));
       router.replace(
         `/agents/${encodeURIComponent(state.generated.agent_id)}?tab=activity&setup=fund`,
       );
     },
-    onError: () => {
-      const status = prepared.current?.operation.status;
-      // Keep unknown and pending outcomes resumable; a confirmed failure permits a new draft.
-      if (status && status !== "SUCCESS" && terminalStatuses.includes(status))
-        prepared.current = null;
+    onError: async () => {
+      if (!prepared) return;
+      // Keep unknown and pending outcomes resumable; an expired or failed request permits a new one.
+      const step = await agentsApi.onboarding(prepared.generated.agent_id).catch(() => null);
+      if (step && onboardingState(step) === "expired") setPrepared(null);
     },
     onSettled: async () => {
       running.current = false;
@@ -60,8 +123,8 @@ export function useCreateAgent() {
     stage,
     form,
     create,
-    hasPendingActivation: prepared.current !== null,
-    pendingAgentId: prepared.current?.generated.agent_id,
+    hasPendingActivation: prepared !== null,
+    pendingAgentId: prepared?.generated.agent_id,
     submit: (values: CreateInput) => {
       if (running.current) return;
       running.current = true;

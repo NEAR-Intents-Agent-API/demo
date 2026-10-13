@@ -32,7 +32,7 @@ export const NODES: FlowDiagramNode[] = [
     owner: "Your rules",
     title: "Rules & limits",
     icon: Wallet01Icon,
-    lines: ["Tokens allowed", "USD budget", "Destinations & delay"],
+    lines: ["Tokens allowed", "USD budget", "Destinations & execution delay"],
     accent: true,
   },
   {
@@ -41,7 +41,7 @@ export const NODES: FlowDiagramNode[] = [
     title: "Custody wallet",
     icon: Robot02Icon,
     lines: [
-      "Holds public & private balances",
+      "Holds a public and a private balance",
       "Acts through MCP or API",
       "Cannot exceed the rules",
     ],

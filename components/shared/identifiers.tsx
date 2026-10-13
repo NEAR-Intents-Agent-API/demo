@@ -52,7 +52,14 @@ export function CopyButton({
   );
 }
 
-/** An identifier with its full value in the tooltip and a copy affordance. */
+/** Long enough that a phone-width row may clip it, so it needs a way to show everything. */
+const CLIPPABLE_LENGTH = 20;
+
+/**
+ * An identifier with a copy affordance. A shortened or long value is a button: tapping it
+ * reveals the full value in place, which is the only way to read it on a touch screen where
+ * the hover tooltip never appears.
+ */
 export function MonoId({
   value,
   className,
@@ -68,12 +75,31 @@ export function MonoId({
   copyable?: boolean;
   label?: string;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const shown = head === undefined && tail === undefined ? value : shortId(value, head, tail);
+  const expandable = shown !== value || value.length > CLIPPABLE_LENGTH;
+  const text = expanded ? value : shown;
   return (
     <span className={cn("inline-flex min-w-0 items-center gap-1", className)}>
-      <span className="console-id truncate text-muted-foreground" title={value}>
-        {shown}
-      </span>
+      {expandable ? (
+        <button
+          type="button"
+          className={cn(
+            "console-id min-w-0 cursor-pointer text-left text-muted-foreground",
+            expanded ? "break-all" : "truncate",
+          )}
+          aria-expanded={expanded}
+          aria-label={expanded ? `${value} (tap to shorten)` : `${value} (tap to show in full)`}
+          title={value}
+          onClick={() => setExpanded((open) => !open)}
+        >
+          {text}
+        </button>
+      ) : (
+        <span className="console-id truncate text-muted-foreground" title={value}>
+          {shown}
+        </span>
+      )}
       {copyable ? <CopyButton value={value} label={label ?? `Copy ${value}`} /> : null}
     </span>
   );

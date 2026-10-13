@@ -1,4 +1,9 @@
-import { beginPolicyWorkflow } from "@/lib/agent-api/policy-workflow";
+import { z } from "zod";
+import {
+  beginFreezeWorkflow,
+  beginPolicyWorkflow,
+  latestPolicyWorkflow,
+} from "@/lib/agent-api/policy-workflow";
 import { policySchema } from "@/lib/agent-api/schemas";
 import {
   type AgentRouteContext,
@@ -8,13 +13,25 @@ import {
   withAgentMutation,
 } from "@/lib/http/handler";
 
+const inputSchema = z.union([
+  z.strictObject({ policy: policySchema, expectedRevision: z.number().int().nonnegative() }),
+  z.strictObject({ frozen: z.boolean() }),
+]);
+
+/** A rules revision on the revision the browser loaded, or a freeze / unfreeze of the account. */
 export async function POST(request: Request, context: AgentRouteContext) {
   const { agentId } = await context.params;
   return withAgentMutation(request, "POST policy/workflows", agentId, async ({ session, log }) => {
-    const body = (await readJson(request)) as { policy?: unknown } | undefined;
-    const policy = policySchema.safeParse(body?.policy);
-    if (!policy.success) return bffError("invalid_request", 400, log);
-    return beginPolicyWorkflow(session, agentId, policy.data);
+    const input = inputSchema.safeParse(await readJson(request));
+    if (!input.success) return bffError("invalid_request", 400, log);
+    return "frozen" in input.data
+      ? beginFreezeWorkflow(session.userId, agentId, input.data.frozen)
+      : beginPolicyWorkflow(
+          session.userId,
+          agentId,
+          input.data.policy,
+          input.data.expectedRevision,
+        );
   });
 }
 
@@ -24,5 +41,3 @@ export async function GET(_request: Request, context: AgentRouteContext) {
     latestPolicyWorkflow(session.userId, agentId),
   );
 }
-
-import { latestPolicyWorkflow } from "@/lib/agent-api/policy-workflow";

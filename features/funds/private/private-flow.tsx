@@ -57,13 +57,12 @@ export function PrivateFlow({ view }: { view: ReturnType<typeof usePrivateFlow> 
                 value: `${formatDisplay(atomic.toString(), token.decimals)} ${token.symbol}`,
                 emphasis: true,
               },
-              { label: "Fee", value: "None" },
               { label: "Counts toward budget", value: "No" },
             ]}
           />
         ) : null}
 
-        <FlowError code={action.error?.message} />
+        <FlowError error={action.error} />
         <FlowButton busy={action.isPending} disabled={Boolean(reason)} onClick={move}>
           {reason ?? (action.isPending ? "Moving…" : copy.label)}
         </FlowButton>

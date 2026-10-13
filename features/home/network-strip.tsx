@@ -3,14 +3,22 @@
 import { ListViewIcon, PlayIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@/components/ui/button";
-import { knownChains } from "@/features/assets";
 import { cn } from "@/lib/utils";
 import { NetworkList } from "./network-list";
+import type { NetworkSet } from "./network-set";
 import { useNetworkStrip } from "./use-network-strip";
+import { useNetworks } from "./use-networks";
 
-export function NetworkStrip({ compact = false }: { compact?: boolean }) {
+export function NetworkStrip({
+  compact = false,
+  networks,
+}: {
+  compact?: boolean;
+  networks: NetworkSet;
+}) {
   const { listVisible, toggleList, contentId } = useNetworkStrip();
-  const chains = knownChains();
+  const { chains, count } = networks;
+  const noun = compact ? "supported networks through" : "networks reachable through";
 
   return (
     <div className={cn("flex w-full min-w-0 flex-col", compact ? "gap-[30px]" : "gap-5")}>
@@ -28,8 +36,7 @@ export function NetworkStrip({ compact = false }: { compact?: boolean }) {
       </div>
       <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
         <p className="text-center text-[13px] leading-5 text-muted-foreground">
-          {chains.length} {compact ? "supported networks through" : "networks reachable through"}{" "}
-          NEAR Intents
+          {count === null ? "Networks reachable through" : `${count} ${noun}`} NEAR Intents
         </p>
         <Button
           type="button"
@@ -44,6 +51,16 @@ export function NetworkStrip({ compact = false }: { compact?: boolean }) {
           {listVisible ? "Show animation" : "View all networks"}
         </Button>
       </div>
+      {listVisible ? (
+        <p className="text-center text-xs leading-5 text-muted-foreground">
+          Networks marked “Withdraw only” can be withdrawn to but have no deposit address.
+        </p>
+      ) : null}
     </div>
   );
+}
+
+/** The strip for pages inside the catalogue provider, so its list and count are the live ones. */
+export function CatalogNetworkStrip({ compact }: { compact?: boolean }) {
+  return <NetworkStrip compact={compact} networks={useNetworks()} />;
 }

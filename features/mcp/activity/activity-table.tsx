@@ -14,8 +14,15 @@ import {
 import { accountTimestamp } from "@/lib/format/date";
 import type { McpActivityView } from "../api";
 import { ActivityEntryDetails } from "./activity-entry-details";
+import { activityOutcome } from "./activity-outcome";
 
-export function McpActivityTable({ activity }: { activity: McpActivityView[] }) {
+export function McpActivityTable({
+  activity,
+  operationStatuses,
+}: {
+  activity: McpActivityView[];
+  operationStatuses: ReadonlyMap<string, string>;
+}) {
   return (
     <div className="hidden md:block">
       <Table aria-label="Client requests">
@@ -28,31 +35,31 @@ export function McpActivityTable({ activity }: { activity: McpActivityView[] }) 
           </TableRow>
         </TableHeader>
         <TableBody>
-          {activity.map((entry) => (
-            <TableRow key={entry.id}>
-              <TableCell className="py-4 pl-5 align-top">
-                <span className="flex items-center gap-2 font-medium">
-                  <HugeiconsIcon icon={Cursor01Icon} className="size-3.5 text-muted-foreground" />
-                  {entry.clientName}
-                </span>
-                <code className="console-id mt-1 block text-muted-foreground">{entry.tool}</code>
-              </TableCell>
-              <TableCell className="py-4 align-top">
-                <StatusPill
-                  tone={entry.status === "error" ? "blocked" : "ok"}
-                  className="capitalize"
-                >
-                  {entry.status}
-                </StatusPill>
-              </TableCell>
-              <TableCell className="py-4 pr-5 align-top text-xs text-muted-foreground">
-                {accountTimestamp(entry.createdAt)}
-              </TableCell>
-              <TableCell className="py-4 pr-5 align-top">
-                <ActivityEntryDetails entry={entry} />
-              </TableCell>
-            </TableRow>
-          ))}
+          {activity.map((entry) => {
+            const outcome = activityOutcome(entry, operationStatuses);
+            return (
+              <TableRow key={entry.id}>
+                <TableCell className="py-4 pl-5 align-top">
+                  <span className="flex items-center gap-2 font-medium">
+                    <HugeiconsIcon icon={Cursor01Icon} className="size-3.5 text-muted-foreground" />
+                    {entry.clientName}
+                  </span>
+                  <code className="console-id mt-1 block text-muted-foreground">{entry.tool}</code>
+                </TableCell>
+                <TableCell className="py-4 align-top">
+                  <StatusPill tone={outcome.tone} className="capitalize">
+                    {outcome.label}
+                  </StatusPill>
+                </TableCell>
+                <TableCell className="py-4 pr-5 align-top text-xs text-muted-foreground">
+                  {accountTimestamp(entry.createdAt)}
+                </TableCell>
+                <TableCell className="py-4 pr-5 align-top">
+                  <ActivityEntryDetails entry={entry} outcome={outcome} />
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>

@@ -14,6 +14,8 @@ export type McpClientView = {
   authKind: "oauth" | "api_key";
   status: "pending" | "authorized" | "revoked" | "expired";
   expiresAt: string | null;
+  /** When the owner revoked its grant; null while the grant stands or was never installed. */
+  revokedAt: string | null;
   lastUsedAt: string | null;
   prefix: string | null;
   grantId: string | null;
@@ -25,7 +27,7 @@ export type McpActivityView = {
   clientAccessId: string | null;
   clientName: string;
   agentId: string;
-  authKind: "oauth" | "api_key";
+  authKind: "oauth" | "api_key" | "dashboard";
   subject: string;
   tool: string;
   status: string;

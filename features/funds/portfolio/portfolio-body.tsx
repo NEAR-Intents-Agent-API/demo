@@ -13,14 +13,12 @@ export function PortfolioBody({
   loading,
   error,
   onRetry,
-  usdOf,
 }: {
   lane: Lane;
   visible: readonly Holding[];
   loading: boolean;
   error: string | null;
   onRetry: () => void;
-  usdOf: (holding: Holding) => number | null;
 }) {
   if (loading) {
     return (
@@ -38,7 +36,7 @@ export function PortfolioBody({
   return (
     <ul className="flex flex-col">
       {visible.map((holding) => (
-        <HoldingRow key={holding.assetId} holding={holding} usd={usdOf(holding)} />
+        <HoldingRow key={holding.assetId} holding={holding} />
       ))}
     </ul>
   );

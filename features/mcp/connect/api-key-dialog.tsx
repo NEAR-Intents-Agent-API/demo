@@ -1,10 +1,12 @@
 "use client";
+import { useState } from "react";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GrantRules } from "@/features/policy";
 import { errorMessage } from "@/lib/http/messages";
+import { MCP_CLIENT_NAME_MAX, mcpClientNameProblem } from "@/lib/mcp/client-name";
 import type { McpClientView } from "../api";
 import { useMcpKeyForm } from "../hooks/use-mcp-key-form";
 import { IssuedKey } from "./issued-key";
@@ -23,12 +25,16 @@ export function ApiKeyDialog({
   const { name, setName, authorize } = useMcpKeyForm(agentId, client);
   const clientAccessId = client?.id;
   const issued = Boolean(authorize.data?.authorized);
+  const [submitted, setSubmitted] = useState(false);
+  // A resumed client keeps the name it was created with.
+  const problem = clientAccessId ? null : mcpClientNameProblem(name);
+  const showProblem = problem !== null && (submitted || name.trim().length > MCP_CLIENT_NAME_MAX);
 
   const footer = issued ? null : (
     <div className="flex flex-col items-stretch gap-3 sm:items-end">
       {authorize.error ? (
         <p role="alert" className="text-sm text-destructive">
-          {errorMessage(authorize.error.message)}
+          {errorMessage(authorize.error)}
         </p>
       ) : null}
       <Button
@@ -63,6 +69,8 @@ export function ApiKeyDialog({
           onSubmit={(event) => {
             event.preventDefault();
             if (authorize.isPending) return;
+            setSubmitted(true);
+            if (problem) return;
             authorize.mutate({ name, clientAccessId });
           }}
         >
@@ -73,10 +81,14 @@ export function ApiKeyDialog({
               placeholder="Codex, OpenClaw…"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              required={!clientAccessId}
-              maxLength={100}
+              aria-invalid={showProblem}
               disabled={authorize.isPending}
             />
+            <p
+              className={showProblem ? "text-sm text-destructive" : "text-xs text-muted-foreground"}
+            >
+              {showProblem ? problem : `Up to ${MCP_CLIENT_NAME_MAX} characters.`}
+            </p>
           </div>
           <GrantRules agentId={agentId} holder={name.trim() || "this client"} />
           <p className="text-xs text-muted-foreground">

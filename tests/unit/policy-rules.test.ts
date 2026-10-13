@@ -16,7 +16,7 @@ const rules = (patch: Partial<Rules> = {}): Rules => ({
   ...patch,
 });
 
-test("a new agent can do everything NEAR Intents offers and sends nowhere yet", () => {
+test("a new agent can do everything NEAR Intents offers and send anywhere", () => {
   const policy = policySchema.parse(policyFromRules(null, rules()));
   assert.deepEqual(policy, {
     frozen: false,
@@ -26,7 +26,7 @@ test("a new agent can do everything NEAR Intents offers and sends nowhere yet", 
     assets: "any",
     limits: {},
     max_actions_per_hour: null,
-    destinations: { mode: "only", list: [] },
+    destinations: { mode: "any", list: [] },
     budget: { daily_usd: null, weekly_usd: null, monthly_usd: null },
     timelock_ms: 0,
   });
@@ -116,8 +116,8 @@ test("the delay is typed in seconds and stored in exact milliseconds", () => {
 test("destinations are the account's one rule, in the API's own shape", () => {
   assert.deepEqual(
     defaultRules.destinations,
-    { mode: "only", list: [] },
-    "new accounts send nowhere",
+    { mode: "any", list: [] },
+    "new accounts send anywhere",
   );
   const only = rules({
     destinations: {

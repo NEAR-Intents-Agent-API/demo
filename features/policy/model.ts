@@ -9,3 +9,4 @@ export {
   rulesProblem,
   tokenAllowed,
 } from "./rules/rules";
+export { describeSchedule } from "./rules/schedule";

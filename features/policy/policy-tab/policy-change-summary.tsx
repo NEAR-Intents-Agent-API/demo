@@ -18,6 +18,8 @@ export function PolicyChangeSummary({
   usage,
   busy,
   stage,
+  blockedReason,
+  warning,
   onCancel,
   onSave,
 }: {
@@ -28,6 +30,10 @@ export function PolicyChangeSummary({
   usage: PolicyView["usage"]["budget"];
   busy: boolean;
   stage: string;
+  /** Why signing is not possible right now, even though the draft is valid. */
+  blockedReason?: string;
+  /** A consequence of the draft the owner should read before signing. */
+  warning?: string;
   onCancel: () => void;
   onSave: () => void;
 }) {
@@ -82,11 +88,21 @@ export function PolicyChangeSummary({
             {problem}
           </p>
         ) : null}
+        {warning ? (
+          <p role="status" className="text-xs text-warning">
+            {warning}
+          </p>
+        ) : null}
+        {blockedReason ? (
+          <p role="status" className="text-xs text-muted-foreground">
+            {blockedReason}
+          </p>
+        ) : null}
         <PolicySaveBar
           compact
           busy={busy}
           stage={stage}
-          blocked={Boolean(problem) || changes.length === 0}
+          blocked={Boolean(problem) || Boolean(blockedReason) || changes.length === 0}
           onCancel={onCancel}
           onSave={onSave}
         />
