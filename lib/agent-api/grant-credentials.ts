@@ -1,3 +1,4 @@
+import "server-only";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { type AgentApi, createGrantCredential, type GrantView } from "@near-intents-agent-api/sdk";
 import { and, eq } from "drizzle-orm";
