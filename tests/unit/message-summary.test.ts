@@ -73,8 +73,8 @@ test("a policy envelope lists the rules that actually limit spending", () => {
   assert.equal(contents.get("Allowed tokens"), "nep141:wrap.near");
   assert.equal(contents.get("Rate limit"), "10 per hour");
   assert.equal(contents.get("Per transaction limit"), "1000000000000000000000000 nep141:wrap.near");
-  assert.equal(contents.get("USD budget a day"), "$25.00");
-  assert.equal(contents.get("Execution delay"), "90 seconds");
+  assert.equal(contents.get("USD budget (rolling 24 hours)"), "$25.00");
+  assert.equal(contents.get("Execution delay"), "1 minute 30 seconds");
   // The revision is what prevents signing against a stale policy.
   assert.equal(summary.rows.find((row) => row.label === "Expected revision")?.value, "4");
   assert.equal(summary.rows.find((row) => row.label === "Policy hash")?.value, "h".repeat(64));

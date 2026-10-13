@@ -1,4 +1,5 @@
 import type { PolicyView } from "@near-intents-agent-api/sdk";
+import { formatDelayMs } from "@/lib/format/delay";
 import type { Rules } from "../../rules/rules";
 import { describeSchedule } from "../../rules/schedule";
 import type { SummaryCatalog } from "../../rules/summary/summary-types";
@@ -26,7 +27,7 @@ export function RuleSettingValue({
   if (id === "limits") return <LimitsSettingValue rules={rules} catalog={catalog} />;
   if (id === "destinations") return <DestinationsSettingValue rules={rules} />;
   if (id === "delay")
-    return <span>{rules.delaySeconds === "0" ? "No delay" : `${rules.delaySeconds} seconds`}</span>;
+    return <span>{formatDelayMs(Math.round(Number(rules.delaySeconds) * 1000))}</span>;
   if (id === "schedule") return <span>{describeSchedule(rules.schedule)}</span>;
   if (id === "approval")
     return <span>{rules.approval ? "Required for every move" : "Not required"}</span>;

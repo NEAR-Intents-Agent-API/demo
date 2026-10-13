@@ -29,11 +29,11 @@ export type Rules = {
   maxPerHour: string;
   /** The account's one destination rule, shared by the dashboard and every client. */
   destinations: DestinationRule;
-  /** Every money action waits for the owner's approval. NEAR owners only. */
+  /** Every money action waits for the owner's approval. */
   approval: boolean;
   frozen: boolean;
   budget: { dailyUsd: string; weeklyUsd: string; monthlyUsd: string };
-  /** The execution delay as typed, in seconds; stored in milliseconds. */
+  /** The execution delay in seconds (the editor types it in minutes, hours or days); stored in milliseconds. */
   delaySeconds: string;
   /** When money actions may run, on the owner's clock; `null` means any time. */
   schedule: Schedule | null;
@@ -142,7 +142,7 @@ export function rulesProblem(rules: Rules): string | null {
   if (!policySchema.shape.budget.safeParse(budgetFromRules(rules)).success)
     return "Enter a valid USD amount with up to two decimal places, or leave the cap empty.";
   if (!policySchema.shape.timelock_ms.safeParse(delayMsFromRules(rules)).success)
-    return "Execution delay must be a number of seconds between 0 and 2592000.";
+    return "Execution delay must be between 0 and 30 days.";
   if (rules.tokens !== "any" && rules.tokens.length === 0)
     return "Pick at least one token, or allow any token.";
   if (rules.limits.some((limit) => !/^[1-9][0-9]*$/.test(limit.perTransaction)))

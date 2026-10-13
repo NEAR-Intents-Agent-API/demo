@@ -23,15 +23,12 @@ export function RulesEditor({
   rules,
   onChange,
   catalog,
-  approvalAvailable,
   disabled,
   grouped = false,
 }: {
   rules: Rules;
   onChange: (rules: Rules) => void;
   catalog: Catalog;
-  /** Provider approvals need a NEAR owner; other owners do not see the option. */
-  approvalAvailable: boolean;
   disabled?: boolean;
   grouped?: boolean;
 }) {
@@ -52,7 +49,7 @@ export function RulesEditor({
   const destinations = (
     <>
       <DestinationRules rules={rules} onChange={onChange} />
-      {approvalAvailable ? <ApprovalRule rules={rules} onChange={onChange} /> : null}
+      <ApprovalRule rules={rules} onChange={onChange} />
     </>
   );
   return (

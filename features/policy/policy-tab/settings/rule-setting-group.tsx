@@ -14,7 +14,6 @@ export function RuleSettingGroup({
   usage,
   catalog,
   canSign,
-  approvalAvailable,
   busy,
   onEdit,
   onToggle,
@@ -27,7 +26,6 @@ export function RuleSettingGroup({
   usage: PolicyView["usage"]["budget"];
   catalog: SummaryCatalog;
   canSign: boolean;
-  approvalAvailable: boolean;
   busy: boolean;
   onEdit: (id: RuleSettingId) => void;
   onToggle: (id: ToggleSettingId, checked: boolean) => void;
@@ -49,7 +47,7 @@ export function RuleSettingGroup({
             value={
               <RuleSettingValue id={setting.id} rules={current} catalog={catalog} usage={usage} />
             }
-            canEdit={canSign && (setting.id !== "approval" || approvalAvailable)}
+            canEdit={canSign}
             rules={current}
             onToggle={onToggle}
             busy={busy}

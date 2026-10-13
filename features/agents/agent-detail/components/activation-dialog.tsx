@@ -16,7 +16,7 @@ export function ActivationDialog({
     <AccountSetupDialogFrame
       title="Finish account activation"
       description="Continue the existing activation. An already submitted signature is only checked for confirmation."
-      busy={view.finish.isPending}
+      busy={view.finish.isPending || view.restart.isPending}
       onClose={onClose}
     >
       <SetupFlowPanel

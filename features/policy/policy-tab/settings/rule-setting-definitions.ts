@@ -61,7 +61,8 @@ export const RULE_SETTING_GROUPS: readonly {
       {
         id: "delay",
         title: "Execution delay",
-        description: "Waiting time after API acceptance, before an execution may proceed.",
+        description:
+          "How long every swap, transfer and withdrawal waits before it runs. You can cancel while it waits. Deposits are not delayed.",
       },
       {
         id: "schedule",

@@ -46,7 +46,9 @@ export function CreateAgentForm({
   const showRules = step === "rules";
 
   const submit = form.handleSubmit((values) => {
-    if (showRules) onSubmit(values);
+    // The editor is open: Enter only closes it, so nobody signs rules they have not read.
+    if (showRules && editing) setEditing(false);
+    else if (showRules) onSubmit(values);
     else {
       setEditing(false);
       setStep("rules");
@@ -79,6 +81,8 @@ export function CreateAgentForm({
             nameValid={Boolean(form.watch("name").trim())}
             blocked={Boolean(rulesProblem(rules))}
             hasPendingActivation={hasPendingActivation}
+            editing={showRules && editing}
+            onReview={() => setEditing(false)}
           />
         </div>
       }
