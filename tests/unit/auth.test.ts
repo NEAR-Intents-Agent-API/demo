@@ -24,7 +24,7 @@ const demoAgent = (externalUserId: string | null) => ({
 });
 
 test("auth feedback preserves known guidance without exposing unknown exception text", () => {
-  assert.match(authFailureMessage(new Error("passkey_not_registered")), /Register one below/);
+  assert.match(authFailureMessage(new Error("passkey_prompt_closed")), /Register a passkey/);
   assert.equal(
     authFailureMessage(new Error("private-provider-detail")),
     "Authentication failed. Try again.",

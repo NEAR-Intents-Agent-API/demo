@@ -8,6 +8,7 @@ import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { useMounted } from "@/components/shared/use-mounted";
 import { Button } from "@/components/ui/button";
 import { EVM_WALLETS, type EvmWalletBrand, isBrandInstalled } from "@/lib/evm/wallets";
+import { walletConnectMessage } from "./errors";
 
 /**
  * The wallet chooser. Every supported brand is always listed with its own icon: installed
@@ -48,13 +49,18 @@ export function EvmWalletPicker({
     setFailure(null);
     try {
       await connectAsync({ connector });
-      setPendingId(null);
-      onSelect(connector);
     } catch (cause) {
-      // A rejected or failed request leaves the modal open so the owner can pick another.
-      setPendingId(null);
-      setFailure(cause instanceof Error ? cause.message : "Connection failed. Try again.");
+      // wagmi restores the last wallet on page load, so the chosen one may already be the
+      // active connection; that connection is reused as is.
+      if (!isAlreadyConnected(cause)) {
+        // A rejected or failed request leaves the modal open so the owner can pick another.
+        setPendingId(null);
+        setFailure(walletConnectMessage(cause));
+        return;
+      }
     }
+    setPendingId(null);
+    onSelect(connector);
   }
 
   return (
@@ -113,6 +119,10 @@ export function EvmWalletPicker({
   );
 }
 
+function isAlreadyConnected(cause: unknown): boolean {
+  return cause instanceof Error && cause.name === "ConnectorAlreadyConnectedError";
+}
+
 /**
  * The connector for a brand: its dedicated wagmi connector when it has one, otherwise the
  * EIP-6963 announcement (connector id equals the wallet's rdns), otherwise the explicit
@@ -132,8 +142,8 @@ export function matchConnector(
 }
 
 /**
- * A wallet is present when it has a dedicated connector (Coinbase and Safe work without an
- * extension: one opens a popup, the other the Safe app), when the browser announces it with
+ * A wallet is present when it has a dedicated connector (Coinbase works without an
+ * extension: it opens a popup), when the browser announces it with
  * EIP-6963, or when its legacy `window.ethereum` flag is set.
  */
 function isInstalled(brand: EvmWalletBrand, connectors: readonly Connector[]): boolean {
