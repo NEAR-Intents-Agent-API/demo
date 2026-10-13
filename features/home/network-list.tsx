@@ -1,12 +1,15 @@
-import { ChainIcon, type knownChains } from "@/features/assets";
+import { ChainIcon, DEPOSIT_CHAINS } from "@/features/assets";
 import { cn } from "@/lib/utils";
+import type { Network } from "./use-networks";
+
+const depositChains: readonly string[] = DEPOSIT_CHAINS;
 
 export function NetworkList({
   chains,
   layout,
   duplicate = false,
 }: {
-  chains: ReturnType<typeof knownChains>;
+  chains: Network[];
   layout: "strip" | "grid";
   duplicate?: boolean;
 }) {
@@ -30,7 +33,17 @@ export function NetworkList({
           )}
         >
           <ChainIcon chain={chain.id} size="md" />
-          <span>{chain.id === "near" ? "NEAR" : chain.name}</span>
+          <span className="min-w-0">
+            {chain.id === "near" ? "NEAR" : chain.name}
+            {layout === "grid" && !depositChains.includes(chain.id) ? (
+              <span
+                className="block text-[11px] leading-4 text-muted-foreground"
+                title="No deposit address is offered from this network"
+              >
+                Withdraw only
+              </span>
+            ) : null}
+          </span>
         </li>
       ))}
     </ul>
