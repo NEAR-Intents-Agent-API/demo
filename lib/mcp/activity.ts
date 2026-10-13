@@ -21,10 +21,22 @@ export async function recordMcpActivity(
   }
 }
 
+/** A refusal that names a rule or a bad input: our own denial, or a provider 4xx that is not a rate limit. */
+export function isLoggedRefusal(error: unknown): error is AgentApiError | ToolDeniedError {
+  if (error instanceof ToolDeniedError) return true;
+  return (
+    error instanceof AgentApiError &&
+    error.status >= 400 &&
+    error.status < 500 &&
+    error.status !== 429
+  );
+}
+
 /**
  * A refused attempt from the dashboard's own Wallet screen, logged beside the client requests so
- * the owner can see it happened. Quotes and previews move nothing and are not logged; only an
- * API refusal is (infrastructure errors carry no rule to show).
+ * the owner can see it happened. Quotes and previews move nothing and are not logged; only a
+ * policy or validation refusal is (a 5xx, a rate limit or a network failure carries no rule to
+ * show, and the same request is simply retried).
  */
 export async function recordDashboardRefusal(
   input: { userId: string; agentId: string; tool: string; error: unknown },
@@ -32,7 +44,7 @@ export async function recordDashboardRefusal(
 ): Promise<void> {
   const { userId, agentId, tool, error } = input;
   if (tool.endsWith("_quote") || tool.endsWith("_preview")) return;
-  if (!(error instanceof AgentApiError || error instanceof ToolDeniedError)) return;
+  if (!isLoggedRefusal(error)) return;
   await recordMcpActivity(
     {
       clientAccessId: null,

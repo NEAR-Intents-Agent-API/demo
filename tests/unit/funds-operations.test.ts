@@ -16,6 +16,7 @@ import { OperationTrackerFacts } from "../../features/funds/operations/operation
 import { combineTotals, portfolioTotal } from "../../features/funds/portfolio/portfolio-total";
 import { type Holding, toHolding } from "../../features/funds/use-funds";
 import { activityOutcome } from "../../features/mcp/activity/activity-outcome";
+import { errorMessage } from "../../lib/http/messages";
 
 const txHash = "9VqfTxHashSourceChainAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 const destinationHash = "0xdestinationhashBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
@@ -65,8 +66,15 @@ test("tracker facts show both hashes, the refund outcome and a plain failure rea
 });
 
 test("status lines do not overclaim", () => {
-  assert.ok(!describeOperation("FAILED").line.includes("did not go through"));
-  assert.ok(describeOperation("FAILED").line.includes("Part of it may have gone through"));
+  // The API's FAILED means provably never executed or failed with a recorded reason.
+  const failed = describeOperation("FAILED", { failureCode: "route_unavailable" }).line;
+  assert.ok(failed.startsWith("This move did not go through: "));
+  assert.ok(failed.includes(errorMessage("route_unavailable")));
+  assert.ok(!failed.includes("may have gone through"));
+  assert.equal(describeOperation("FAILED").line, "This move did not go through.");
+  const sent = describeOperation("FAILED", { hasTransaction: true }).line;
+  assert.ok(sent.includes("A transaction was recorded"));
+  assert.ok(!sent.includes("may have gone through"));
   const queued = describeOperation("QUEUED", { executeAfter: "2026-10-13T10:00:00.000Z" }).line;
   assert.ok(queued.includes("Oct 13, 2026"), "a queued move says when it runs");
   assert.ok(queued.includes("cancel it in Rules"));
