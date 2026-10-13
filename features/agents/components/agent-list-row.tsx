@@ -16,7 +16,9 @@ export function AgentListRow({ agent, state }: { agent: AgentListItem; state: Ag
       ? "ok"
       : state.stage === "frozen" || state.stage === "archived" || state.stage === "abandoned"
         ? "blocked"
-        : "attention";
+        : state.stage === "active"
+          ? "neutral"
+          : "attention";
   const action = state.next.id === "none" ? "Open" : state.next.label;
   return (
     <li className="relative grid min-w-0 grid-cols-2 items-center gap-x-4 gap-y-4 rounded-[8px] border bg-card px-4 py-4 transition-colors hover:border-primary/40 md:grid-cols-[minmax(0,2fr)_minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1fr)_2rem] md:px-5">

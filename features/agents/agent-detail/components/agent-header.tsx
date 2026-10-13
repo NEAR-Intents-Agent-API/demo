@@ -36,7 +36,9 @@ export function AgentHeader({
       ? "ok"
       : state.stage === "archived" || state.stage === "abandoned"
         ? "blocked"
-        : "attention";
+        : state.stage === "active"
+          ? "neutral"
+          : "attention";
   return (
     <header className={cn("flex flex-col gap-5", framed && "rounded-xl border bg-card p-5 sm:p-6")}>
       <div className="flex min-w-0 flex-1 flex-col gap-4">

@@ -11,10 +11,20 @@ import type { AgentView } from "@near-intents-agent-api/sdk";
  * Pure and dependency-free so a unit test can pin it.
  */
 
-export type AgentJourneyStage = "pending" | "ready" | "frozen" | "archived" | "abandoned";
+export type AgentJourneyStage =
+  | "pending"
+  | "ready"
+  | "active"
+  | "frozen"
+  | "archived"
+  | "abandoned";
 
-/** What the state is derived from: the API view, plus the owner's freeze when the list knows it. */
-export type AgentStateInput = AgentView & { frozen?: boolean };
+/**
+ * What the state is derived from: the API view, plus the owner's freeze from the applied rules.
+ * `null` is unknown (not read yet, or the read failed): shown as just "Active", never as
+ * operational or frozen.
+ */
+export type AgentStateInput = AgentView & { frozen: boolean | null };
 
 export type AgentNextAction = {
   /** Stable id for tests and for keying. */
@@ -75,6 +85,13 @@ export function agentState(agent: AgentStateInput): AgentState {
         },
       };
     case "ACTIVE":
+      if (agent.frozen === null)
+        return {
+          stage: "active",
+          label: "Active",
+          detail: "Owner-bound and live. Whether its rules freeze it is not known right now.",
+          next: nothing,
+        };
       if (agent.frozen)
         return {
           stage: "frozen",
@@ -110,14 +127,17 @@ export function workspaceSummary(agents: AgentStateInput[]): {
   total: number;
   operational: number;
   frozen: number;
+  /** Live accounts whose frozen state is not known; they are in neither count above. */
+  unknown: number;
   needsYou: number;
 } {
   const listed = visibleAgents(agents);
   const active = listed.filter((agent) => agent.status === "ACTIVE");
   return {
     total: listed.length,
-    operational: active.filter((agent) => !agent.frozen).length,
-    frozen: active.filter((agent) => agent.frozen).length,
+    operational: active.filter((agent) => agent.frozen === false).length,
+    frozen: active.filter((agent) => agent.frozen === true).length,
+    unknown: active.filter((agent) => agent.frozen === null).length,
     needsYou: listed.filter((agent) => agent.status === "PENDING").length,
   };
 }

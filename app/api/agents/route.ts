@@ -18,13 +18,17 @@ import {
  *
  * The network gate runs first so a mainnet demo fails closed before returning any agent data
  * from an unreachable or wrong-network API, and the result is filtered again in-process. Every
- * page is followed and each account carries its `frozen` flag (see `listOwnedAgents`).
+ * page is followed. `?frozen=1` also reads each live account's frozen flag (see
+ * `listOwnedAgents`); without it the flag is unknown, so shared chrome costs no policy reads.
  */
-export function GET() {
+export function GET(request: Request) {
+  const withFrozen = new URL(request.url).searchParams.get("frozen") === "1";
   return withSession(async (session) => {
     const gate = await requireConfiguredNetwork();
     if (!gate.ok) return networkGateError(gate, { route: "GET /api/agents" });
-    return { agents: await listOwnedAgents(agentApi(), session.userId) };
+    return {
+      agents: await listOwnedAgents(agentApi(), session.userId, { frozen: withFrozen }),
+    };
   }, "GET /api/agents");
 }
 
