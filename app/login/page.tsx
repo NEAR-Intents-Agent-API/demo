@@ -1,12 +1,14 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import {
   DemoFooter,
   LoginPanel,
   loginReturnTo,
   pendingAuthorizationUrl,
 } from "@/features/auth/index";
-import { LoginHero, NetworkStrip } from "@/features/home/index";
+import { fallbackNetworks, LoginHero, NetworkStrip } from "@/features/home/index";
 import { currentSession } from "@/lib/auth/session";
+import { LoginNetworkStrip } from "./login-network-strip";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +39,9 @@ export default async function LoginPage({
         aria-label="Supported networks"
         className="relative mx-auto mt-14 w-full max-w-[1440px] border-t px-5 pt-[30px] sm:px-8 xl:px-[44px]"
       >
-        <NetworkStrip compact />
+        <Suspense fallback={<NetworkStrip compact networks={fallbackNetworks()} />}>
+          <LoginNetworkStrip />
+        </Suspense>
       </section>
       <div className="relative mx-auto w-full max-w-[1440px] px-4 pb-6 md:px-8">
         <DemoFooter />

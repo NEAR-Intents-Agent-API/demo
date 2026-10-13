@@ -21,7 +21,7 @@ OpenClaw, all under rules the owner signed.
 - **One-signature agent creation** with a plain-language rules editor (what it can do, which
   tokens, the most one move may spend, where funds can go, owner approval).
 - **Wallet tab**: holdings with USD values (public and private), swap, transfer, deposit,
-  withdraw and shield/unshield, each against the public or private balance.
+  withdraw and make private/make public, each against the public or private balance.
 - **Activity and Rules tabs**: operations and pending owner approvals; live rules, emergency
   stop, USD budget and execution delay, all editable in place.
 - **MCP/OAuth server**: one endpoint per account, one owner-signed grant per client, instant revocation.
@@ -75,7 +75,7 @@ Production: `pnpm build`, `pnpm start`, and run `pnpm db:migrate` before each de
 3. **Fund it.** Deposits need only the signed-in owner's session: a one-time 1Click address for a
    chosen network and token (optionally an amount), or a transfer from any NEAR Intents account.
    No grant signature is needed, and a failed or late deposit refunds into the agent's own balance.
-4. **Authorize the dashboard** to spend. Swaps, sends, withdrawals and shield/unshield need one
+4. **Authorize the dashboard** to spend. Swaps, sends, withdrawals and private-balance moves need one
    owner signature on a `grant_issue` for the dashboard's own grant token, valid for 1, 7 or 30
    days. The dialog shows the live account rules: exactly what the dashboard, and every other
    grant, may do.

@@ -1,6 +1,7 @@
 import { createConfig, createStorage, http, noopStorage } from "wagmi";
+import { disconnect } from "wagmi/actions";
 import { arbitrum, avalanche, base, bsc, gnosis, mainnet, optimism, polygon } from "wagmi/chains";
-import { coinbaseWallet, injected, safe } from "wagmi/connectors";
+import { coinbaseWallet, injected } from "wagmi/connectors";
 import { EVM_WALLETS, type EvmProviderLike, isBrandInstalled } from "./wallets";
 
 /** Every legacy provider a page exposes: the nested list when present, otherwise the single one. */
@@ -24,7 +25,7 @@ export function legacyProviderFor(window: Window, brandId: string): EvmProviderL
  * discovery, every modern wallet that announces itself. The explicit targets below cover
  * wallets that only expose `window.ethereum` flags — MetaMask, Rainbow, Rabby, Phantom, OKX,
  * Brave, Trust — so the connect modal can offer the full brand list regardless of age.
- * Coinbase Wallet and Safe have their own connectors. `walletConnect()` is deliberately absent:
+ * Coinbase Wallet has its own connector. `walletConnect()` is deliberately absent:
  * pairing through a relay is not something this dashboard needs.
  *
  * A target whose wallet is absent returns a provider function resolving `undefined`, which
@@ -50,7 +51,6 @@ export const evmConfig = createConfig({
   connectors: [
     injected(),
     coinbaseWallet({ appName: "NEAR Agent Connect", preference: "all" }),
-    safe(),
     ...legacyTargets,
   ],
   multiInjectedProviderDiscovery: true,
@@ -95,6 +95,22 @@ export async function connectedEvmRequest(address: string): Promise<EvmRequest> 
   )
     throw new Error("evm_account_mismatch");
   return request;
+}
+
+/**
+ * Drops every wallet connection and the remembered wallet. Providers reconnect the last wallet
+ * on page load, so a sign-out that leaves it connected makes the next sign-in with the same
+ * wallet start from a stale connection.
+ */
+export async function disconnectEvmWallets(): Promise<void> {
+  for (const { connector } of [...evmConfig.state.connections.values()]) {
+    try {
+      await disconnect(evmConfig, { connector });
+    } catch {
+      // A wallet that refuses to disconnect is dropped from the remembered state below.
+    }
+  }
+  await evmConfig.storage?.removeItem("recentConnectorId");
 }
 
 /** Whether the brand can be connected right now; used to choose Connect versus Install. */

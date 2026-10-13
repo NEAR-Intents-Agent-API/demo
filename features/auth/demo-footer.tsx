@@ -7,7 +7,7 @@ export function DemoFooter({ className }: { className?: string }) {
     <footer className={cn("mt-14 border-t border-border py-6", className)}>
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
         <div className="flex shrink-0 flex-col items-start gap-2">
-          <Link href="/how-it-works" aria-label="NEAR Intents home">
+          <Link href="/" aria-label="NEAR Intents home">
             <DesignAsset
               name="guide-imgGroup1-light"
               width={128}

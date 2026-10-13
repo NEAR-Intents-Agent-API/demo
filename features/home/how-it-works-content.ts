@@ -6,34 +6,38 @@ export const MOVES: { verb: string; asset: string; what: string; who: Who; guard
     asset: "Deposit",
     who: "No one",
     what: "Fund the agent's public balance through NEAR Intents from a supported network.",
-    guard: "Receiving funds needs no approval and does not spend the account’s balance.",
+    guard:
+      "Receiving funds needs no approval and does not spend the account’s balance. Deposits are refused while the account is frozen.",
   },
   {
     verb: "Swap",
     asset: "Network2",
     who: "Agent alone",
     what: "Exchange assets across supported chains, with a quoted rate and a minimum amount to receive.",
-    guard: "Uses only allowed tokens and counts toward your USD budget.",
+    guard:
+      "Uses only allowed tokens, counts toward your USD budget, and waits out any execution delay.",
   },
   {
     verb: "Transfer",
     asset: "Transfer",
     who: "Agent alone",
     what: "Send funds to another NEAR Intents account.",
-    guard: "Uses approved destinations and counts toward your USD budget.",
+    guard:
+      "Uses approved destinations, counts toward your USD budget, and waits out any execution delay.",
   },
   {
     verb: "Withdraw",
     asset: "Withdraw",
     who: "Agent alone",
     what: "Send funds to an approved address on a supported network.",
-    guard: "A withdrawal delay gives you time to cancel.",
+    guard:
+      "Uses approved destinations, counts toward your USD budget, and waits out any execution delay, which gives you time to cancel.",
   },
   {
-    verb: "Public & Private Balances",
+    verb: "Private balance",
     asset: "Private",
     who: "Agent alone",
-    what: "Move funds between the account’s public and private balances.",
+    what: "Make funds private or public by moving them between the account’s public and private balances.",
     guard: "Funds stay inside the agent account, under your rules.",
   },
 ];
@@ -55,34 +59,3 @@ export const KEYS = [
     body: "Holds funds and signs transactions within your rules. Its keys stay with the custody provider.",
   },
 ];
-
-export const SITE_NODES = [
-  {
-    owner: "YOU",
-    title: "Owner",
-    asset: "User",
-    lines: ["Wallet or passkey", "Signs the rules once", "Can revoke any time"],
-  },
-  {
-    owner: "YOUR RULES",
-    title: "Rules & limits",
-    asset: "Rules",
-    lines: ["Tokens allowed", "USD budget", "Destinations & delay"],
-  },
-  {
-    owner: "THE AGENT",
-    title: "Custody wallet",
-    asset: "Agent",
-    lines: [
-      "Holds public & private balances",
-      "Acts through MCP or API",
-      "Cannot exceed the rules",
-    ],
-  },
-  {
-    owner: "THE WORLD",
-    title: "Any network",
-    asset: "Network1",
-    lines: ["Deposit from anywhere", "Swap, transfer, withdraw", "Settle on any chain"],
-  },
-] as const;

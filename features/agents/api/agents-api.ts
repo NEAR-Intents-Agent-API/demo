@@ -1,9 +1,10 @@
 import type { AgentView, Policy, SignedData } from "@near-intents-agent-api/sdk";
 import type { IntentStep } from "@/features/intents";
+import type { AgentListItem } from "@/lib/agent-api/agent-list";
 import { request } from "@/lib/http/request";
 
 export const agentsApi = {
-  list: (signal?: AbortSignal) => request<{ agents: AgentView[] }>("/api/agents", { signal }),
+  list: (signal?: AbortSignal) => request<{ agents: AgentListItem[] }>("/api/agents", { signal }),
   create: (name: string, policy: Policy) =>
     request<IntentStep>("/api/agents", {
       method: "POST",

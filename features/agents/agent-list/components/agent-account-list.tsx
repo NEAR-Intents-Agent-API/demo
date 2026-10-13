@@ -1,8 +1,8 @@
-import type { AgentView } from "@near-intents-agent-api/sdk";
+import type { AgentListItem } from "@/lib/agent-api/agent-list";
 import { AgentListRow } from "../../components/agent-list-row";
 import { agentState } from "../../model/agent-state";
 
-export function AgentAccountList({ agents }: { agents: AgentView[] }) {
+export function AgentAccountList({ agents }: { agents: AgentListItem[] }) {
   return (
     <section className="flex flex-col gap-5" aria-labelledby="accounts-title">
       <h2

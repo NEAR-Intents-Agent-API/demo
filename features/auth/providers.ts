@@ -52,14 +52,15 @@ export async function evmLogin(address: string, ethereumRequest: EvmRequest): Pr
  * Passkey login. Options and verification both run inside Better Auth's passkey plugin, which
  * enforces the exact origin, RP ID and counter advancement.
  *
- * A user with no passkey yet gets `NotAllowedError` from the authenticator. That is not a
- * server error, so it is mapped to the same actionable message as an unknown credential.
+ * Browsers answer a cancelled prompt, a timeout and "no passkey for this site on this device"
+ * with the same `NotAllowedError`, so those three cannot be told apart and share one message
+ * that names every possibility. A server-side "unknown passkey" is the one definite case.
  */
 export async function passkeyLogin(): Promise<void> {
   try {
     unwrap(await authClient.signIn.passkey());
   } catch (cause) {
-    if (isWebAuthnNotAllowed(cause)) throw new Error("passkey_not_registered");
+    if (isPromptClosed(cause)) throw new Error("passkey_prompt_closed");
     throw cause;
   }
 }
@@ -67,28 +68,53 @@ export async function passkeyLogin(): Promise<void> {
 /**
  * Passkey registration through Better Auth's own client action, which also creates the
  * session. The server verifies the attestation and persists only public credential metadata
- * and the signature counter; the private key never leaves the authenticator.
+ * and the signature counter; the private key never leaves the authenticator. The owner row is
+ * created together with the credential, so a cancelled prompt leaves nothing behind.
  */
 export async function passkeyRegister(name: string): Promise<void> {
   try {
     unwrap(await authClient.passkey.addPasskey({ name, createSession: true }));
   } catch (cause) {
-    if (isWebAuthnNotAllowed(cause)) throw new Error("passkey_registration_failed");
+    if (isPromptClosed(cause)) throw new Error("passkey_registration_cancelled");
     throw cause;
   }
 }
 
-function isWebAuthnNotAllowed(cause: unknown): boolean {
-  if (!(cause instanceof Error)) return false;
+/** WebAuthn codes the passkey client reports when the prompt did not produce a credential. */
+const PROMPT_CLOSED_CODES = new Set([
+  "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY",
+  "ERROR_CEREMONY_ABORTED",
+  "AUTH_CANCELLED",
+]);
+
+function isPromptClosed(cause: unknown): boolean {
+  if (cause instanceof AuthRequestError) return PROMPT_CLOSED_CODES.has(cause.code ?? "");
   return (
-    cause.name === "NotAllowedError" ||
-    /not allowed|timed out or was not allowed|no credentials/i.test(cause.message)
+    cause instanceof Error && (cause.name === "NotAllowedError" || cause.name === "AbortError")
   );
 }
 
+/** A Better Auth client failure; `code` is the server's error code or the WebAuthn error code. */
+export class AuthRequestError extends Error {
+  constructor(
+    message: string,
+    readonly code?: string,
+  ) {
+    super(message);
+    this.name = "AuthRequestError";
+  }
+}
+
 /** Better Auth client results are `{ data, error }`; errors become thrown values here. */
-function unwrap<T>(result: { data?: T | null; error?: { message?: string | null } | null }): T {
-  if (result.error) throw new Error(result.error.message ?? "auth_request_failed");
+function unwrap<T>(result: {
+  data?: T | null;
+  error?: { message?: string | null; code?: string | null } | null;
+}): T {
+  if (result.error)
+    throw new AuthRequestError(
+      result.error.message ?? "auth_request_failed",
+      result.error.code ?? undefined,
+    );
   if (result.data === undefined || result.data === null) throw new Error("auth_request_failed");
   return result.data;
 }

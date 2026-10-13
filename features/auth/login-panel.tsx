@@ -58,9 +58,13 @@ export function LoginPanel({ resuming, returnTo }: { resuming: boolean; returnTo
           ))}
         </div>
 
-        <p className="text-[15px] leading-[22px] text-muted-foreground">
-          The dashboard stores only your passkey’s public key.
-        </p>
+        <div className="flex flex-col gap-2 text-[15px] leading-[22px] text-muted-foreground">
+          <p>The dashboard stores only your passkey’s public key.</p>
+          <p>
+            A passkey is the only key to the owner it creates, and this demo has no recovery. If you
+            lose it, you cannot sign in as that owner or sign changes to its accounts again.
+          </p>
+        </div>
 
         {error ? (
           <p

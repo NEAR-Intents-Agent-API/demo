@@ -3,7 +3,7 @@
  *
  * Every row is always shown. A wallet connects when it is present: modern extensions announce
  * themselves with EIP-6963 and are matched by `rdns`; older ones are matched by their
- * `window.ethereum` flag; Coinbase and Safe have their own wagmi connectors. Wallets that are
+ * `window.ethereum` flag; Coinbase has its own wagmi connector. Wallets that are
  * not installed offer their download page instead. No row ever depends on WalletConnect.
  */
 
@@ -53,14 +53,6 @@ export const EVM_WALLETS: readonly EvmWalletBrand[] = [
         ethereum?.isCoinbaseWallet ||
           (window as { coinbaseWalletExtension?: unknown }).coinbaseWalletExtension,
       ),
-  },
-  {
-    id: "safe",
-    name: "Safe",
-    icon: "/assets/wallets/safe.svg",
-    installUrl: "https://app.safe.global",
-    installLabel: "Open in Safe",
-    connectorId: "safe",
   },
   {
     id: "rainbow",
@@ -146,7 +138,5 @@ function providersOf(window: Window): EvmProviderLike[] {
 export function isBrandInstalled(brandId: string, window: Window): boolean {
   const brand = EVM_WALLETS.find((candidate) => candidate.id === brandId);
   if (!brand) return false;
-  // Safe is a web app, not an extension: it is always offered, and connecting opens its app.
-  if (brand.connectorId === "safe") return true;
   return providersOf(window).some((provider) => brand.detect?.(provider, window));
 }

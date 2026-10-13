@@ -23,7 +23,7 @@ export const walletProviders: ProviderCard[] = [
   {
     id: "evm",
     label: "EVM wallet",
-    detail: "MetaMask, Coinbase, Safe, and more",
+    detail: "MetaMask, Coinbase, Rabby, and more",
     asset: "login-reference/login-auth-evm",
     iconWidth: 20.7667,
     iconHeight: 25.4333,
