@@ -10,7 +10,7 @@ export function ruleDialogDescription(id: RuleSettingId): string {
     case "tokens":
       return "Choose tokens this account may swap, transfer or withdraw.";
     case "delay":
-      return "Set how long an accepted execution must wait.";
+      return "Set how long swaps, transfers and withdrawals wait before they run.";
     case "schedule":
       return "Choose when swaps, transfers and withdrawals may run, on your clock.";
     case "destinations":
