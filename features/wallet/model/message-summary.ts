@@ -203,19 +203,20 @@ function collectBudget(details: SummaryRow[], budget: unknown): void {
   const value = asRecord(budget);
   if (!value) return;
   for (const [key, period] of [
-    ["daily_usd", "a day"],
-    ["weekly_usd", "a week"],
-    ["monthly_usd", "a month"],
+    ["daily_usd", "rolling 24 hours"],
+    ["weekly_usd", "rolling 7 days"],
+    ["monthly_usd", "rolling 30 days"],
   ] as const) {
     const usd = value[key];
-    if (typeof usd === "string") details.push({ label: `USD budget ${period}`, value: `$${usd}` });
+    if (typeof usd === "string")
+      details.push({ label: `USD budget (${period})`, value: `$${usd}` });
   }
 }
 
 /** The account destination rule in words: every grant follows exactly this. */
 function describeRule(rule: DestinationRule): string {
   if (rule.list.length === 0)
-    return rule.mode === "only" ? "Nowhere (outgoing payments blocked)" : "Anywhere";
+    return rule.mode === "only" ? "Nowhere yet; funds stay in this account" : "Anywhere";
   const prefix = rule.mode === "only" ? "Only" : "Anywhere except";
   return `${prefix}: ${rule.list.map(renderDestination).join(", ")}`;
 }
