@@ -4,6 +4,7 @@
  */
 
 import { accountTimestamp } from "@/lib/format/date";
+import { errorMessage } from "@/lib/http/messages";
 
 export type OperationTone = "run" | "ok" | "wait" | "bad";
 
@@ -22,7 +23,13 @@ export const PHASES = ["Submitted", "Processing", "Settled"] as const;
 
 export function describeOperation(
   status: string,
-  options: { executeAfter?: string | null } = {},
+  options: {
+    executeAfter?: string | null;
+    /** The API's snake_case reason for a FAILED move. */
+    failureCode?: string | null;
+    /** A transaction hash is recorded, so something was submitted before it failed. */
+    hasTransaction?: boolean;
+  } = {},
 ): OperationView {
   switch (status) {
     case "SUCCESS":
@@ -34,10 +41,12 @@ export function describeOperation(
         line: "The route refunded your funds to the account. Nothing was lost.",
       };
     case "FAILED":
+      // The API's FAILED is "provably never executed, or failed with a recorded reason": say so,
+      // and only point at the balances when a transaction was recorded.
       return {
         reached: 2,
         tone: "bad",
-        line: "This move stopped before it finished. Part of it may have gone through, so check your balances and the transactions below before trying again.",
+        line: failedLine(options.failureCode, options.hasTransaction),
       };
     case "UNCERTAIN":
       return {
@@ -74,4 +83,13 @@ export function describeOperation(
     default:
       return { reached: 2, tone: "run", line: "Working on it. This usually takes under a minute." };
   }
+}
+
+function failedLine(failureCode?: string | null, hasTransaction?: boolean): string {
+  const line = failureCode
+    ? `This move did not go through: ${errorMessage(failureCode)}`
+    : "This move did not go through.";
+  return hasTransaction
+    ? `${line} A transaction was recorded for it (below), so check your balances before trying again.`
+    : line;
 }

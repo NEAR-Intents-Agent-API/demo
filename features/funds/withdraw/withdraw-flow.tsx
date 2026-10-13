@@ -73,7 +73,7 @@ export function WithdrawFlow({ view }: { view: ReturnType<typeof useWithdrawFlow
           />
         ) : null}
 
-        <FlowError code={preview.error?.message ?? action.error?.message} />
+        <FlowError error={preview.error ?? action.error} />
         <FlowButton
           busy={action.isPending}
           disabled={Boolean(reason) || preview.isFetching || Boolean(preview.error)}

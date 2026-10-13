@@ -62,7 +62,7 @@ export function PrivateFlow({ view }: { view: ReturnType<typeof usePrivateFlow> 
           />
         ) : null}
 
-        <FlowError code={action.error?.message} />
+        <FlowError error={action.error} />
         <FlowButton busy={action.isPending} disabled={Boolean(reason)} onClick={move}>
           {reason ?? (action.isPending ? "Moving…" : copy.label)}
         </FlowButton>

@@ -41,7 +41,7 @@ export function DepositForm({ form }: { form: ReturnType<typeof useDepositForm> 
         />
       </DepositStep>
 
-      <FlowError code={action.error?.message} />
+      <FlowError error={action.error} />
       <FlowButton
         requiresGrant={false}
         busy={action.isPending}

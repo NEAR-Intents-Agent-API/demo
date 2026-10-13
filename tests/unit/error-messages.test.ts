@@ -124,6 +124,21 @@ test("every API error code has its own plain-language message, never the fallbac
   }
 });
 
+/** Codes the dashboard itself raises (wallet ceremonies, the rules workflow), not the API. */
+const clientCodes = [
+  "wallet_request_cancelled",
+  "passkey_prompt_closed",
+  "wallet_request_pending",
+  "policy_change_in_flight",
+];
+
+test("every client-side code has its own plain-language message", () => {
+  for (const code of clientCodes) {
+    assert.ok(Object.hasOwn(errorMessages, code), `${code} has a message`);
+    assert.notEqual(errorMessage(code), `Something went wrong (${code}). Try again.`, code);
+  }
+});
+
 test("the removed owner_approval_unsupported code no longer has a message", () => {
   assert.equal(Object.hasOwn(errorMessages, "owner_approval_unsupported"), false);
 });

@@ -39,8 +39,11 @@ export function OperationTracker({
   const { operation, refresh } = useOperation(agentId, operationId);
   const status = operation.data?.status ?? initialStatus;
   const details = (operation.data?.details ?? {}) as Record<string, unknown>;
+  const evidence = operationEvidence({ details });
   const view = describeOperation(status, {
-    executeAfter: operationEvidence({ details }).executeAfter,
+    executeAfter: evidence.executeAfter,
+    failureCode: operation.data?.failure_code,
+    hasTransaction: Boolean(evidence.txHash || evidence.destinationTxHash),
   });
   const settled = TERMINAL_STATUSES.has(status);
 
@@ -70,7 +73,8 @@ export function OperationTracker({
         status={status}
         operationId={operationId}
         details={details}
-        failureCode={operation.data?.failure_code}
+        // A failed move already states its reason in the status line above.
+        failureCode={status === "FAILED" ? null : operation.data?.failure_code}
         token={token}
       />
 

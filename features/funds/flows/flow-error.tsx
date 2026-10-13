@@ -2,14 +2,15 @@
 
 import { errorMessage } from "@/lib/http/messages";
 
-export function FlowError({ code }: { code: string | null | undefined }) {
-  if (!code) return null;
+/** Pass the error itself, not its message: its details add the USD left and the retry time. */
+export function FlowError({ error }: { error: unknown }) {
+  if (!error) return null;
   return (
     <p
       role="alert"
       className="rounded-lg border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive"
     >
-      {errorMessage(code)}
+      {errorMessage(error)}
     </p>
   );
 }

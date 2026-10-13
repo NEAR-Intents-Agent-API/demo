@@ -11,13 +11,19 @@ import { errorFields, logger } from "@/lib/http/logger";
 export { guardBrowserMutation, readGuardedJson } from "@/lib/http/browser-guard";
 export { bffError, networkGateError, type RouteLog, readJson } from "@/lib/http/errors";
 
+const BUDGET_READ_TIMEOUT_MS = 2_000;
+
 /**
  * USD left in the tightest budget window, so a budget refusal can say how much the account has.
- * The refusal itself carries no amount; a failed read only means the message goes without it.
+ * The refusal itself carries no amount; a slow or failed read only means the message goes without
+ * it, so the read is bounded well below the shared client's timeout.
  */
 async function budgetRemainingUsd(agentId: string): Promise<string | undefined> {
   try {
-    const { budget } = (await agentApi().getPolicy(agentId)).usage;
+    const policy = await agentApi().getPolicy(agentId, {
+      signal: AbortSignal.timeout(BUDGET_READ_TIMEOUT_MS),
+    });
+    const { budget } = policy.usage;
     const left = [budget.daily, budget.weekly, budget.monthly]
       .map((window) => window.remaining_usd)
       .filter((remaining) => remaining !== null);

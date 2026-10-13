@@ -28,15 +28,17 @@ export type Holding = {
 };
 
 export function useHoldings(agentId: string, source: BalanceSource) {
-  const { find, query: tokenQuery } = useCatalog();
+  const { find, query: tokenQuery, now } = useCatalog();
   const query = useQuery({
     queryKey: queryKeys.balances(agentId, source),
     queryFn: () => fundsApi.balances(agentId, source),
     refetchInterval: 30_000,
   });
+  // Price expiry is judged against the wall clock, not the fetch time: a balance fetched a while
+  // ago still loses its dollar value once the price passes `price_expires_at`.
   const holdings = useMemo(
-    () => (query.data?.balances ?? []).map((entry) => toHolding(entry, find, query.dataUpdatedAt)),
-    [query.data, query.dataUpdatedAt, find],
+    () => (query.data?.balances ?? []).map((entry) => toHolding(entry, find, now)),
+    [query.data, now, find],
   );
   return {
     query,

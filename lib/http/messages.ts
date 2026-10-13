@@ -48,6 +48,8 @@ export const errorMessages: Record<string, string> = {
   wallet_signature_missing: "The wallet did not return a signature. Try again.",
   wallet_request_pending: "A wallet request is already open. Finish or cancel it first.",
   wallet_request_cancelled: "Wallet request cancelled. Try again when you are ready.",
+  passkey_prompt_closed:
+    "The passkey prompt closed: it was cancelled, timed out, or this device has no passkey for this owner.",
   owner_proof_invalid: "The signature did not verify. Sign again with the same wallet.",
   owner_nonce_invalid: "This consent request expired or was replaced. Start again.",
   owner_command_expired: "This signing request expired. Start again.",
@@ -68,6 +70,8 @@ export const errorMessages: Record<string, string> = {
     "The policy changed while you were editing. Reload and sign the new revision.",
   policy_submission_unconfirmed: "The provider has not confirmed the policy yet. Refresh it.",
   policy_submission_uncertain: "Policy outcome unknown. Reconcile the operation; do not resubmit.",
+  policy_change_in_flight:
+    "A rules change is still settling. Wait for it to finish, then try again.",
   policy_reconciliation_required:
     "Another rules change is still waiting to be signed or applied. Wait for it to finish, then try again.",
   policy_storage_changed: "Storage costs changed while you were signing. Start the change again.",
@@ -229,6 +233,11 @@ function baseMessage(code: string): string {
     : "Something went wrong. Try again.";
 }
 
+/** Whole cents, but never a rounded-down "$0.00" while some budget remains. */
+function usdLeft(usd: number): string {
+  return usd > 0 && usd < 0.01 ? "less than $0.01" : `$${usd.toFixed(2)}`;
+}
+
 /**
  * Human-readable text for an API error code, or for the error carrying one. Pass the error itself
  * whenever you have it: its details add a local retry time and the USD left in a budget. Unknown
@@ -237,7 +246,7 @@ function baseMessage(code: string): string {
 export function errorMessage(source: unknown): string {
   const { code, details } = parseErrorSource(source);
   if (code === "spend_budget_exceeded" && details.budget_remaining_usd !== undefined)
-    return `The account has $${Number(details.budget_remaining_usd).toFixed(2)} left in its USD budget, which is not enough for this. ${budgetAdvice}`;
+    return `The account has ${usdLeft(Number(details.budget_remaining_usd))} left in its USD budget, which is not enough for this. ${budgetAdvice}`;
   const message = baseMessage(code);
   const retryAt = details.available_at;
   if (!retryAt || Date.parse(retryAt) <= Date.now()) return message;
