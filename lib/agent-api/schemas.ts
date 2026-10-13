@@ -11,6 +11,7 @@ import type {
   Status,
 } from "@near-intents-agent-api/sdk";
 import { z } from "zod";
+import { evmChains, transferRecipientProblem, withdrawalAddressProblem } from "./address";
 
 /**
  * Runtime validation for the Agent API payloads this app handles. The SDK ships plain types and
@@ -68,26 +69,6 @@ const chainAliases: Record<string, string> = {
 };
 export const canonicalChain = (chain: string) => chainAliases[chain] ?? chain;
 
-/** Chains whose accounts are `0x` EVM addresses, in canonical ids. */
-const evmChains = new Set([
-  "eth",
-  "base",
-  "arb",
-  "bsc",
-  "pol",
-  "op",
-  "avax",
-  "gnosis",
-  "bera",
-  "plasma",
-  "hood",
-  "hypercore",
-  "monad",
-  "xlayer",
-  "scroll",
-  "abs",
-]);
-
 /** One place funds may go, named exactly. No wildcards. */
 export const destinationSchema = z
   .discriminatedUnion("action", [
@@ -108,14 +89,15 @@ export const destinationSchema = z
     }),
   ])
   .superRefine((value, ctx) => {
-    if (value.action !== "withdraw") return;
+    if (value.action === "transfer") {
+      const problem = transferRecipientProblem(value.address);
+      if (problem) ctx.addIssue({ code: "custom", message: problem, path: ["address"] });
+      return;
+    }
     if (canonicalChain(value.chain) !== value.chain)
       ctx.addIssue({ code: "custom", message: "Use the canonical chain identifier" });
-    if (evmChains.has(value.chain) && !/^0x[0-9a-f]{40}$/.test(value.address))
-      ctx.addIssue({
-        code: "custom",
-        message: "EVM destinations must use canonical lowercase hex addresses",
-      });
+    const problem = withdrawalAddressProblem(value.chain, value.address);
+    if (problem) ctx.addIssue({ code: "custom", message: problem, path: ["address"] });
   });
 assertType<Equal<z.infer<typeof destinationSchema>, Destination>>();
 

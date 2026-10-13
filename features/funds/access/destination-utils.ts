@@ -1,6 +1,9 @@
 import type { Destination } from "@near-intents-agent-api/sdk";
+import { z } from "zod";
 import { chainInfo } from "@/features/assets";
 import { canonicalDestination } from "@/lib/agent-api/schemas";
+
+export const MEMO_MAX_LENGTH = 256;
 
 /**
  * The route an owner picks for a destination, in the words the dashboard uses: a withdrawal, a
@@ -16,6 +19,10 @@ export function destinationRoute(destination: Destination): DestinationAction {
   return destination.confidential ? "confidential_transfer" : "intents_transfer";
 }
 
+/**
+ * Builds the destination an owner typed, or throws an `Error` whose message says exactly what is
+ * wrong with it (missing network, malformed address, memo too long) for the form to show.
+ */
 export function destinationFromDraft(input: {
   action: DestinationAction;
   chain: string;
@@ -23,21 +30,33 @@ export function destinationFromDraft(input: {
   memo: string;
   hasMemo: boolean;
 }): Destination {
-  if (input.hasMemo && input.memo.length === 0) throw new Error("Memo value is required");
-  return canonicalDestination(
-    input.action === "withdraw"
-      ? {
-          action: "withdraw",
-          chain: input.chain,
-          address: input.address,
-          memo: input.hasMemo ? input.memo : null,
-        }
-      : {
-          action: "transfer",
-          address: input.address,
-          confidential: input.action === "confidential_transfer",
-        },
-  );
+  const withdraw = input.action === "withdraw";
+  const address = input.address.trim();
+  if (withdraw && !input.chain) throw new Error("Choose a network");
+  if (!address) throw new Error(withdraw ? "Enter a recipient address" : "Enter an account");
+  if (withdraw && input.hasMemo && input.memo.length === 0)
+    throw new Error("Enter the memo, or choose No memo");
+  if (withdraw && input.memo.length > MEMO_MAX_LENGTH)
+    throw new Error(`Memo is at most ${MEMO_MAX_LENGTH} characters`);
+  try {
+    return canonicalDestination(
+      withdraw
+        ? {
+            action: "withdraw",
+            chain: input.chain,
+            address,
+            memo: input.hasMemo ? input.memo : null,
+          }
+        : {
+            action: "transfer",
+            address,
+            confidential: input.action === "confidential_transfer",
+          },
+    );
+  } catch (cause) {
+    if (cause instanceof z.ZodError && cause.issues[0]) throw new Error(cause.issues[0].message);
+    throw cause;
+  }
 }
 
 export const DESTINATION_ACTIONS = [
