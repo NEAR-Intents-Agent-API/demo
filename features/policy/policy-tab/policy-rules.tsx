@@ -4,9 +4,9 @@ import { SnowIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { AgentView, PolicyView } from "@near-intents-agent-api/sdk";
 import { Callout } from "@/components/shared/callout";
-import { Button } from "@/components/ui/button";
 import { errorMessage } from "@/lib/http/messages";
 import { PolicyChangeSummary } from "./policy-change-summary";
+import { PolicyNotices } from "./policy-notices";
 import { ApplyingNotice, PolicyState } from "./policy-status";
 import { PolicyEditDialog } from "./settings/policy-edit-dialog";
 import { RULE_SETTING_GROUPS } from "./settings/rule-setting-definitions";
@@ -27,7 +27,6 @@ export function PolicyRules({ agent, view }: { agent: AgentView; view: PolicyVie
     current,
     changes,
     canSign,
-    approvalAvailable,
     busy,
     error,
     state,
@@ -38,7 +37,19 @@ export function PolicyRules({ agent, view }: { agent: AgentView; view: PolicyVie
     cancelEditing,
     closeEditor,
     toggleSetting,
+    pending,
+    stale,
+    conflict,
+    changeAvailableAt,
+    holdsPrivateFunds,
   } = usePolicyEditor(agent, view);
+  const blockedReason = stale
+    ? "The rules changed after you started editing."
+    : pending.kind === "in_flight"
+      ? "A previous rules change is still settling."
+      : changeAvailableAt
+        ? `The next rules change is possible at ${changeAvailableAt.toLocaleString()}. Freezing stays available.`
+        : undefined;
 
   return (
     <section
@@ -63,7 +74,6 @@ export function PolicyRules({ agent, view }: { agent: AgentView; view: PolicyVie
           usage={view.usage.budget}
           catalog={catalog}
           canSign={canSign}
-          approvalAvailable={approvalAvailable}
           busy={busy}
           onEdit={beginEditing}
           onToggle={toggleSetting}
@@ -90,24 +100,26 @@ export function PolicyRules({ agent, view }: { agent: AgentView; view: PolicyVie
           usage={view.usage.budget}
           busy={busy}
           stage={workflow.stage}
+          blockedReason={blockedReason}
+          warning={
+            holdsPrivateFunds
+              ? "This account holds a private balance. While Private balance is off, those funds cannot be moved back to the public balance; turn it back on first."
+              : undefined
+          }
           onCancel={cancelEditing}
           onSave={() => submit(editing)}
         />
       ) : null}
-      {workflow.pending && !busy ? (
-        <Callout
-          tone="warning"
-          compact
-          className="mt-4"
-          action={
-            <Button size="sm" onClick={() => workflow.save.mutate(null)}>
-              Resume
-            </Button>
-          }
-        >
-          A rules change is waiting for your signature.
-        </Callout>
-      ) : null}
+      <PolicyNotices
+        editing={editing}
+        busy={busy}
+        conflict={conflict}
+        pending={pending}
+        changeAvailableAt={changeAvailableAt}
+        workflow={workflow}
+        onReview={setEditing}
+        onDiscard={cancelEditing}
+      />
       {error ? (
         <p role="alert" className="mt-4 text-sm text-destructive">
           {errorMessage(error.message)}

@@ -1,6 +1,7 @@
 import type { ScheduledExecutionView } from "@near-intents-agent-api/sdk";
 import { Loading } from "@/components/shared/states";
 import { Button } from "@/components/ui/button";
+import { scheduledActionLabel, scheduledTiming } from "./scheduled-label";
 
 export function ScheduledList({
   items,
@@ -20,12 +21,11 @@ export function ScheduledList({
           key={item.correlation_id}
           className="flex flex-wrap items-center justify-between gap-3 py-3"
         >
-          <div>
-            <p className="text-sm font-medium leading-6">{item.action ?? "Execution"}</p>
+          <div className="min-w-0">
+            <p className="text-sm font-medium leading-6">{scheduledActionLabel(item.action)}</p>
+            <p className="text-xs text-muted-foreground">{scheduledTiming(item)}</p>
             <p className="text-xs text-muted-foreground">
-              {item.state === "waiting"
-                ? `Earliest execution: ${new Date(item.execute_after).toLocaleString()}`
-                : "Dispatching"}
+              Reference {item.correlation_id.slice(0, 12)}
             </p>
           </div>
           <Button

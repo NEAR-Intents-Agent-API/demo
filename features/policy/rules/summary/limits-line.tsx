@@ -5,8 +5,18 @@ import { formatDisplay } from "@/lib/format/amount";
 import type { Rules } from "../rules";
 import type { SummaryCatalog } from "./summary-types";
 
-export function LimitsLine({ rules, catalog }: { rules: Rules; catalog: SummaryCatalog }) {
-  const perHour = rules.maxPerHour ? `at most ${rules.maxPerHour} moves an hour` : null;
+export function LimitsLine({
+  rules,
+  catalog,
+  hideRate = false,
+}: {
+  rules: Rules;
+  catalog: SummaryCatalog;
+  /** Leave the moves-per-hour cap to a row of its own. */
+  hideRate?: boolean;
+}) {
+  const perHour =
+    rules.maxPerHour && !hideRate ? `at most ${rules.maxPerHour} moves an hour` : null;
   if (rules.limits.length === 0)
     return (
       <span className="flex items-center gap-1.5 text-sm text-muted-foreground">

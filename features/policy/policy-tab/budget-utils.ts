@@ -1,9 +1,3 @@
-export const BUDGET_WINDOWS = [
-  { key: "daily", field: "dailyUsd", label: "Per 24 hours" },
-  { key: "weekly", field: "weeklyUsd", label: "Per 7 days" },
-  { key: "monthly", field: "monthlyUsd", label: "Per 30 days" },
-] as const;
-
 /**
  * `"1.004000"` → `"1.01"` rounding up, `"1.00"` rounding down. Usage rounds up and allowance
  * down, so a display never understates what was counted or overstates what is left.
