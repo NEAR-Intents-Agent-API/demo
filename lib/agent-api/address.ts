@@ -63,22 +63,34 @@ function bitcoinAddress(text: string): boolean {
   return payload?.length === 21 && (payload[0] === 0x00 || payload[0] === 0x05);
 }
 
+/** A classic `r…` account, or a mainnet `X…` address (account and destination tag in one string). */
 const xrpAddress = (text: string) => {
   const payload = base58checkPayload(text, base58xrp.decode);
-  return /^r/.test(text) && payload?.length === 21 && payload[0] === 0x00;
+  if (/^r/.test(text)) return payload?.length === 21 && payload[0] === 0x00;
+  return /^X/.test(text) && payload?.length === 31 && payload[0] === 0x05 && payload[1] === 0x44;
 };
 
+/** A base58 `T…` address, or the same account in hex (`41` and 20 bytes). */
 const tronAddress = (text: string) => {
+  if (/^41[0-9a-fA-F]{40}$/.test(text)) return true;
   const payload = base58checkPayload(text, base58.decode);
   return /^T/.test(text) && payload?.length === 21 && payload[0] === 0x41;
 };
 
-/** Stellar `G…` public key: base32 of version byte 0x30, 32 key bytes and a little-endian CRC. */
+/**
+ * Stellar `G…` public key (version byte 0x30, 32 key bytes) or `M…` muxed account (0x60, 32 key
+ * bytes and an 8 byte id), followed by a little-endian CRC, all base32.
+ */
 function stellarAddress(text: string): boolean {
-  if (!/^G[A-Z2-7]{55}$/.test(text)) return false;
+  const muxed = /^M[A-Z2-7]{68}$/.test(text);
+  if (!muxed && !/^G[A-Z2-7]{55}$/.test(text)) return false;
   const bytes = attempt(() => base32nopad.decode(text));
-  if (bytes?.length !== 35 || bytes[0] !== 0x30) return false;
-  return crc16(bytes.subarray(0, 33)) === (bytes[33] as number) + ((bytes[34] as number) << 8);
+  const length = muxed ? 43 : 35;
+  if (bytes?.length !== length || bytes[0] !== (muxed ? 0x60 : 0x30)) return false;
+  return (
+    crc16(bytes.subarray(0, length - 2)) ===
+    (bytes[length - 2] as number) + ((bytes[length - 1] as number) << 8)
+  );
 }
 
 /** TON in raw `workchain:hex` form, or the 48 character user-friendly form with a CRC. */

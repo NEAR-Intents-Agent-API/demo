@@ -25,9 +25,11 @@ export function usePolicyWorkflow(agentId: string) {
   const key = queryKeys.workflow(agentId);
   const saved = useQuery({ queryKey: key, queryFn: () => policyApi.workflow(agentId) });
 
-  const signAndSubmit = async (prepared: IntentStep) => {
+  // `remember` keeps a rules change where the editor resumes it. A freeze is its own ceremony
+  // and must never appear there as a rules change the owner started earlier.
+  const signAndSubmit = async (prepared: IntentStep, remember: boolean) => {
     let step = prepared;
-    queryClient.setQueryData(key, step);
+    if (remember) queryClient.setQueryData(key, step);
     if (step.operation.status === "PENDING_SIGNATURE") {
       setStage("Confirm in your wallet…");
       const signedData = await signIntent(step.generated);
@@ -35,7 +37,7 @@ export function usePolicyWorkflow(agentId: string) {
       step = await policyApi.resumeWorkflow(agentId, step.generated.correlation_id, {
         signedData,
       });
-      queryClient.setQueryData(key, step);
+      if (remember) queryClient.setQueryData(key, step);
     }
     return step;
   };
@@ -66,7 +68,7 @@ export function usePolicyWorkflow(agentId: string) {
         change.kind === "signable" && samePolicy(change.policy, target)
           ? await policyApi.resumeWorkflow(agentId, change.step.generated.correlation_id)
           : await policyApi.beginWorkflow(agentId, target, expectedRevision);
-      return signAndSubmit(step);
+      return signAndSubmit(step, true);
     },
     onSettled: settle,
   });
@@ -74,7 +76,7 @@ export function usePolicyWorkflow(agentId: string) {
   const setFrozen = useMutation({
     mutationFn: async (frozen: boolean) => {
       setStage("Preparing…");
-      return signAndSubmit(await policyApi.freezeWorkflow(agentId, frozen));
+      return signAndSubmit(await policyApi.freezeWorkflow(agentId, frozen), false);
     },
     onSettled: settle,
   });

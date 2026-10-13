@@ -128,18 +128,25 @@ test("an activation request is signable only until it expires", () => {
 });
 
 test("a stored account draft is restored only when it has the shape this build wrote", () => {
-  const draft = { name: "Trader", rules: defaultRules, agentId: "agent_1" };
+  const draft = { userId: "user_1", name: "Trader", rules: defaultRules, agentId: "agent_1" };
   assert.deepEqual(parseDraft(JSON.stringify(draft)), draft);
   assert.deepEqual(
-    parseDraft(JSON.stringify({ name: "x", rules: defaultRules }))?.agentId,
+    parseDraft(JSON.stringify({ userId: "user_1", name: "x", rules: defaultRules }))?.agentId,
     undefined,
   );
   assert.equal(parseDraft(null), null);
   assert.equal(parseDraft("{not json"), null);
-  assert.equal(parseDraft(JSON.stringify({ name: 1, rules: defaultRules })), null);
+  assert.equal(parseDraft(JSON.stringify({ name: "x", rules: defaultRules })), null);
+  assert.equal(parseDraft(JSON.stringify({ ...draft, name: 1 })), null);
   assert.equal(
-    parseDraft(JSON.stringify({ name: "x", rules: { ...defaultRules, tokens: 5 } })),
+    parseDraft(JSON.stringify({ ...draft, rules: { ...defaultRules, tokens: 5 } })),
     null,
   );
-  assert.equal(parseDraft(JSON.stringify({ name: "x", rules: { abilities: {} } })), null);
+  assert.equal(parseDraft(JSON.stringify({ ...draft, rules: { abilities: {} } })), null);
+});
+
+test("a draft with a narrowed token list survives the round trip", () => {
+  const rules = { ...defaultRules, tokens: ["nep141:wrap.near", "nep141:usdc.near"] };
+  const draft = { userId: "user_1", name: "Trader", rules, agentId: "agent_1" };
+  assert.deepEqual(parseDraft(JSON.stringify(draft)), draft);
 });

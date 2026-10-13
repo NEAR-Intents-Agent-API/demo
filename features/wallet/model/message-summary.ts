@@ -1,9 +1,4 @@
-import type { DestinationRule } from "@near-intents-agent-api/sdk";
-import {
-  destinationLabel,
-  destinationRuleSchema,
-  destinationSchema,
-} from "@/lib/agent-api/schemas";
+import { destinationLabel, destinationSchema } from "@/lib/agent-api/schemas";
 import { formatDelayMs } from "@/lib/format/delay";
 
 /**
@@ -153,7 +148,7 @@ function collectGrant(details: SummaryRow[]): void {
 
 function renderDestination(item: unknown): string {
   const parsed = destinationSchema.safeParse(item);
-  if (parsed.success) return `${parsed.data.action}: ${destinationLabel(parsed.data)}`;
+  if (parsed.success) return destinationLabel(parsed.data);
   return typeof item === "string" ? item : JSON.stringify(item);
 }
 
@@ -194,9 +189,14 @@ function collectPolicy(details: SummaryRow[], policy: unknown): void {
   collectBudget(details, value.budget);
   if (typeof value.timelock_ms === "number")
     details.push({ label: "Execution delay", value: formatDelayMs(value.timelock_ms) });
-  const rule = destinationRuleSchema.safeParse(value.destinations);
-  if (rule.success)
-    details.push({ label: "Where funds can go", value: describeRule(rule.data), mono: true });
+  const rule = asRecord(value.destinations);
+  // The row is never dropped: an entry the dashboard cannot parse is shown exactly as signed.
+  if (rule && Array.isArray(rule.list))
+    details.push({
+      label: "Where funds can go",
+      value: describeRule(rule.mode, rule.list),
+      mono: true,
+    });
 }
 
 function collectBudget(details: SummaryRow[], budget: unknown): void {
@@ -214,11 +214,11 @@ function collectBudget(details: SummaryRow[], budget: unknown): void {
 }
 
 /** The account destination rule in words: every grant follows exactly this. */
-function describeRule(rule: DestinationRule): string {
-  if (rule.list.length === 0)
-    return rule.mode === "only" ? "Nowhere yet; funds stay in this account" : "Anywhere";
-  const prefix = rule.mode === "only" ? "Only" : "Anywhere except";
-  return `${prefix}: ${rule.list.map(renderDestination).join(", ")}`;
+function describeRule(mode: unknown, list: unknown[]): string {
+  if (list.length === 0)
+    return mode === "only" ? "Nowhere yet; funds stay in this account" : "Anywhere";
+  const prefix = mode === "only" ? "Only" : mode === "except" ? "Anywhere except" : "Listed";
+  return `${prefix}: ${list.map(renderDestination).join(", ")}`;
 }
 
 function collectLimits(details: SummaryRow[], limits: unknown): void {
