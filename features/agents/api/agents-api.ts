@@ -5,6 +5,9 @@ import { request } from "@/lib/http/request";
 
 export const agentsApi = {
   list: (signal?: AbortSignal) => request<{ agents: AgentListItem[] }>("/api/agents", { signal }),
+  /** The same list with each live account's frozen flag, which costs a provider read apiece. */
+  listWithFrozen: (signal?: AbortSignal) =>
+    request<{ agents: AgentListItem[] }>("/api/agents?frozen=1", { signal }),
   create: (name: string, policy: Policy) =>
     request<IntentStep>("/api/agents", {
       method: "POST",

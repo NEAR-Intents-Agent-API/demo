@@ -1,6 +1,6 @@
 "use client";
 import { Unavailable } from "@/components/shared/states";
-import { useAgents } from "../api/agent-queries";
+import { useAgentsWithFrozen } from "../api/agent-queries";
 import { AgentListSkeleton } from "../components/agent-list-skeleton";
 import { visibleAgents, workspaceSummary } from "../model/agent-state";
 import { AgentAccountList } from "./components/agent-account-list";
@@ -10,7 +10,7 @@ import { SummaryStrip } from "./components/summary-strip";
 
 /** The workspace: every account this owner holds, each one wallet + rules + history. */
 export function AgentsPage() {
-  const agents = useAgents();
+  const agents = useAgentsWithFrozen();
   // Rows and counters share one list: deleted and never-activated accounts are in neither.
   const list = visibleAgents(agents.data?.agents ?? []);
   const summary = workspaceSummary(list);

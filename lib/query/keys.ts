@@ -6,6 +6,8 @@ export const queryKeys = {
   session: (userId: string | null) => ["session", userId] as const,
   catalog: () => ["catalog"] as const,
   agents: () => ["agents"] as const,
+  /** The accounts page's list, which also reads each account's frozen flag. */
+  agentsWithFrozen: () => ["agents", "with-frozen"] as const,
   agent: (agentId: string) => ["agent", agentId] as const,
   onboarding: (agentId: string) => ["onboarding", agentId] as const,
   balances: (agentId: string, source: string) => ["balances", agentId, source] as const,

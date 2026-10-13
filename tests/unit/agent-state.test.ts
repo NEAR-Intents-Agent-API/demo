@@ -37,7 +37,7 @@ test("a pending agent asks for one activation signature", () => {
 });
 
 test("a live agent needs nothing", () => {
-  const state = agentState(agent({ status: "ACTIVE", owner: nearOwner }));
+  const state = agentState(agent({ status: "ACTIVE", owner: nearOwner, frozen: false }));
   assert.equal(state.stage, "ready");
   assert.equal(state.next.id, "none");
 });
@@ -53,7 +53,7 @@ test("deleted, archived and abandoned agents are terminal and offer nothing", ()
 test("the workspace counts only agents that can still become or stay live", () => {
   const summary = workspaceSummary([
     agent(),
-    agent({ status: "ACTIVE", owner: nearOwner }),
+    agent({ status: "ACTIVE", owner: nearOwner, frozen: false }),
     agent({ status: "DELETED" }),
     agent({ status: "ABANDONED" }),
   ]);

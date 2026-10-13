@@ -104,6 +104,7 @@ function LifecycleMenu({ agent, actions }: { agent: AgentView; actions: Lifecycl
           stage={lifecycle.stage}
           error={lifecycle.error}
           onSign={() => void lifecycle.sign()}
+          onRetry={lifecycle.retry}
         />
       ) : (
         <ConsentDialog
@@ -118,6 +119,7 @@ function LifecycleMenu({ agent, actions }: { agent: AgentView; actions: Lifecycl
           error={lifecycle.error}
           confirmLabel={step ? STEP_CONFIRM[step] : "Sign"}
           onSign={lifecycle.sign}
+          onRetry={lifecycle.retry}
         />
       )}
     </>

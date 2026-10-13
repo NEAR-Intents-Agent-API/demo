@@ -7,7 +7,7 @@ import {
 } from "../../features/agents/model/agent-state";
 import { authFailureMessage, walletConnectMessage } from "../../features/auth/errors";
 import { identityLabel } from "../../features/auth/identity-label";
-import { listOwnedAgents } from "../../lib/agent-api/agent-list";
+import { listOwnedAgents, withFrozenFlag } from "../../lib/agent-api/agent-list";
 import { catalogChains, resetCatalogChains } from "../../lib/agent-api/token-chains";
 
 /** Wallet libraries name their errors and EIP-1193 providers attach numeric codes. */
@@ -133,13 +133,20 @@ test("a frozen account is shown and counted as frozen, never as live", () => {
   assert.equal(frozen.label, "Frozen");
   assert.equal(agentState(view({ frozen: false })).stage, "ready");
   const summary = workspaceSummary([
-    view(),
+    view({ frozen: false }),
     view({ frozen: true }),
+    view({ frozen: null }),
     view({ status: "PENDING" }),
     view({ status: "ARCHIVED" }),
     view({ status: "DELETED" }),
   ]);
-  assert.deepEqual(summary, { total: 4, operational: 1, frozen: 1, needsYou: 1 });
+  assert.deepEqual(summary, { total: 5, operational: 1, frozen: 1, unknown: 1, needsYou: 1 });
+});
+
+test("an account whose frozen state is unknown is neither operational nor frozen", () => {
+  const unknown = agentState(view({ frozen: null }));
+  assert.equal(unknown.stage, "active");
+  assert.equal(unknown.label, "Active");
 });
 
 test("the listed accounts and the counters are the same set", () => {
@@ -153,7 +160,7 @@ test("the listed accounts and the counters are the same set", () => {
   assert.equal(agentState(view({ status: "ARCHIVED" })).label, "Archived");
 });
 
-test("the account list follows every page, keeps only the owner's and reads frozen state", async () => {
+test("the account list follows every page and keeps only the owner's", async () => {
   const pages: Record<string, { data: unknown[]; next_cursor: string | null }> = {
     first: {
       data: [view({ id: "1" }), view({ id: "other", external_user_id: "user-2" })],
@@ -172,10 +179,20 @@ test("the account list follows every page, keeps only the owner's and reads froz
       peak = Math.max(peak, inFlight);
       await new Promise((resolve) => setTimeout(resolve, 1));
       inFlight -= 1;
-      return { policy: { frozen: id === "3" } } as never;
+      return { status: "APPLIED", policy: { frozen: id === "3" } } as never;
     },
   };
-  const list = await listOwnedAgents(api, "user-1");
+  const plain = await listOwnedAgents(api, "user-1");
+  assert.deepEqual(
+    plain.map((agent) => [agent.id, agent.frozen]),
+    [
+      ["1", null],
+      ["2", false],
+      ["3", null],
+    ],
+  );
+  assert.deepEqual(policyReads, [], "the plain list reads no policies");
+  const list = await listOwnedAgents(api, "user-1", { frozen: true });
   assert.deepEqual(
     list.map((agent) => [agent.id, agent.frozen]),
     [
@@ -188,14 +205,42 @@ test("the account list follows every page, keeps only the owner's and reads froz
   assert.ok(peak <= 8);
 });
 
-test("a failed policy read fails the list instead of showing a frozen account as live", async () => {
-  const api = {
-    listAgents: async () => ({ data: [view({ id: "1" })], next_cursor: null }) as never,
+test("the frozen flag comes only from an applied policy and a failed read leaves it unknown", async () => {
+  const account = view({ id: "1" });
+  const read = (result: unknown) => ({
     getPolicy: async () => {
-      throw new Error("policy_unavailable");
+      if (result instanceof Error) throw result;
+      return result as never;
     },
-  };
-  await assert.rejects(listOwnedAgents(api, "user-1"), /policy_unavailable/);
+  });
+  assert.equal(
+    (await withFrozenFlag(read({ status: "APPLIED", policy: { frozen: true } }), account)).frozen,
+    true,
+  );
+  for (const status of ["SIGNED", "FAILED"])
+    assert.equal(
+      (await withFrozenFlag(read({ status, policy: { frozen: true } }), account)).frozen,
+      null,
+      status,
+    );
+  assert.equal(
+    (await withFrozenFlag(read({ status: "APPLIED", policy: null }), account)).frozen,
+    null,
+  );
+  assert.equal((await withFrozenFlag(read(new Error("policy_unavailable")), account)).frozen, null);
+  // One failing account does not fail the list.
+  const list = await listOwnedAgents(
+    {
+      listAgents: async () => ({ data: [account], next_cursor: null }) as never,
+      getPolicy: read(new Error("policy_unavailable")).getPolicy,
+    },
+    "user-1",
+    { frozen: true },
+  );
+  assert.deepEqual(
+    list.map((agent) => agent.frozen),
+    [null],
+  );
 });
 
 test("the sign-in page reads networks from the public token list and survives its failure", async () => {

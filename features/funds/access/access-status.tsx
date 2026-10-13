@@ -2,7 +2,7 @@
 import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { AccessGrantView as Access } from "@/features/funds";
-import { accessWhen } from "./access-display";
+import { accessWhen, endedDashboardAccess } from "./access-display";
 import { useGrants } from "./use-grants";
 
 export { useAccessFlow } from "./use-access-flow";
@@ -26,11 +26,18 @@ export function AccessStatus({
   const { view } = useGrants(agentId);
   if (!access) {
     // Dashboard access that ended stays on record: say when, instead of showing nothing.
-    const ended = view.data?.data.find((grant) => grant.holder === "dashboard");
-    if (!ended || ended.status === "active") return null;
+    const ended = endedDashboardAccess(view.data?.data ?? []);
+    if (!ended) return null;
     return (
-      <div className="mt-2 border-t pt-4 text-xs text-muted-foreground">
-        <span className="font-medium text-foreground">Dashboard access {accessWhen(ended)}</span>
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-4 text-xs text-muted-foreground">
+        <span className="font-medium text-foreground">
+          Dashboard access {accessWhen(ended.grant)}
+        </span>
+        {ended.olderActive > 0 ? (
+          <span>
+            An older dashboard grant is still active; the dashboard only uses its newest grant.
+          </span>
+        ) : null}
       </div>
     );
   }

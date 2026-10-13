@@ -14,6 +14,12 @@ export type ConsentChallenge = {
 
 export type ConsentStage = "idle" | "preparing" | "signing" | "submitting" | "error";
 
+function buttonLabel(stage: ConsentStage, retryable: boolean, confirmLabel: string) {
+  if (stage === "signing") return "Waiting for your wallet…";
+  if (stage === "submitting") return "Submitting…";
+  return retryable ? "Prepare again" : confirmLabel;
+}
+
 /**
  * The signature ceremony, as one dialog.
  *
@@ -32,6 +38,7 @@ export function ConsentDialog({
   error,
   confirmLabel,
   onSign,
+  onRetry,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -43,8 +50,11 @@ export function ConsentDialog({
   confirmLabel: string;
   /** Signs and submits one prepared challenge. Rejections set the error state in the caller. */
   onSign: (challenge: ConsentChallenge) => Promise<void>;
+  /** When no message could be prepared, or the prepared one is spent, asks for a fresh one. */
+  onRetry?: () => void;
 }) {
   const busy = stage === "submitting" || stage === "signing";
+  const retryable = Boolean(onRetry) && !challenge && stage === "error";
 
   const footer = (
     <div className="flex flex-col gap-3">
@@ -57,17 +67,14 @@ export function ConsentDialog({
         </Button>
         <Button
           onClick={() => {
-            if (challenge) void onSign(challenge);
+            if (retryable) onRetry?.();
+            else if (challenge) void onSign(challenge);
           }}
           size="lg"
-          disabled={!challenge || busy}
+          disabled={(!challenge && !retryable) || busy}
         >
           {busy ? <Pending /> : null}
-          {stage === "signing"
-            ? "Waiting for your wallet…"
-            : stage === "submitting"
-              ? "Submitting…"
-              : confirmLabel}
+          {buttonLabel(stage, retryable, confirmLabel)}
         </Button>
       </div>
     </div>
@@ -89,7 +96,7 @@ export function ConsentDialog({
             owner={challenge.owner}
             message={challenge.displayMessage ?? JSON.stringify(challenge.message)}
           />
-        ) : (
+        ) : stage === "error" ? null : (
           <p className="text-sm text-muted-foreground">
             Asking the server for the exact message to sign…
           </p>

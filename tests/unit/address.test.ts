@@ -6,7 +6,11 @@ import {
   transferRecipientProblem,
   withdrawalAddressProblem,
 } from "../../lib/agent-api/address";
-import { canonicalDestination } from "../../lib/agent-api/schemas";
+import {
+  canonicalDestination,
+  destinationRuleSchema,
+  destinationSchema,
+} from "../../lib/agent-api/schemas";
 
 const valid: Record<string, string[]> = {
   sol: [
@@ -20,13 +24,24 @@ const valid: Record<string, string[]> = {
     "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
     "bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0",
   ],
-  xrp: ["rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"],
-  stellar: ["GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7"],
+  xrp: [
+    "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+    "XVLhHMPHU98es4dbozjVtdWzVrDjtV5fdx1mHp98tDMoQXb",
+    "X7AcgcsBL6XDcUb289X4mJ8djcdyKaB5hJDWMArnXr61cqZ",
+  ],
+  stellar: [
+    "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7",
+    "MA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJVAAAAAAAAAAAAAJLK",
+  ],
   ton: [
     "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N",
     "0:83dfd552e63729b472fcbcc8c45ebcc6691702558b68ec7527e1ba403a0f31a8",
   ],
-  tron: ["TQrY8tryqsYVCYS3MFbtffiPp2ccyn4STm", "TLa2f6VPqDgRE67v1736s7bJ8Ray5wYjU7"],
+  tron: [
+    "TQrY8tryqsYVCYS3MFbtffiPp2ccyn4STm",
+    "TLa2f6VPqDgRE67v1736s7bJ8Ray5wYjU7",
+    "41a614f803b6fd780986a42c78ec9c7f77e6ded13c",
+  ],
   base: ["0x52908400098527886e0f7030069857d2e4169ee7"],
   near: ["alice.near", "bob.tg", "a1", "a-b_c.d.near", "ab".repeat(32)],
 };
@@ -45,11 +60,17 @@ const invalid: Record<string, string[]> = {
     "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5MDq",
     "0x52908400098527886e0f7030069857d2e4169ee7",
   ],
-  xrp: ["rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTi", "1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2"],
+  xrp: [
+    "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTi",
+    "1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2",
+    "XVLhHMPHU98es4dbozjVtdWzVrDjtV5fdx1mHp98tDMoQXc",
+    "T719a5UwUCnEs54UsxG9CJYYDhwmFCqkr7wxCcNcfZ6p5GZ",
+  ],
   stellar: [
     "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN6",
     "SAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7",
     "GAAZI4",
+    "MA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJVAAAAAAAAAAAAAJLL",
   ],
   ton: [
     "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2M",
@@ -167,5 +188,36 @@ test("a draft destination trims the pasted address", () => {
       address: "11111111111111111111111111111111",
       memo: null,
     },
+  );
+});
+
+test("a policy keeps destinations the API accepts even when the dashboard would not let an owner type them", () => {
+  const stored = [
+    {
+      action: "withdraw",
+      chain: "tron",
+      address: "41a614f803b6fd780986a42c78ec9c7f77e6ded13c",
+      memo: null,
+    },
+    { action: "withdraw", chain: "xrp", address: "not-an-xrp-address", memo: null },
+    { action: "withdraw", chain: "sol", address: "short", memo: null },
+    { action: "transfer", address: "a-.near", confidential: false },
+  ] as const;
+  for (const destination of stored)
+    assert.deepEqual(destinationSchema.parse(destination), destination);
+  assert.equal(destinationRuleSchema.safeParse({ mode: "only", list: stored }).success, true);
+  // The same entries are refused when an owner types them into the editor.
+  assert.throws(() => canonicalDestination(stored[1]));
+  assert.throws(() => canonicalDestination(stored[2]));
+  assert.throws(() => canonicalDestination(stored[3]));
+  // The API still refuses mixed-case EVM addresses and non-canonical chains.
+  assert.equal(
+    destinationSchema.safeParse({
+      action: "withdraw",
+      chain: "eth",
+      address: "0x52908400098527886E0F7030069857D2E4169EE7",
+      memo: null,
+    }).success,
+    false,
   );
 });

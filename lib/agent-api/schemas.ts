@@ -69,44 +69,67 @@ const chainAliases: Record<string, string> = {
 };
 export const canonicalChain = (chain: string) => chainAliases[chain] ?? chain;
 
-/** One place funds may go, named exactly. No wildcards. */
-export const destinationSchema = z
-  .discriminatedUnion("action", [
-    z.strictObject({
-      action: z.literal("withdraw"),
-      chain: z.string().regex(/^[a-z][a-z0-9_-]{0,63}$/),
-      address: z
-        .string()
-        .min(1)
-        .max(256)
-        .refine((value) => value === value.trim(), "Address whitespace is not allowed"),
-      memo: z.string().max(256).nullable(),
-    }),
-    z.strictObject({
-      action: z.literal("transfer"),
-      address: nearAccount,
-      confidential: z.boolean(),
-    }),
-  ])
-  .superRefine((value, ctx) => {
-    if (value.action === "transfer") {
-      const problem = transferRecipientProblem(value.address);
-      if (problem) ctx.addIssue({ code: "custom", message: problem, path: ["address"] });
-      return;
-    }
-    if (canonicalChain(value.chain) !== value.chain)
-      ctx.addIssue({ code: "custom", message: "Use the canonical chain identifier" });
-    const problem = withdrawalAddressProblem(value.chain, value.address);
-    if (problem) ctx.addIssue({ code: "custom", message: problem, path: ["address"] });
-  });
+/**
+ * One place funds may go, named exactly. No wildcards. This checks only what the API checks, so
+ * every destination it already holds (added through the SDK or another client) still round-trips
+ * through a whole policy; per-network address formats are checked by `typedDestinationSchema`,
+ * only on the entry an owner is adding.
+ */
+const destinationUnion = z.discriminatedUnion("action", [
+  z.strictObject({
+    action: z.literal("withdraw"),
+    chain: z.string().regex(/^[a-z][a-z0-9_-]{0,63}$/),
+    address: z
+      .string()
+      .min(1)
+      .max(256)
+      .refine((value) => value === value.trim(), "Address whitespace is not allowed"),
+    memo: z.string().max(256).nullable(),
+  }),
+  z.strictObject({
+    action: z.literal("transfer"),
+    address: nearAccount,
+    confidential: z.boolean(),
+  }),
+]);
+
+type DestinationCtx = Parameters<Parameters<typeof destinationUnion.superRefine>[0]>[1];
+
+/** What the API itself enforces on every destination. */
+function checkApiRules(value: Destination, ctx: DestinationCtx) {
+  if (value.action !== "withdraw") return;
+  if (canonicalChain(value.chain) !== value.chain)
+    ctx.addIssue({ code: "custom", message: "Use the canonical chain identifier" });
+  if (evmChains.has(value.chain) && !/^0x[0-9a-f]{40}$/.test(value.address))
+    ctx.addIssue({
+      code: "custom",
+      message: "EVM destinations must use canonical lowercase hex addresses",
+      path: ["address"],
+    });
+}
+
+export const destinationSchema = destinationUnion.superRefine(checkApiRules);
 assertType<Equal<z.infer<typeof destinationSchema>, Destination>>();
 
-/** Exact identity for comparison: canonical chain id, lowercase EVM hex; a memo is never altered. */
+/** A destination the owner is typing: the API's checks plus the address format of its network. */
+const typedDestinationSchema = destinationUnion.superRefine((value, ctx) => {
+  const problem =
+    value.action === "transfer"
+      ? transferRecipientProblem(value.address)
+      : withdrawalAddressProblem(value.chain, value.address);
+  if (problem) ctx.addIssue({ code: "custom", message: problem, path: ["address"] });
+  checkApiRules(value, ctx);
+});
+
+/**
+ * Exact identity for a destination the owner typed: canonical chain id, lowercase EVM hex; a memo
+ * is never altered. Throws a `ZodError` naming the first problem, malformed addresses included.
+ */
 export function canonicalDestination(input: Destination): Destination {
-  if (input.action === "transfer") return destinationSchema.parse(input);
+  if (input.action === "transfer") return typedDestinationSchema.parse(input);
   const chain = canonicalChain(input.chain);
   const address = evmChains.has(chain) ? input.address.toLowerCase() : input.address;
-  return destinationSchema.parse({ ...input, chain, address });
+  return typedDestinationSchema.parse({ ...input, chain, address });
 }
 
 export function destinationLabel(value: Destination): string {

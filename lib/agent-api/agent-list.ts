@@ -1,23 +1,27 @@
 import type { AgentApi, AgentView } from "@near-intents-agent-api/sdk";
 import { agentBelongsToUser } from "./ownership";
 
-/** An owned agent plus the one fact the list endpoint does not carry: is it frozen. */
-export type AgentListItem = AgentView & { frozen: boolean };
+/**
+ * An owned agent plus the one fact the list endpoint does not carry: is it frozen. `null` means
+ * unknown (not read, or the read failed), which no screen may present as either state.
+ */
+export type AgentListItem = AgentView & { frozen: boolean | null };
 
 /** Upper bounds: a loop guard on the cursor and a polite cap on parallel policy reads. */
 const MAX_PAGES = 50;
 const POLICY_READ_CONCURRENCY = 8;
 
 /**
- * Every agent the signed-in user owns, with its frozen flag.
+ * Every agent the signed-in user owns.
  *
  * The list endpoint is cursor-paged and has no frozen field, so the pages are followed to the
- * end and each live account's policy is read (a few at a time) for it. Only ACTIVE accounts can
- * be frozen; a failed read fails the whole list rather than showing a frozen account as live.
+ * end. With `frozen`, each live account's applied policy is also read (a few at a time) for its
+ * flag; without it the flag stays unknown and no policy is read.
  */
 export async function listOwnedAgents(
   api: Pick<AgentApi, "listAgents" | "getPolicy">,
   userId: string,
+  { frozen = false }: { frozen?: boolean } = {},
 ): Promise<AgentListItem[]> {
   const owned: AgentView[] = [];
   let cursor: string | undefined;
@@ -30,17 +34,31 @@ export async function listOwnedAgents(
     if (!next_cursor) break;
     cursor = next_cursor;
   }
+  if (!frozen) return owned.map(withoutFrozenFlag);
   return mapWithConcurrency(owned, POLICY_READ_CONCURRENCY, (agent) => withFrozenFlag(api, agent));
 }
 
-/** One agent with its frozen flag. Only an ACTIVE account can be frozen, so others skip the read. */
+/** Only an ACTIVE account can be frozen; for any other the flag is simply false. */
+export function withoutFrozenFlag(agent: AgentView): AgentListItem {
+  return { ...agent, frozen: agent.status === "ACTIVE" ? null : false };
+}
+
+/**
+ * One agent with its frozen flag, read from the APPLIED policy only: a signed or failed
+ * revision is not in force. Best effort: a failed read leaves the flag unknown rather than
+ * failing the account or guessing.
+ */
 export async function withFrozenFlag(
   api: Pick<AgentApi, "getPolicy">,
   agent: AgentView,
 ): Promise<AgentListItem> {
-  const frozen =
-    agent.status === "ACTIVE" ? Boolean((await api.getPolicy(agent.id)).policy?.frozen) : false;
-  return { ...agent, frozen };
+  if (agent.status !== "ACTIVE") return { ...agent, frozen: false };
+  try {
+    const view = await api.getPolicy(agent.id);
+    return { ...agent, frozen: view.status === "APPLIED" ? (view.policy?.frozen ?? null) : null };
+  } catch {
+    return { ...agent, frozen: null };
+  }
 }
 
 /** `Array.map` with an async callback and at most `limit` calls in flight; order is kept. */

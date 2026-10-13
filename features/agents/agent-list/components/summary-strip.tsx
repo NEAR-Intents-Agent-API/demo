@@ -18,7 +18,10 @@ export function SummaryStrip({ summary }: { summary: ReturnType<typeof workspace
     {
       label: "Frozen",
       value: String(summary.frozen),
-      detail: "money actions refused",
+      detail:
+        summary.unknown > 0
+          ? `${summary.unknown} not checked; money actions refused`
+          : "money actions refused",
       tone: "neutral" as const,
     },
     {

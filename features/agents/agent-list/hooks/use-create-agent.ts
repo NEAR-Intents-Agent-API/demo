@@ -12,6 +12,7 @@ import {
   type Rules,
   rulesFromPolicy,
 } from "@/features/policy/model";
+import { authClient } from "@/lib/auth/client";
 import { queryKeys } from "@/lib/query/keys";
 import { onboardingState } from "../../agent-detail/onboarding-state";
 import { agentsApi } from "../../api/agents-api";
@@ -21,6 +22,7 @@ import { finishOnboarding } from "./finish-onboarding";
 
 export function useCreateAgent() {
   const cache = useQueryClient();
+  const userId = authClient.useSession().data?.user.id;
   const router = useRouter();
   const running = useRef(false);
   const [prepared, setPrepared] = useState<IntentStep | null>(null);
@@ -36,7 +38,8 @@ export function useCreateAgent() {
   // Put back what a reload or a Back press took away: the name, the rules and, if a request
   // was already prepared for them, that request (so resuming never makes a second account).
   useEffect(() => {
-    const draft = readDraft();
+    if (!userId) return;
+    const draft = readDraft(userId);
     if (!draft) {
       setRestored(true);
       return;
@@ -51,7 +54,16 @@ export function useCreateAgent() {
     agentsApi
       .onboarding(draft.agentId)
       .then((step) => {
-        if (!live || ["expired", "done"].includes(onboardingState(step))) return;
+        if (!live) return;
+        const state = onboardingState(step);
+        if (state === "done") {
+          // The account is already live; the draft is spent and must not seed another one.
+          clearDraft();
+          form.reset({ name: "" });
+          setRules(structuredClone(defaultRules));
+          return;
+        }
+        if (state === "expired") return;
         setPrepared(step);
         // The prepared request, not the draft, is what the signature installs.
         if (step.generated.preview.policy) setRules(rulesFromPolicy(step.generated.preview.policy));
@@ -61,14 +73,14 @@ export function useCreateAgent() {
     return () => {
       live = false;
     };
-  }, [form]);
+  }, [form, userId]);
 
   useEffect(() => {
-    if (!restored) return;
+    if (!restored || !userId) return;
     if (!name.trim() && !prepared && JSON.stringify(rules) === JSON.stringify(defaultRules))
       clearDraft();
-    else writeDraft({ name, rules, agentId: prepared?.generated.agent_id });
-  }, [restored, name, rules, prepared]);
+    else writeDraft({ userId, name, rules, agentId: prepared?.generated.agent_id });
+  }, [restored, userId, name, rules, prepared]);
 
   const create = useMutation({
     mutationFn: async (input: CreateInput) => {
