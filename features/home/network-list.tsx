@@ -1,6 +1,6 @@
 import { ChainIcon, DEPOSIT_CHAINS } from "@/features/assets";
 import { cn } from "@/lib/utils";
-import type { Network } from "./use-networks";
+import type { Network } from "./network-set";
 
 const depositChains: readonly string[] = DEPOSIT_CHAINS;
 

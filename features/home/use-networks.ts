@@ -1,17 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { chainInfo, knownChains, useCatalog } from "@/features/assets";
-
-export type Network = ReturnType<typeof knownChains>[number];
-
-/** The networks to draw and, once known, how many the catalogue lists. */
-export type NetworkSet = { chains: Network[]; count: number | null };
-
-/** Chains we can draw, with no claim about how many networks exist. */
-export function fallbackNetworks(): NetworkSet {
-  return { chains: knownChains(), count: null };
-}
+import { chainInfo, useCatalog } from "@/features/assets";
+import { fallbackNetworks, type NetworkSet } from "./network-set";
 
 /**
  * The networks the token catalogue lists, with their count. The count stays `null` until the

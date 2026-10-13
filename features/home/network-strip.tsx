@@ -5,8 +5,9 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { NetworkList } from "./network-list";
+import type { NetworkSet } from "./network-set";
 import { useNetworkStrip } from "./use-network-strip";
-import { type NetworkSet, useNetworks } from "./use-networks";
+import { useNetworks } from "./use-networks";
 
 export function NetworkStrip({
   compact = false,
