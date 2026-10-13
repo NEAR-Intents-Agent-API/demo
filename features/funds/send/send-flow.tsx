@@ -76,7 +76,7 @@ export function SendFlow({ view }: { view: ReturnType<typeof useSendFlow> }) {
           />
         ) : null}
 
-        <FlowError code={action.error?.message} />
+        <FlowError error={action.error} />
         <FlowButton busy={action.isPending} disabled={Boolean(reason)} onClick={send}>
           {reason ?? (action.isPending ? "Transferring…" : `Transfer ${token?.symbol}`)}
         </FlowButton>

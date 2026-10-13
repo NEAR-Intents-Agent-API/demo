@@ -90,6 +90,8 @@ export type Catalog = {
   find: (asset: string) => CatalogOption | undefined;
   lookup: (assetId: string) => CatalogOption;
   chains: string[];
+  /** The shared wall clock (refreshed every 15 s) that prices expire against. */
+  now: number;
 };
 
 /**
@@ -126,7 +128,7 @@ export function useCatalogData(): Catalog {
     () => [...new Set(tokens.map((token) => token.chain))].sort(compareChains),
     [tokens],
   );
-  return { query, tokens, byAsset, find, lookup, chains };
+  return { query, tokens, byAsset, find, lookup, chains, now };
 }
 
 /** `raw` of `token` in dollars, or null without a price or decimals. */

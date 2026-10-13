@@ -8,6 +8,17 @@ const cancelledText = [
 ];
 
 /**
+ * The error code for a prompt that ended without a signature, or null when it failed for another
+ * reason. A WebAuthn `NotAllowedError` is also what a timeout and "no passkey for this owner on
+ * this device" look like, so a passkey prompt gets a message that names all three; NEAR and EVM
+ * wallets only reject when the person dismissed them.
+ */
+export function cancellationCode(error: unknown, standard: string): string | null {
+  if (!isWalletCancellation(error)) return null;
+  return standard === "webauthn" ? "passkey_prompt_closed" : "wallet_request_cancelled";
+}
+
+/**
  * True when a wallet or passkey prompt ended because the person dismissed it. NEAR wallets,
  * wagmi/viem and WebAuthn each report this differently, so name, code and message are all
  * checked along the `cause` chain rather than matching one exact string.
