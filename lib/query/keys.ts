@@ -18,6 +18,7 @@ export const queryKeys = {
   operations: (agentId: string) => ["operations", agentId] as const,
   operation: (agentId: string, operationId: string) => ["operation", agentId, operationId] as const,
   approvals: (agentId: string) => ["approvals", agentId] as const,
+  approval: (agentId: string, approvalId: string) => ["approvals", agentId, approvalId] as const,
   mcp: (agentId: string) => ["agent-mcp", agentId] as const,
   oauthClient: (clientId: string) => ["oauth-client", clientId] as const,
   swapQuote: (agentId: string, args: unknown) => ["swap-quote", agentId, args] as const,

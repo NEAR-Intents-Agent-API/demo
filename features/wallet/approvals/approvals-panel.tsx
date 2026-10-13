@@ -2,6 +2,7 @@
 
 import { Loading, Unavailable } from "@/components/shared/states";
 import { ConsentDialog } from "../components/consent-dialog";
+import { ApprovalHistoryList } from "./approval-history-list";
 import { ApprovalRow } from "./approval-row";
 import { ApprovalSummary } from "./approval-summary";
 import { useApprovals } from "./use-approvals";
@@ -49,6 +50,7 @@ export function ApprovalsPanel({ agentId }: { agentId: string }) {
             </ul>
           ) : null}
         </div>
+        {view.decided.length > 0 ? <ApprovalHistoryList approvals={view.decided} /> : null}
         {view.error && !view.decision ? (
           <p className="px-4 pb-4 text-sm text-destructive sm:px-5">{view.error}</p>
         ) : null}
