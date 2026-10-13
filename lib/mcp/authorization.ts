@@ -7,6 +7,7 @@ import { issuedGrantSchema } from "@/lib/agent-api/schemas";
 import { consumeGrantChallenge, storeGrantChallenge } from "@/lib/auth/challenges";
 import { getDemoDatabase } from "@/lib/auth/instance";
 import { mcpClientAccess } from "@/lib/db/schema";
+import { mcpClientNameProblem, mcpGrantLabel } from "@/lib/mcp/client-name";
 import {
   activateClient,
   createClientAccess,
@@ -39,7 +40,7 @@ export async function prepareClientGrant(
     access = await ownedClient(userId, agentId, input.clientAccessId);
     if (access.authKind !== "api_key") throw new Error("invalid_request");
   } else {
-    if (!input.name) throw new Error("invalid_request");
+    if (!input.name || mcpClientNameProblem(input.name)) throw new Error("invalid_request");
     access = await createClientAccess({ userId, agentId, name: input.name, authKind: "api_key" });
   }
   if (access.status === "revoked") throw new Error("client_revoked");
@@ -71,7 +72,7 @@ export async function prepareClientGrant(
         agentId,
         holder: "mcp",
         clientAccessId: current.id,
-        label: `MCP: ${current.name}`.slice(0, 64),
+        label: mcpGrantLabel(current.name),
       },
       scoped,
     );
@@ -80,7 +81,7 @@ export async function prepareClientGrant(
       agent_id: agentId,
       label: credential.label,
       credential: credential.commitment,
-      expires_at: new Date(Date.now() + MCP_KEY_TTL_MS + 60 * 60 * 1000).toISOString(),
+      expires_at: new Date(Date.now() + MCP_KEY_TTL_MS).toISOString(),
     });
     await transaction
       .update(mcpClientAccess)

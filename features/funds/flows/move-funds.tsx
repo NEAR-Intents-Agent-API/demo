@@ -97,17 +97,14 @@ export function MoveFunds({
               description="Swap, transfer, withdraw and shield. These spend from the account and need dashboard authorization; deposits don't."
             />
           </div>
-          {funds.access ? (
-            <div className="border-t mt-2 pt-4">
-              <AccessStatus
-                access={funds.access}
-                onManage={onManage}
-                onDestinations={() => funds.manageDestinations()}
-                onRevoke={onRevoke}
-                revoking={revoking}
-              />
-            </div>
-          ) : null}
+          <AccessStatus
+            agentId={funds.agent.id}
+            access={funds.access}
+            onManage={onManage}
+            onDestinations={() => funds.manageDestinations()}
+            onRevoke={onRevoke}
+            revoking={revoking}
+          />
         </div>
       </Tabs>
     </section>

@@ -109,6 +109,25 @@ export async function heldGrant(
   return null;
 }
 
+/** Commitments of the tokens this dashboard itself holds, to tell its grants from a client's. */
+export async function dashboardCommitments(
+  userId: string,
+  agentId: string,
+  database: DemoDatabase = getDemoDatabase(),
+): Promise<Set<string>> {
+  const rows = await database.db
+    .select({ commitment: grantCredential.commitment })
+    .from(grantCredential)
+    .where(
+      and(
+        eq(grantCredential.userId, userId),
+        eq(grantCredential.agentId, agentId),
+        eq(grantCredential.holder, "dashboard"),
+      ),
+    );
+  return new Set(rows.map((row) => row.commitment));
+}
+
 /** Forgets every token a client held, so nothing in the demo can use its grants again. */
 export async function forgetClientCredentials(
   clientAccessId: string,

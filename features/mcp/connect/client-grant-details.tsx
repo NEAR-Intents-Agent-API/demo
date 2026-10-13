@@ -11,6 +11,12 @@ export function ClientGrantDetails({ client }: { client: McpClientView }) {
             {client.expiresAt ? new Date(client.expiresAt).toLocaleString() : "—"}
           </dd>
         </div>
+        {client.revokedAt ? (
+          <div>
+            <dt className="text-muted-foreground">Revoked</dt>
+            <dd className="mt-1">{new Date(client.revokedAt).toLocaleString()}</dd>
+          </div>
+        ) : null}
         <div>
           <dt className="text-muted-foreground">Permissions</dt>
           <dd className="mt-1 break-words leading-5">

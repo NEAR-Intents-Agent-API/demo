@@ -17,9 +17,6 @@ const attempt = <T>(read: () => T): T | null => {
   }
 };
 
-const startsWith = (bytes: Uint8Array, prefix: readonly number[]) =>
-  prefix.every((byte, index) => bytes[index] === byte);
-
 /** Payload (version bytes included) of a base58check string, or null when the checksum is wrong. */
 function base58checkPayload(text: string, decode: Decode): Uint8Array | null {
   const bytes = attempt(() => decode(text));
@@ -45,22 +42,25 @@ const evmAddress = (text: string) => /^0x[0-9a-f]{40}$/.test(text);
 const solanaAddress = (text: string) =>
   text.length >= 32 && text.length <= 44 && attempt(() => base58.decode(text))?.length === 32;
 
-function bitcoinAddress(text: string): boolean {
-  if (/^[13]/.test(text)) {
-    const payload = base58checkPayload(text, base58.decode);
-    return payload?.length === 21 && (payload[0] === 0x00 || payload[0] === 0x05);
-  }
-  if (!/^bc1/i.test(text)) return false;
+function bitcoinSegwit(text: string): boolean {
   if (text !== text.toLowerCase() && text !== text.toUpperCase()) return false;
   const v0 = attempt(() => bech32.decode(text as `${string}1${string}`));
   const decoded = v0 ?? attempt(() => bech32m.decode(text as `${string}1${string}`));
-  if (!decoded || decoded.prefix.toLowerCase() !== "bc" || decoded.words.length < 1) return false;
+  if (!decoded) return false;
+  if (decoded.prefix.toLowerCase() !== "bc" || decoded.words.length < 1) return false;
   const version = decoded.words[0] as number;
   const program = attempt(() => bech32.fromWords(decoded.words.slice(1)));
   if (!program || version > 16) return false;
   // Version 0 is bech32 with a 20 or 32 byte program; later versions are bech32m (BIP 350).
   if (version === 0) return v0 !== null && (program.length === 20 || program.length === 32);
   return v0 === null && program.length >= 2 && program.length <= 40;
+}
+
+function bitcoinAddress(text: string): boolean {
+  if (/^bc1/i.test(text)) return bitcoinSegwit(text);
+  if (!/^[13]/.test(text)) return false;
+  const payload = base58checkPayload(text, base58.decode);
+  return payload?.length === 21 && (payload[0] === 0x00 || payload[0] === 0x05);
 }
 
 const xrpAddress = (text: string) => {

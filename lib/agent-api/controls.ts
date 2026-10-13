@@ -1,7 +1,8 @@
 import type { Policy, PolicyView } from "@near-intents-agent-api/sdk";
 import { type RulesState, rulesState } from "@/lib/policy/rules-state";
-import { type AccessView, accessView } from "./access";
+import { type AccessView, accessViews } from "./access";
 import { agentApi } from "./client";
+import { dashboardCommitments } from "./grant-credentials";
 
 /**
  * Everything that limits one agent account, in one read: its rules, its shared USD budget, its
@@ -11,19 +12,23 @@ import { agentApi } from "./client";
 export type AccountControls = {
   rules: { state: RulesState; revision: number | null; policy: Policy | null };
   usage: PolicyView["usage"];
-  /** Live grants only: one per connection that can use the account now. */
+  /** Every grant, active ones first: one per connection, with revoked and expired ones dated. */
   access: AccessView[];
 };
 
-export async function readAccountControls(agentId: string): Promise<AccountControls> {
+export async function readAccountControls(
+  userId: string,
+  agentId: string,
+): Promise<AccountControls> {
   const api = agentApi();
-  const [policy, grants] = await Promise.all([api.getPolicy(agentId), api.listGrants(agentId)]);
-  const now = Date.now();
+  const [policy, grants, dashboard] = await Promise.all([
+    api.getPolicy(agentId),
+    api.listGrants(agentId),
+    dashboardCommitments(userId, agentId),
+  ]);
   return {
     rules: { state: rulesState(policy), revision: policy.revision, policy: policy.policy },
     usage: policy.usage,
-    access: grants
-      .filter((grant) => grant.revoked_at === null && Date.parse(grant.expires_at) > now)
-      .map(accessView),
+    access: accessViews(grants, dashboard),
   };
 }

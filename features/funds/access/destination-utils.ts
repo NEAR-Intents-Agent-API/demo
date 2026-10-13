@@ -19,28 +19,35 @@ export function destinationRoute(destination: Destination): DestinationAction {
   return destination.confidential ? "confidential_transfer" : "intents_transfer";
 }
 
-/**
- * Builds the destination an owner typed, or throws an `Error` whose message says exactly what is
- * wrong with it (missing network, malformed address, memo too long) for the form to show.
- */
-export function destinationFromDraft(input: {
+type Draft = {
   action: DestinationAction;
   chain: string;
   address: string;
   memo: string;
   hasMemo: boolean;
-}): Destination {
-  const withdraw = input.action === "withdraw";
+};
+
+/** What is missing or wrong before the draft can even be checked against the network. */
+function draftProblem(input: Draft): string | null {
+  if (input.action !== "withdraw") return input.address.trim() ? null : "Enter an account";
+  if (!input.chain) return "Choose a network";
+  if (!input.address.trim()) return "Enter a recipient address";
+  if (input.hasMemo && input.memo.length === 0) return "Enter the memo, or choose No memo";
+  if (input.memo.length > MEMO_MAX_LENGTH) return `Memo is at most ${MEMO_MAX_LENGTH} characters`;
+  return null;
+}
+
+/**
+ * Builds the destination an owner typed, or throws an `Error` whose message says exactly what is
+ * wrong with it (missing network, malformed address, memo too long) for the form to show.
+ */
+export function destinationFromDraft(input: Draft): Destination {
+  const problem = draftProblem(input);
+  if (problem) throw new Error(problem);
   const address = input.address.trim();
-  if (withdraw && !input.chain) throw new Error("Choose a network");
-  if (!address) throw new Error(withdraw ? "Enter a recipient address" : "Enter an account");
-  if (withdraw && input.hasMemo && input.memo.length === 0)
-    throw new Error("Enter the memo, or choose No memo");
-  if (withdraw && input.memo.length > MEMO_MAX_LENGTH)
-    throw new Error(`Memo is at most ${MEMO_MAX_LENGTH} characters`);
   try {
     return canonicalDestination(
-      withdraw
+      input.action === "withdraw"
         ? {
             action: "withdraw",
             chain: input.chain,

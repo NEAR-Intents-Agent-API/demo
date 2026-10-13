@@ -1,3 +1,4 @@
+export { ACCESS_STATUS_LABEL, accessWhen } from "./access/access-display";
 export { AccessPage } from "./access/access-page";
 export { AccessStatus } from "./access/access-status";
 export { DESTINATION_RULE_COPY, DestinationRuleFields } from "./access/destination-rule-fields";

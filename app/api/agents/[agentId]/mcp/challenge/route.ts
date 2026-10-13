@@ -8,7 +8,7 @@ import {
 import { prepareClientGrant } from "@/lib/mcp/authorization";
 
 const schema = z.strictObject({
-  name: z.string().trim().min(1).max(100).optional(),
+  name: z.string().trim().optional(),
   oauthQuery: z.string().min(1).max(16384).optional(),
   clientAccessId: z.string().min(1).max(64).optional(),
 });
