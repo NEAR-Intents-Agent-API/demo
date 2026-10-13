@@ -94,7 +94,7 @@ export function MoveFunds({
               onChange={onMoreActions}
               disabled={busy}
               label="More actions"
-              description="Swap, transfer, withdraw and shield. These spend from the account and need dashboard authorization; deposits don't."
+              description="Swap, transfer, withdraw and move funds between the public and private balance. These spend from the account and need dashboard authorization; deposits don't."
             />
           </div>
           {funds.access ? (

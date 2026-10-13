@@ -1,12 +1,11 @@
 "use client";
 
-import type { Catalog } from "@/features/assets";
-import { usdValue } from "@/features/assets";
 import { cn } from "@/lib/utils";
 import type { Holding } from "../use-funds";
 import { PortfolioAssetsDialog } from "./portfolio-assets-dialog";
 import { PortfolioLaneSwitch } from "./portfolio-lane-switch";
 import { PortfolioSummary } from "./portfolio-summary";
+import { combineTotals, portfolioTotal } from "./portfolio-total";
 import { usePortfolioDialog } from "./use-portfolio-dialog";
 
 export type Lane = "public" | "confidential";
@@ -21,7 +20,7 @@ export function Portfolio({
   error,
   onRetry,
   account,
-  catalog,
+  allHoldings,
   onManageFunds,
   fundsOpen = false,
   onAddFunds,
@@ -36,7 +35,8 @@ export function Portfolio({
   error: string | null;
   onRetry: () => void;
   account: string | undefined;
-  catalog: Catalog;
+  /** Both balances, once both have loaded, for the combined total. */
+  allHoldings: Record<Lane, readonly Holding[]> | null;
   onManageFunds?: () => void;
   fundsOpen?: boolean;
   onAddFunds?: () => void;
@@ -45,15 +45,16 @@ export function Portfolio({
 }) {
   const assets = usePortfolioDialog();
   const visible = holdings.filter((holding) => holding.raw > 0n);
-  const total = visible.reduce((sum, holding) => {
-    const token = catalog.find(holding.assetId);
-    return sum + (token ? (usdValue(holding.raw, token) ?? 0) : 0);
-  }, 0);
+  const total = portfolioTotal(visible);
+  const combined = allHoldings
+    ? combineTotals(portfolioTotal(allHoldings.public), portfolioTotal(allHoldings.confidential))
+    : null;
 
   return (
     <div className={cn("min-w-0", !embedded && "rounded-xl border bg-card p-4")}>
       <PortfolioSummary
         total={total}
+        combined={combined}
         count={visible.length}
         lane={lane}
         loading={loading}
@@ -83,7 +84,6 @@ export function Portfolio({
         error={error}
         onRetry={onRetry}
         account={account}
-        catalog={catalog}
       />
     </div>
   );

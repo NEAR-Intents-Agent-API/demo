@@ -1,11 +1,20 @@
 "use client";
 
-import { chainInfo, TokenIcon } from "@/features/assets";
+import { chainInfo, formatUsd, TokenIcon } from "@/features/assets";
 import { formatDisplay } from "@/lib/format/amount";
+import { accountTime } from "@/lib/format/date";
 import type { Holding } from "../use-funds";
+import { holdingUsd } from "./portfolio-total";
 
-/** One held token: symbol over chain, amount over its dollar value. */
-export function HoldingRow({ holding, usd }: { holding: Holding; usd: number | null }) {
+function valueLine(holding: Holding): string {
+  if (holding.decimals === null) return "raw units";
+  const usd = formatUsd(holdingUsd(holding));
+  if (usd === null) return holding.priceExpired ? "Price expired" : "No price";
+  return holding.priceUpdatedAt ? `${usd} · ${accountTime(holding.priceUpdatedAt)}` : usd;
+}
+
+/** One held token: symbol over chain, amount over its dollar value and how fresh that price is. */
+export function HoldingRow({ holding }: { holding: Holding }) {
   return (
     <li className="flex items-center gap-3 rounded-lg px-2 py-2.5">
       <TokenIcon
@@ -24,9 +33,7 @@ export function HoldingRow({ holding, usd }: { holding: Holding; usd: number | n
         <p className="text-sm font-medium tabular-nums">
           {formatDisplay(holding.raw.toString(), holding.decimals)}
         </p>
-        <p className="text-[11px] text-muted-foreground tabular-nums">
-          {holding.decimals === null ? "raw units" : (usd ?? "")}
-        </p>
+        <p className="text-[11px] text-muted-foreground tabular-nums">{valueLine(holding)}</p>
       </div>
     </li>
   );

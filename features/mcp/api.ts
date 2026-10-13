@@ -25,7 +25,7 @@ export type McpActivityView = {
   clientAccessId: string | null;
   clientName: string;
   agentId: string;
-  authKind: "oauth" | "api_key";
+  authKind: "oauth" | "api_key" | "dashboard";
   subject: string;
   tool: string;
   status: string;

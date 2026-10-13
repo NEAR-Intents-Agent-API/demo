@@ -61,7 +61,7 @@ export function AgentAccountWorkspace({
             error: view.active.query.error?.message ?? null,
             onRetry: () => void view.active.query.refetch(),
             account: view.active.nearAccountId,
-            catalog: view.catalog,
+            allHoldings: view.allHoldings,
             onManageFunds: navigation.openFunds,
             fundsOpen: navigation.fundsOpen,
             embedded: true,

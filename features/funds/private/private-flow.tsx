@@ -57,7 +57,6 @@ export function PrivateFlow({ view }: { view: ReturnType<typeof usePrivateFlow> 
                 value: `${formatDisplay(atomic.toString(), token.decimals)} ${token.symbol}`,
                 emphasis: true,
               },
-              { label: "Fee", value: "None" },
               { label: "Counts toward budget", value: "No" },
             ]}
           />

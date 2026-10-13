@@ -1,5 +1,6 @@
 "use client";
 
+import { operationEvidence } from "./operation-evidence";
 import { PhaseBar } from "./operation-phase-bar";
 import { describeOperation, TERMINAL_STATUSES } from "./operation-status";
 import { StatusBadge } from "./operation-status-badge";
@@ -21,6 +22,7 @@ export function OperationTracker({
   title,
   onDone,
   onOpenActivity,
+  token,
   children,
 }: {
   agentId: string;
@@ -29,14 +31,18 @@ export function OperationTracker({
   title: string;
   onDone: () => void;
   onOpenActivity?: () => void;
+  /** The moved token, so a refunded amount reads in token units rather than base units. */
+  token?: { symbol: string; decimals: number } | null;
   /** Flow-specific detail shown under the title, e.g. where to send a deposit. */
   children?: React.ReactNode;
 }) {
   const { operation, refresh } = useOperation(agentId, operationId);
   const status = operation.data?.status ?? initialStatus;
-  const view = describeOperation(status);
-  const settled = TERMINAL_STATUSES.has(status);
   const details = (operation.data?.details ?? {}) as Record<string, unknown>;
+  const view = describeOperation(status, {
+    executeAfter: operationEvidence({ details }).executeAfter,
+  });
+  const settled = TERMINAL_STATUSES.has(status);
 
   return (
     <div className="flex flex-col gap-5">
@@ -65,6 +71,7 @@ export function OperationTracker({
         operationId={operationId}
         details={details}
         failureCode={operation.data?.failure_code}
+        token={token}
       />
 
       <OperationTrackerActions

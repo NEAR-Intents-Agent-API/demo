@@ -19,7 +19,7 @@ export function AccountFundsPanel({
         if (!open) onClose();
       }}
       title="Manage funds"
-      description="Deposit to this account, or turn on more actions to swap, transfer, withdraw or shield."
+      description="Deposit to this account, or turn on more actions to swap, transfer, withdraw or make funds private."
       descriptionClassName="sr-only"
       contentClassName="sm:max-w-md sm:overflow-visible"
       showDrawerCloseButton

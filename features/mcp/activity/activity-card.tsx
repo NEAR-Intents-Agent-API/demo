@@ -5,21 +5,29 @@ import { McpActivityCards } from "./activity-cards";
 import { McpActivityTable } from "./activity-table";
 
 /**
- * Every tool call any client made, newest first.
+ * Every tool call any client made, and every refused dashboard attempt, newest first.
  *
  * This is the only place a client has a name: the custody wallet sees only the account, so
  * without this feed a provider request is unattributable. The operation id links a call to the
  * operation it started, which is what a visitor follows to see where it ended up.
  */
-export function McpActivityCard({ activity }: { activity: McpActivityView[] }) {
+export function McpActivityCard({
+  activity,
+  operationStatuses,
+}: {
+  activity: McpActivityView[];
+  operationStatuses: ReadonlyMap<string, string>;
+}) {
   return (
     <div className="min-w-0">
       {activity.length === 0 ? (
-        <p className="px-4 py-4 text-sm text-muted-foreground sm:px-5">No client requests yet</p>
+        <p className="px-4 py-4 text-sm text-muted-foreground sm:px-5">
+          No client or dashboard requests yet
+        </p>
       ) : (
         <>
-          <McpActivityCards activity={activity} />
-          <McpActivityTable activity={activity} />
+          <McpActivityCards activity={activity} operationStatuses={operationStatuses} />
+          <McpActivityTable activity={activity} operationStatuses={operationStatuses} />
         </>
       )}
     </div>
