@@ -2,19 +2,19 @@
 
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import type { AgentView } from "@near-intents-agent-api/sdk";
 import Link from "next/link";
 import { MonoId } from "@/components/shared/identifiers";
 import { StatusPill } from "@/components/shared/status";
+import type { AgentListItem } from "@/lib/agent-api/agent-list";
 import { accountDate } from "@/lib/format/date";
 import type { AgentState } from "../model/agent-state";
 import { AgentAvatar } from "./agent-avatar";
 
-export function AgentListRow({ agent, state }: { agent: AgentView; state: AgentState }) {
+export function AgentListRow({ agent, state }: { agent: AgentListItem; state: AgentState }) {
   const tone =
     state.stage === "ready"
       ? "ok"
-      : state.stage === "archived" || state.stage === "abandoned"
+      : state.stage === "frozen" || state.stage === "archived" || state.stage === "abandoned"
         ? "blocked"
         : "attention";
   const action = state.next.id === "none" ? "Open" : state.next.label;

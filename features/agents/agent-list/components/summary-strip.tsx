@@ -16,6 +16,12 @@ export function SummaryStrip({ summary }: { summary: ReturnType<typeof workspace
       tone: "ok" as const,
     },
     {
+      label: "Frozen",
+      value: String(summary.frozen),
+      detail: "money actions refused",
+      tone: "neutral" as const,
+    },
+    {
       label: "Waiting on you",
       value: String(summary.needsYou),
       detail: "need your signature",
@@ -23,7 +29,7 @@ export function SummaryStrip({ summary }: { summary: ReturnType<typeof workspace
     },
   ];
   return (
-    <dl className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+    <dl className="grid divide-y divide-border sm:grid-cols-4 sm:divide-x sm:divide-y-0">
       {facts.map((fact) => (
         <div
           key={fact.label}

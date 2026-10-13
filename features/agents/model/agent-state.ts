@@ -11,7 +11,10 @@ import type { AgentView } from "@near-intents-agent-api/sdk";
  * Pure and dependency-free so a unit test can pin it.
  */
 
-export type AgentJourneyStage = "pending" | "ready" | "archived" | "abandoned";
+export type AgentJourneyStage = "pending" | "ready" | "frozen" | "archived" | "abandoned";
+
+/** What the state is derived from: the API view, plus the owner's freeze when the list knows it. */
+export type AgentStateInput = AgentView & { frozen?: boolean };
 
 export type AgentNextAction = {
   /** Stable id for tests and for keying. */
@@ -35,7 +38,7 @@ export type AgentState = {
 
 const nothing: AgentNextAction = { id: "none", label: "Nothing to do", detail: "", signing: false };
 
-export function agentState(agent: AgentView): AgentState {
+export function agentState(agent: AgentStateInput): AgentState {
   switch (agent.status) {
     case "DELETED":
       return {
@@ -72,6 +75,13 @@ export function agentState(agent: AgentView): AgentState {
         },
       };
     case "ACTIVE":
+      if (agent.frozen)
+        return {
+          stage: "frozen",
+          label: "Frozen",
+          detail: "The owner froze it. Every money action is refused until it is unfrozen.",
+          next: nothing,
+        };
       return {
         stage: "ready",
         label: "Operational",
@@ -87,16 +97,27 @@ export function journeyProgress(agent: AgentView): { done: number; total: number
   return { done: agent.status === "PENDING" || agent.status === "ABANDONED" ? 1 : total, total };
 }
 
-/** One-line summary of the workspace, used by the agents page header. */
-export function workspaceSummary(agents: AgentView[]): {
+/**
+ * The accounts the workspace lists: everything except deleted ones (gone for good) and ones
+ * whose activation expired (never live). Archived accounts stay, shown as archived.
+ */
+export function visibleAgents<T extends AgentView>(agents: T[]): T[] {
+  return agents.filter((agent) => agent.status !== "DELETED" && agent.status !== "ABANDONED");
+}
+
+/** Counters over the listed accounts; `total` is exactly the number of rows. */
+export function workspaceSummary(agents: AgentStateInput[]): {
   total: number;
   operational: number;
+  frozen: number;
   needsYou: number;
 } {
-  const live = agents.filter((agent) => agent.status !== "DELETED" && agent.status !== "ABANDONED");
+  const listed = visibleAgents(agents);
+  const active = listed.filter((agent) => agent.status === "ACTIVE");
   return {
-    total: live.length,
-    operational: live.filter((agent) => agent.status === "ACTIVE").length,
-    needsYou: live.filter((agent) => agent.status === "PENDING").length,
+    total: listed.length,
+    operational: active.filter((agent) => !agent.frozen).length,
+    frozen: active.filter((agent) => agent.frozen).length,
+    needsYou: listed.filter((agent) => agent.status === "PENDING").length,
   };
 }

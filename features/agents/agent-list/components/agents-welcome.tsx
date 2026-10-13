@@ -11,7 +11,7 @@ export function Welcome() {
     <div className="flex flex-col gap-14">
       <div className="flex flex-col items-start gap-5 rounded-[16px] border bg-card p-5 sm:p-6">
         <h2 className="max-w-xl text-[22px] leading-7 font-bold tracking-[-0.35px]">
-          Create your first agent wallet
+          Create your first agent account
         </h2>
         <p className="max-w-xl text-sm leading-[23px] text-muted-foreground">
           Name it, choose its limits and sign once. That signature makes you its owner and installs

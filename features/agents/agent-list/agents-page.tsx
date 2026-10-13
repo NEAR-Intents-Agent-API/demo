@@ -2,7 +2,7 @@
 import { Unavailable } from "@/components/shared/states";
 import { useAgents } from "../api/agent-queries";
 import { AgentListSkeleton } from "../components/agent-list-skeleton";
-import { workspaceSummary } from "../model/agent-state";
+import { visibleAgents, workspaceSummary } from "../model/agent-state";
 import { AgentAccountList } from "./components/agent-account-list";
 import { AgentsPageHeader } from "./components/agents-page-header";
 import { Welcome } from "./components/agents-welcome";
@@ -11,8 +11,8 @@ import { SummaryStrip } from "./components/summary-strip";
 /** The workspace: every account this owner holds, each one wallet + rules + history. */
 export function AgentsPage() {
   const agents = useAgents();
-  // An agent whose activation expired never went live; it has nothing to show or do.
-  const list = (agents.data?.agents ?? []).filter((agent) => agent.status !== "ABANDONED");
+  // Rows and counters share one list: deleted and never-activated accounts are in neither.
+  const list = visibleAgents(agents.data?.agents ?? []);
   const summary = workspaceSummary(list);
 
   return (
