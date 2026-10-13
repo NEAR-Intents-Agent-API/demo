@@ -51,7 +51,7 @@ test("legacy funds links return to rules when their dialog closes", () => {
   assert.equal(closed.searchParams.get("filter"), "pending");
 });
 
-test("login defaults to the guide, keeps dashboard destinations and refuses unsafe redirects", () => {
+test("login defaults to the dashboard, keeps dashboard destinations and refuses unsafe redirects", () => {
   assert.equal(loginReturnTo("/how-it-works"), "/how-it-works");
   assert.equal(loginReturnTo("/agents/alice?tab=connect"), "/agents/alice?tab=connect");
   for (const value of [
@@ -67,7 +67,7 @@ test("login defaults to the guide, keeps dashboard destinations and refuses unsa
     ["/agents"],
     undefined,
   ]) {
-    assert.equal(loginReturnTo(value), "/how-it-works");
+    assert.equal(loginReturnTo(value), "/agents");
   }
 });
 

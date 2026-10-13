@@ -1,7 +1,7 @@
 "use client";
 import { Logout01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { MonoId } from "@/components/shared/identifiers";
+import { CopyButton } from "@/components/shared/identifiers";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { identityLabel } from "./identity-label";
 import type { DemoIdentity } from "./types";
 
 export function DemoAccountMenu({
@@ -23,39 +24,37 @@ export function DemoAccountMenu({
   signingOut: boolean;
   siteStyle?: boolean;
 }) {
+  const label = identityLabel(identity);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
           <button
             type="button"
-            aria-label="Account"
+            aria-label={`Account menu, signed in as ${label.full || "owner"}`}
+            title={label.full}
             className={cn(
-              "grid size-9 place-items-center text-xs font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "inline-flex h-9 max-w-[7.5rem] min-w-0 items-center px-2.5 outline-none focus-visible:ring-2 focus-visible:ring-ring sm:max-w-[16rem] sm:px-3",
               siteStyle
-                ? "rounded-[6px] border bg-background text-[13px] font-medium text-foreground"
+                ? "rounded-[6px] border bg-background text-foreground"
                 : "rounded-md bg-foreground text-background",
             )}
           />
         }
       >
-        {(identity.ownerLabel ?? identity.name).trim().charAt(0).toUpperCase() || "?"}
+        <span className="site-mono truncate text-xs font-medium">{label.short}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
         <div className="flex flex-col gap-1 px-3 py-2.5">
           <p className="text-[11px] tracking-wide text-muted-foreground uppercase">
             Signed in as {identity.ownerType ?? "no owner claim"}
           </p>
-          {identity.ownerLabel ? (
-            <MonoId value={identity.ownerLabel} className="text-xs" head={12} tail={6} />
-          ) : (
-            <p className="truncate text-sm">{identity.name}</p>
-          )}
-          {identity.ownerLabel === identity.name ? null : (
-            <p className="truncate text-xs text-muted-foreground" title={identity.email}>
-              {identity.email}
-            </p>
-          )}
+          {label.full ? (
+            <div className="flex items-start gap-1">
+              <p className="console-id min-w-0 flex-1 text-xs break-all">{label.full}</p>
+              <CopyButton value={label.full} label="Copy signed-in identity" />
+            </div>
+          ) : null}
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onSignOut} disabled={signingOut}>
