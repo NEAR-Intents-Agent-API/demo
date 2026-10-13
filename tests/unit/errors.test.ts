@@ -15,9 +15,15 @@ test("every documented code has human text, and none of it is the code itself", 
   }
 });
 
-test("unknown codes and inherited object keys use a safe message", () => {
-  assert.equal(errorMessage("private_provider_detail"), errorMessages.request_failed);
-  assert.equal(errorMessage("__proto__"), errorMessages.request_failed);
+test("unknown codes and inherited object keys use a user-facing message that names the code", () => {
+  assert.equal(
+    errorMessage("private_provider_detail"),
+    "Something went wrong (private_provider_detail). Try again.",
+  );
+  assert.equal(errorMessage("__proto__"), "Something went wrong (__proto__). Try again.");
+  assert.equal(errorMessage("Failed to fetch resource now"), "Something went wrong. Try again.");
+  assert.equal(errorMessage(undefined), errorMessages.request_failed);
+  assert.doesNotMatch(Object.values(errorMessages).join(" "), /server logs/i);
 });
 
 test("state errors are not retryable, so no dead-end retry button appears", () => {
@@ -25,7 +31,8 @@ test("state errors are not retryable, so no dead-end retry button appears", () =
   assert.equal(isRetryable("agent_not_found"), false);
   assert.equal(isRetryable("policy_revision_conflict"), false);
   assert.equal(isRetryable("intent_expired"), false);
-  assert.equal(isRetryable("owner_approval_unsupported"), false);
+  assert.equal(isRetryable("policy_change_throttled"), false);
+  assert.equal(isRetryable("spend_budget_exceeded"), false);
   assert.equal(errorMessage("policy_not_ready"), errorMessages.policy_not_ready);
   assert.equal(isRetryable("onboarding_expired"), false);
 });

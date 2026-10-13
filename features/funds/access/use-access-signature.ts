@@ -48,7 +48,7 @@ export function useAccessSignature(agentId: string, onDone: () => void) {
     stage,
     prepared,
     busy: mutation.isPending,
-    error: mutation.error ? errorMessage(mutation.error.message) : null,
+    error: mutation.error ? errorMessage(mutation.error) : null,
     sign: mutation.mutate,
     reset,
   };

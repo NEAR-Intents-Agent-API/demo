@@ -24,7 +24,7 @@ export function PolicyEditDialog({
   catalog: SummaryCatalog;
   usage: PolicyView["usage"]["budget"];
   busy: boolean;
-  error?: string;
+  error?: Error | null;
   onChange: (rules: Rules) => void;
   onClose: () => void;
 }) {

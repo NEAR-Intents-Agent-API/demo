@@ -41,7 +41,7 @@ export function EmergencyStop({ agentId, view }: { agentId: string; view: Policy
       />
       {workflow.save.error ? (
         <p role="alert" className="px-5 pb-4 text-sm text-destructive">
-          {errorMessage(workflow.save.error.message)}
+          {errorMessage(workflow.save.error)}
         </p>
       ) : null}
     </div>
