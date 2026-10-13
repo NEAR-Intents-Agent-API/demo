@@ -11,6 +11,8 @@ import { DemoApiError } from "../../lib/http/request";
  */
 const apiCodes = [
   "agent_archived",
+  "pause_before_archive",
+  "unpause_before_restore",
   "agent_creation_quota_exceeded",
   "agent_deleted",
   "agent_deletion_pending",

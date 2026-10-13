@@ -1,4 +1,4 @@
-import type { AgentView, Policy, SignedData } from "@near-intents-agent-api/sdk";
+import type { Policy, SignedData } from "@near-intents-agent-api/sdk";
 import type { IntentStep } from "@/features/intents";
 import type { AgentListItem } from "@/lib/agent-api/agent-list";
 import { request } from "@/lib/http/request";
@@ -23,5 +23,5 @@ export const agentsApi = {
       body: "{}",
     }),
   detail: (agentId: string, signal?: AbortSignal) =>
-    request<AgentView>(`/api/agents/${encodeURIComponent(agentId)}`, { signal }),
+    request<AgentListItem>(`/api/agents/${encodeURIComponent(agentId)}`, { signal }),
 };

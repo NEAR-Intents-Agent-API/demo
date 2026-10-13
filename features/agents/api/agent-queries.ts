@@ -1,7 +1,7 @@
 "use client";
 
-import type { AgentView } from "@near-intents-agent-api/sdk";
 import { useQuery } from "@tanstack/react-query";
+import type { AgentListItem } from "@/lib/agent-api/agent-list";
 import { queryKeys } from "@/lib/query/keys";
 import { agentsApi } from "./agents-api";
 
@@ -12,7 +12,7 @@ export function useAgents() {
   });
 }
 
-export function useAgent(agentId: string, initialData?: AgentView) {
+export function useAgent(agentId: string, initialData?: AgentListItem) {
   return useQuery({
     queryKey: queryKeys.agent(agentId),
     initialData,

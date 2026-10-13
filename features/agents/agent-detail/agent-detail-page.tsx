@@ -1,7 +1,7 @@
 "use client";
 
-import type { AgentView } from "@near-intents-agent-api/sdk";
 import { Unavailable } from "@/components/shared/states";
+import type { AgentListItem } from "@/lib/agent-api/agent-list";
 import { useAgent } from "../api/agent-queries";
 import { AgentBackLink } from "../components/agent-back-link";
 import { AgentDetailSkeleton } from "../components/agent-detail-skeleton";
@@ -17,7 +17,7 @@ export function AgentDetailPage({
   accessPage = false,
 }: {
   agentId: string;
-  initialAgent: AgentView;
+  initialAgent: AgentListItem;
   accessPage?: boolean;
 }) {
   const agent = useAgent(agentId, initialAgent);

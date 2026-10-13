@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { transferRecipientProblem } from "@/lib/agent-api/address";
 import type { DestinationAction } from "../access/destination-utils";
 import type { BalanceLane } from "../flows/flow-parts";
 import { useFunds } from "../funds-context";
@@ -29,7 +30,7 @@ export function useSendFlow(initialLane: BalanceLane = "public") {
 
   const reason =
     amountReason({ ...source, empty: "Add funds to transfer" }) ??
-    (recipient ? null : "Choose who receives it");
+    (recipient ? (open ? transferRecipientProblem(recipient) : null) : "Choose who receives it");
 
   const send = () => {
     if (!token || !atomic || !recipient) return;

@@ -24,21 +24,6 @@ type Run = {
   step: IntentStep | null;
 };
 
-const lifecycleMessages: Record<string, string> = {
-  pause_before_archive: "Freeze the account first, then archive it.",
-  unpause_before_restore: "Unfreeze the account first, then restore it.",
-  agent_unfreeze_throttled:
-    "Unfreezing is cooling down after a recent unfreeze. Try again after the cooldown shown on the account.",
-  agent_archived: "This account is archived. Restore it before changing its rules.",
-  lifecycle_pending: "Still being processed. Check Activity, then refresh the account.",
-};
-
-function lifecycleError(cause: unknown): string {
-  const code = cause instanceof Error ? cause.message : "request_failed";
-  const known = Object.hasOwn(lifecycleMessages, code) ? lifecycleMessages[code] : undefined;
-  return known ?? errorMessage(code);
-}
-
 /**
  * Archive, restore and delete as one signing run. Each action is the short list of intents the
  * API requires (see `lifecyclePlan`); the hook prepares one, lets the owner sign it, waits for it
@@ -79,7 +64,7 @@ export function useAccountLifecycle(agent: AgentView) {
       } catch (cause) {
         if (current !== attempt.current) return;
         setStage("error");
-        setError(lifecycleError(cause));
+        setError(errorMessage(cause));
       }
     },
     [agent.id],
@@ -141,7 +126,7 @@ export function useAccountLifecycle(agent: AgentView) {
       if (run.action === "delete") router.push("/agents");
     } catch (cause) {
       setStage("error");
-      setError(lifecycleError(cause));
+      setError(errorMessage(cause));
       await refresh();
     }
   }, [agent.id, close, prepare, refresh, router, run]);

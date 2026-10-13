@@ -30,11 +30,17 @@ export async function listOwnedAgents(
     if (!next_cursor) break;
     cursor = next_cursor;
   }
-  return mapWithConcurrency(owned, POLICY_READ_CONCURRENCY, async (agent) => ({
-    ...agent,
-    frozen:
-      agent.status === "ACTIVE" ? Boolean((await api.getPolicy(agent.id)).policy?.frozen) : false,
-  }));
+  return mapWithConcurrency(owned, POLICY_READ_CONCURRENCY, (agent) => withFrozenFlag(api, agent));
+}
+
+/** One agent with its frozen flag. Only an ACTIVE account can be frozen, so others skip the read. */
+export async function withFrozenFlag(
+  api: Pick<AgentApi, "getPolicy">,
+  agent: AgentView,
+): Promise<AgentListItem> {
+  const frozen =
+    agent.status === "ACTIVE" ? Boolean((await api.getPolicy(agent.id)).policy?.frozen) : false;
+  return { ...agent, frozen };
 }
 
 /** `Array.map` with an async callback and at most `limit` calls in flight; order is kept. */
