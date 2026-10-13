@@ -3,6 +3,7 @@ export { AccessPage } from "./access/access-page";
 export { AccessStatus } from "./access/access-status";
 export { DESTINATION_RULE_COPY, DestinationRuleFields } from "./access/destination-rule-fields";
 export { type DestinationContext, destinationName } from "./access/destination-utils";
+export { signedPayloadText } from "./access/signature-utils";
 export { useAccessFlow } from "./access/use-access-flow";
 export { useGrants } from "./access/use-grants";
 export {
