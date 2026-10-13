@@ -182,7 +182,7 @@ export const scheduleSchema = z.strictObject({
 });
 assertType<Equal<z.infer<typeof scheduleSchema>, Schedule>>();
 
-/** A new account sends nowhere until the owner lists a destination. */
+/** What the dashboard assumes before a policy is applied: nothing may leave the account. */
 export const defaultDestinationRule: DestinationRule = { mode: "only", list: [] };
 
 // ---- Policy

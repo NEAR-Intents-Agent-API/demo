@@ -1,5 +1,5 @@
 import type { DestinationRule, Policy, Schedule } from "@near-intents-agent-api/sdk";
-import { defaultDestinationRule, policySchema } from "@/lib/agent-api/schemas";
+import { policySchema } from "@/lib/agent-api/schemas";
 
 /**
  * The agent's rules in the owner's words, and their translation to the API policy.
@@ -39,16 +39,13 @@ export type Rules = {
   schedule: Schedule | null;
 };
 
-/**
- * A new agent can do everything NEAR Intents offers inside the account; nothing leaves it until
- * the owner approves a destination.
- */
+/** A new agent can do everything NEAR Intents offers, to any destination, until the owner narrows it. */
 export const defaultRules: Rules = {
   abilities: { swap: true, transfer: true, withdraw: true, confidential: true },
   tokens: "any",
   limits: [],
   maxPerHour: "",
-  destinations: defaultDestinationRule,
+  destinations: { mode: "any", list: [] },
   approval: false,
   frozen: false,
   budget: { dailyUsd: "", weeklyUsd: "", monthlyUsd: "" },
