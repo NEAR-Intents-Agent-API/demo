@@ -1,6 +1,6 @@
 "use client";
 
-import type { AgentView } from "@near-intents-agent-api/sdk";
+import type { AgentView, PolicyView } from "@near-intents-agent-api/sdk";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
@@ -15,6 +15,8 @@ import {
   type LifecyclePlan,
   type LifecycleStep,
   lifecyclePlan,
+  needsReplan,
+  rulesReading,
 } from "./lifecycle-state";
 
 type Run = {
@@ -39,10 +41,10 @@ export function useAccountLifecycle(agent: AgentView) {
   const [error, setError] = useState<string | null>(null);
   const attempt = useRef(0);
 
-  const frozen = policy.data ? Boolean(policy.data.policy?.frozen) : undefined;
+  const rules = rulesReading(policy.data, policy.isError);
   const plan = useCallback(
-    (action: LifecycleAction): LifecyclePlan => lifecyclePlan(action, agent, frozen, Date.now()),
-    [agent, frozen],
+    (action: LifecycleAction): LifecyclePlan => lifecyclePlan(action, agent, rules, Date.now()),
+    [agent, rules],
   );
 
   const prepare = useCallback(
@@ -99,6 +101,26 @@ export function useAccountLifecycle(agent: AgentView) {
     [agent.id, cache],
   );
 
+  // Start over from what the account is now: reread its rules and status, re-plan, prepare again.
+  const retry = useCallback(async () => {
+    if (!run) return;
+    const current = ++attempt.current;
+    setStage("preparing");
+    setError(null);
+    await refresh();
+    if (current !== attempt.current) return;
+    const latest = cache.getQueryData<AgentView>(queryKeys.agent(agent.id)) ?? agent;
+    const view = cache.getQueryData<PolicyView>(queryKeys.policy(agent.id));
+    const planned = lifecyclePlan(run.action, latest, rulesReading(view, !view), Date.now());
+    if (!planned.ok) {
+      setRun({ ...run, step: null });
+      setStage("error");
+      setError(planned.reason);
+      return;
+    }
+    await prepare({ action: run.action, steps: planned.steps, index: 0, step: null });
+  }, [agent, cache, prepare, refresh, run]);
+
   const sign = useCallback(async () => {
     const step = run?.step;
     if (!run || !step) return;
@@ -127,6 +149,8 @@ export function useAccountLifecycle(agent: AgentView) {
     } catch (cause) {
       setStage("error");
       setError(errorMessage(cause));
+      // A request that cannot be signed any more is dropped, so the dialog offers a fresh one.
+      if (needsReplan(cause)) setRun({ ...run, step: null });
       await refresh();
     }
   }, [agent.id, close, prepare, refresh, router, run]);
@@ -139,5 +163,16 @@ export function useAccountLifecycle(agent: AgentView) {
       }
     : null;
 
-  return { run, stage, error, plan, start, close, sign, challenge, loadingRules: policy.isPending };
+  return {
+    run,
+    stage,
+    error,
+    plan,
+    start,
+    close,
+    sign,
+    retry: () => void retry(),
+    challenge,
+    loadingRules: policy.isPending,
+  };
 }

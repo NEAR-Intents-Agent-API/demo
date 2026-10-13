@@ -27,6 +27,7 @@ export function DeleteAccountDialog({
   stage,
   error,
   onSign,
+  onRetry,
 }: {
   agent: AgentView;
   open: boolean;
@@ -36,6 +37,7 @@ export function DeleteAccountDialog({
   stage: ConsentStage;
   error: string | null;
   onSign: () => void;
+  onRetry: () => void;
 }) {
   const [typed, setTyped] = useState("");
   const busy = stage === "signing" || stage === "submitting";
@@ -54,8 +56,10 @@ export function DeleteAccountDialog({
         <DeleteFooter
           stage={stage}
           ready={ready}
+          retryable={stage === "error" && !challenge}
           onCancel={() => onOpenChange(false)}
           onSign={onSign}
+          onRetry={onRetry}
         />
       }
     >
@@ -170,13 +174,18 @@ function NameConfirmation({
 function DeleteFooter({
   stage,
   ready,
+  retryable,
   onCancel,
   onSign,
+  onRetry,
 }: {
   stage: ConsentStage;
   ready: boolean;
+  /** Nothing is prepared and the last attempt failed: offer a fresh request. */
+  retryable: boolean;
   onCancel: () => void;
   onSign: () => void;
+  onRetry: () => void;
 }) {
   const busy = stage === "signing" || stage === "submitting";
   return (
@@ -188,14 +197,20 @@ function DeleteFooter({
         <Button variant="link" onClick={onCancel} disabled={busy}>
           Cancel
         </Button>
-        <Button variant="destructive" size="lg" onClick={onSign} disabled={!ready || busy}>
-          {busy ? <Pending /> : null}
-          {stage === "signing"
-            ? "Waiting for your wallet…"
-            : stage === "submitting"
-              ? "Deleting…"
-              : STEP_CONFIRM.agent_delete}
-        </Button>
+        {retryable ? (
+          <Button size="lg" onClick={onRetry}>
+            Prepare again
+          </Button>
+        ) : (
+          <Button variant="destructive" size="lg" onClick={onSign} disabled={!ready || busy}>
+            {busy ? <Pending /> : null}
+            {stage === "signing"
+              ? "Waiting for your wallet…"
+              : stage === "submitting"
+                ? "Deleting…"
+                : STEP_CONFIRM.agent_delete}
+          </Button>
+        )}
       </div>
     </div>
   );
