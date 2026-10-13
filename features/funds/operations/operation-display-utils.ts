@@ -1,4 +1,6 @@
 import type { StatusResponse } from "@near-intents-agent-api/sdk";
+import { formatDisplay } from "@/lib/format/amount";
+import { operationEvidence } from "./operation-evidence";
 
 /** Provider statuses keep their meaning; only their tone and casing are mapped. */
 export function statusTone(status: string): "ok" | "attention" | "blocked" | "neutral" {
@@ -7,6 +9,7 @@ export function statusTone(status: string): "ok" | "attention" | "blocked" | "ne
     return "blocked";
   }
   if (
+    value.includes("refund") ||
     value.includes("pending") ||
     value.includes("uncertain") ||
     value.includes("review") ||
@@ -39,8 +42,8 @@ const ACTION_LABELS: Readonly<Record<string, string>> = {
   intents_transfer: "Transfer funds",
   confidential_transfer: "Private transfer",
   cross_chain_deposit: "Deposit funds",
-  shield: "Make funds private",
-  unshield: "Make funds public",
+  shield: "Make private",
+  unshield: "Make public",
   swap: "Swap tokens",
   withdraw: "Withdraw funds",
 };
@@ -52,11 +55,18 @@ export function operationActionLabel(operation: StatusResponse): string {
   return label ?? humanize(action);
 }
 
-export function operationTransactionHash(operation: StatusResponse): string | null {
-  const details = (operation.details ?? {}) as Record<string, unknown>;
-  return (
-    [details.transaction_hash, details.tx_hash].find(
-      (value): value is string => typeof value === "string" && value.length > 0,
-    ) ?? null
-  );
+/** Who made the operation: the grant that authorised it, else the owner or a grant-free deposit. */
+export function operationMadeBy(operation: StatusResponse): string {
+  return operation.grant ? operation.grant.label : "Owner";
+}
+
+/** The amount and token the provider echoed back, in token units; null when it did not. */
+export function operationAmountLabel(
+  operation: StatusResponse,
+  find: (asset: string) => { symbol: string; decimals: number } | undefined,
+): string | null {
+  const { token, amount } = operationEvidence(operation);
+  if (!token || !amount || !/^[0-9]{1,78}$/.test(amount)) return null;
+  const known = find(token);
+  return known ? `${formatDisplay(amount, known.decimals)} ${known.symbol}` : null;
 }

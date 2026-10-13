@@ -1,5 +1,3 @@
-import type { Catalog } from "@/features/assets";
-import { usdValue } from "@/features/assets";
 import type { Holding } from "../use-funds";
 import { AccountFooter } from "./account-footer";
 import type { Lane } from "./portfolio";
@@ -12,7 +10,6 @@ export function PortfolioDetails({
   error,
   onRetry,
   account,
-  catalog,
 }: {
   lane: Lane;
   holdings: readonly Holding[];
@@ -20,7 +17,6 @@ export function PortfolioDetails({
   error: string | null;
   onRetry: () => void;
   account: string | undefined;
-  catalog: Catalog;
 }) {
   return (
     <>
@@ -30,10 +26,6 @@ export function PortfolioDetails({
         loading={loading}
         error={error}
         onRetry={onRetry}
-        usdOf={(holding) => {
-          const token = catalog.find(holding.assetId);
-          return token ? usdValue(holding.raw, token) : null;
-        }}
       />
       {account ? <AccountFooter account={account} /> : null}
     </>

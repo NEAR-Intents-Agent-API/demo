@@ -5,7 +5,7 @@ export const COPY: Record<
   { label: string; from: string; to: string; blurb: string; empty: string }
 > = {
   shield: {
-    label: "Shield",
+    label: "Make private",
     from: "Public balance",
     to: "Private balance",
     blurb:
@@ -13,7 +13,7 @@ export const COPY: Record<
     empty: "Nothing in the public balance to move",
   },
   unshield: {
-    label: "Unshield",
+    label: "Make public",
     from: "Private balance",
     to: "Public balance",
     blurb: "Moves funds back to the public NEAR Intents balance, where swaps and withdrawals run.",

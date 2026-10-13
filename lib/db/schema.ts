@@ -439,7 +439,7 @@ export const mcpActivity = pgTable(
     clientName: text("clientName").notNull(),
     agentId: text("agentId").notNull(),
     userId: text("userId").notNull(),
-    authKind: text("authKind").$type<"oauth" | "api_key">().notNull(),
+    authKind: text("authKind").$type<"oauth" | "api_key" | "dashboard">().notNull(),
     subject: text("subject").notNull(),
     tool: text("tool").notNull(),
     status: text("status").notNull(),

@@ -9,13 +9,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useCatalog } from "@/features/assets";
 import { accountTimestamp } from "@/lib/format/date";
-
-import { humanize, operationActionLabel, statusTone } from "./operation-display-utils";
+import {
+  humanize,
+  operationActionLabel,
+  operationAmountLabel,
+  operationMadeBy,
+  statusTone,
+} from "./operation-display-utils";
 import { RequestDetails } from "./request-details";
 import { RequestsCards } from "./requests-cards";
 
 export function RequestsTable({ operations }: { operations: StatusResponse[] }) {
+  const { find } = useCatalog();
   if (operations.length === 0) {
     return (
       <p className="px-4 py-4 text-sm text-muted-foreground sm:px-5">No wallet operations yet</p>
@@ -29,7 +36,8 @@ export function RequestsTable({ operations }: { operations: StatusResponse[] }) 
         <Table aria-label="Wallet operations">
           <TableHeader>
             <TableRow>
-              <TableHead className="console-table-head w-2/5 pl-5">Action</TableHead>
+              <TableHead className="console-table-head w-1/3 pl-5">Action</TableHead>
+              <TableHead className="console-table-head">Made by</TableHead>
               <TableHead className="console-table-head">Status</TableHead>
               <TableHead className="console-table-head">When</TableHead>
               <TableHead className="console-table-head pr-5">Details</TableHead>
@@ -38,10 +46,19 @@ export function RequestsTable({ operations }: { operations: StatusResponse[] }) 
           <TableBody>
             {operations.map((operation) => {
               const status = operation.status;
+              const amount = operationAmountLabel(operation, find);
               return (
                 <TableRow key={operation.correlation_id}>
                   <TableCell className="py-4 pl-5 align-top font-medium">
                     {operationActionLabel(operation)}
+                    {amount ? (
+                      <span className="mt-1 block text-xs font-normal text-muted-foreground tabular-nums">
+                        {amount}
+                      </span>
+                    ) : null}
+                  </TableCell>
+                  <TableCell className="py-4 align-top text-xs text-muted-foreground">
+                    {operationMadeBy(operation)}
                   </TableCell>
                   <TableCell className="py-4 align-top">
                     <StatusPill tone={statusTone(status)} className="capitalize">

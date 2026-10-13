@@ -21,9 +21,15 @@ export function RuleGate({ ability }: { ability: Ability }) {
       <div className="flex flex-col gap-1.5">
         <p className="text-base font-medium">{info.off}</p>
         <p className="max-w-sm text-sm leading-6 text-muted-foreground">{info.description}</p>
+        {ability === "confidential" ? (
+          <p className="max-w-sm text-sm leading-6 text-muted-foreground">
+            Funds already in the private balance stay private and untouched until you turn Private
+            balance back on in Rules. Moving them to the public balance needs it on too.
+          </p>
+        ) : null}
       </div>
       <Button variant="outline" onClick={funds.openRules}>
-        Change the rules
+        {ability === "confidential" ? "Turn on Private balance in Rules" : "Change the rules"}
       </Button>
     </div>
   );

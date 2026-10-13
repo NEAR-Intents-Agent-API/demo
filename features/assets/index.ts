@@ -21,6 +21,8 @@ export {
   type Catalog,
   type CatalogOption,
   formatUsd,
+  type PriceFacts,
   unknownOption,
+  usablePrice,
   usdValue,
 } from "./use-catalog";

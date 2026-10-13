@@ -3,13 +3,22 @@ import { MonoId } from "@/components/shared/identifiers";
 import { StatusPill } from "@/components/shared/status";
 import { accountTimestamp } from "@/lib/format/date";
 import type { McpActivityView } from "../api";
+import type { ActivityOutcome } from "./activity-outcome";
 
-export function ActivityEntryDetails({ entry }: { entry: McpActivityView }) {
+const CONNECTION = { oauth: "OAuth", api_key: "API key", dashboard: "Dashboard" } as const;
+
+export function ActivityEntryDetails({
+  entry,
+  outcome,
+}: {
+  entry: McpActivityView;
+  outcome: ActivityOutcome;
+}) {
   return (
     <DetailsDialog title="Client request" description="Client request details.">
       <dl className="space-y-4 text-sm">
         <div>
-          <dt className="text-muted-foreground">Client</dt>
+          <dt className="text-muted-foreground">Source</dt>
           <dd>{entry.clientName}</dd>
         </div>
         <div>
@@ -19,8 +28,8 @@ export function ActivityEntryDetails({ entry }: { entry: McpActivityView }) {
         <div>
           <dt className="text-muted-foreground">Result</dt>
           <dd>
-            <StatusPill tone={entry.status === "error" ? "blocked" : "ok"} className="capitalize">
-              {entry.status}
+            <StatusPill tone={outcome.tone} className="capitalize">
+              {outcome.label}
             </StatusPill>
           </dd>
         </div>
@@ -30,7 +39,7 @@ export function ActivityEntryDetails({ entry }: { entry: McpActivityView }) {
         </div>
         <div>
           <dt className="text-muted-foreground">Connection</dt>
-          <dd>{entry.authKind === "oauth" ? "OAuth" : "API key"}</dd>
+          <dd>{CONNECTION[entry.authKind]}</dd>
         </div>
         <div>
           <dt className="text-muted-foreground">Wallet operation</dt>

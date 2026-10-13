@@ -3,7 +3,7 @@
 import type { BalanceEntry } from "@near-intents-agent-api/sdk";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { chainOfAsset, useCatalog } from "@/features/assets";
+import { chainOfAsset, usablePrice, useCatalog } from "@/features/assets";
 import { type FundsTool, fundsApi } from "./api";
 
 export type BalanceSource = "public" | "confidential";
@@ -21,6 +21,10 @@ export type Holding = {
   chain: string;
   raw: bigint;
   token: TokenOption | null;
+  /** USD per whole token while the price is usable; null is unknown, never zero. */
+  priceUsd: number | null;
+  priceUpdatedAt: string | null;
+  priceExpired: boolean;
 };
 
 export function useHoldings(agentId: string, source: BalanceSource) {
@@ -31,8 +35,8 @@ export function useHoldings(agentId: string, source: BalanceSource) {
     refetchInterval: 30_000,
   });
   const holdings = useMemo(
-    () => (query.data?.balances ?? []).map((entry) => toHolding(entry, find)),
-    [query.data, find],
+    () => (query.data?.balances ?? []).map((entry) => toHolding(entry, find, query.dataUpdatedAt)),
+    [query.data, query.dataUpdatedAt, find],
   );
   return {
     query,
@@ -42,15 +46,25 @@ export function useHoldings(agentId: string, source: BalanceSource) {
   };
 }
 
-function toHolding(entry: BalanceEntry, find: (asset: string) => TokenOption | undefined): Holding {
+/**
+ * One balance row joined to the token list. The balance names its own price and when it expires,
+ * so the dollar value is the API's, not a second lookup; the catalogue fills in only what the
+ * balance lacks (decimals for an asset the API could not describe).
+ */
+export function toHolding(
+  entry: BalanceEntry,
+  find: (asset: string) => TokenOption | undefined,
+  now: number,
+): Holding {
   const token = find(entry.asset_id) ?? null;
   return {
     assetId: token?.assetId ?? entry.asset_id,
     symbol: entry.symbol ?? token?.symbol ?? "Unknown",
-    decimals: entry.decimals,
+    decimals: entry.decimals ?? token?.decimals ?? null,
     chain: entry.blockchain ?? token?.chain ?? chainOfAsset(entry.asset_id),
     raw: BigInt(entry.balance_raw),
     token,
+    ...usablePrice(entry, now),
   };
 }
 
