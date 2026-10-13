@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NetworkGateFailure } from "@/lib/agent-api/network";
 import { readGuardedJson } from "@/lib/http/browser-guard";
+import { type ErrorDetails, errorDetails } from "@/lib/http/error-details";
 import { logger } from "@/lib/http/logger";
 
 const errorStatus: Record<string, number> = {
@@ -78,9 +79,14 @@ export type RouteLog = { requestId: string; route: string; startedAt: number };
 /**
  * JSON error body for the demo BFF. Unknown codes default to 502 because an unrecognized
  * failure came from upstream, not from the browser. Provider internals and credentials never
- * leak.
+ * leak: `details` is filtered through the allowlist in `error-details.ts`.
  */
-export function bffError(code: string, status?: number, context: Partial<RouteLog> = {}) {
+export function bffError(
+  code: string,
+  status?: number,
+  context: Partial<RouteLog> = {},
+  details: ErrorDetails = {},
+) {
   const resolved = status ?? errorStatus[code] ?? 502;
   logger[resolved >= 500 ? "error" : "warn"]("bff_error", {
     request_id: context.requestId,
@@ -89,7 +95,7 @@ export function bffError(code: string, status?: number, context: Partial<RouteLo
     status: resolved,
   });
   return NextResponse.json(
-    { error: { code } },
+    { error: { code, ...errorDetails(details) } },
     {
       status: resolved,
       headers: context.requestId ? { "x-request-id": context.requestId } : undefined,

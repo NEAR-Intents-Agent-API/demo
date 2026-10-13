@@ -49,7 +49,7 @@ export function useApprovals(agentId: string) {
       setDecision(result);
       setStage("idle");
     },
-    onError: (cause: Error) => setError(errorMessage(cause.message)),
+    onError: (cause: Error) => setError(errorMessage(cause)),
   });
 
   const vote = useMutation({
@@ -69,7 +69,7 @@ export function useApprovals(agentId: string) {
     },
     onError: (cause: Error) => {
       setStage("error");
-      setError(errorMessage(cause.message));
+      setError(errorMessage(cause));
     },
   });
 
@@ -83,7 +83,7 @@ export function useApprovals(agentId: string) {
       vote.mutate({ signedData });
     } catch (cause) {
       setStage("error");
-      setError(cause instanceof Error ? errorMessage(cause.message) : "signing_failed");
+      setError(errorMessage(cause));
     }
   };
 

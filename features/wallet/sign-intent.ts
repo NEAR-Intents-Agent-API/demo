@@ -6,6 +6,7 @@ import { getAccount, signTypedData } from "wagmi/actions";
 import { signedDataSchema } from "@/lib/agent-api/schemas";
 import { evmConfig } from "@/lib/evm/wallet";
 import { connectedWallet, nearConnector, type OwnerConnector } from "@/lib/near/wallet";
+import { isWalletCancellation } from "./cancellation";
 import { signNearIntent } from "./sign-near-intent";
 
 let signing = false;
@@ -16,6 +17,7 @@ let signing = false;
  *
  * A single non-reactive flag serializes ceremonies because a wallet can only show one prompt at
  * a time. It is released in `finally`, so a rejected or failed prompt never bricks the next one.
+ * A prompt the person dismisses surfaces as `wallet_request_cancelled` whichever wallet showed it.
  */
 export async function signIntent(
   request: Pick<GenerateIntentResponse, "intent" | "signer">,
@@ -25,6 +27,9 @@ export async function signIntent(
   signing = true;
   try {
     return await signWithWallet(request, connector);
+  } catch (error) {
+    if (isWalletCancellation(error)) throw new Error("wallet_request_cancelled", { cause: error });
+    throw error;
   } finally {
     signing = false;
   }

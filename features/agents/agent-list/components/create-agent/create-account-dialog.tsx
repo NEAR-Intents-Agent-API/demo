@@ -41,7 +41,7 @@ export function CreateAccountDialog() {
         onRulesChange={view.setRules}
         pending={view.create.isPending}
         stage={view.stage}
-        error={view.create.error ? errorMessage(view.create.error.message) : null}
+        error={view.create.error ? errorMessage(view.create.error) : null}
         onSubmit={view.submit}
         hasPendingActivation={view.hasPendingActivation}
       />

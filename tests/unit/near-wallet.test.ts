@@ -112,7 +112,7 @@ test("rejected signatures are never automatically retried or reconnected", async
   const { calls, connector } = walletFixture({ reject: true });
   await assert.rejects(
     signIntent(request, async () => connector),
-    /User rejected/,
+    /wallet_request_cancelled/,
   );
   assert.deepEqual(calls, { connect: 0, sign: 1 });
 });
@@ -167,4 +167,17 @@ test("concurrent owner requests open only one wallet prompt and unlock after com
   await first;
   await signIntent(request, async () => connector);
   assert.deepEqual(calls, { connect: 0, sign: 2 });
+});
+
+test("a dismissed wallet prompt surfaces as wallet_request_cancelled and frees the next ceremony", async () => {
+  const { connector } = walletFixture({ reject: true });
+  await assert.rejects(
+    signIntent(request, async () => connector),
+    {
+      message: "wallet_request_cancelled",
+    },
+  );
+  const retry = walletFixture();
+  const result = await signIntent(request, async () => retry.connector);
+  assert.equal(result.standard, "nep413");
 });

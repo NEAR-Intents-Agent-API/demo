@@ -52,7 +52,7 @@ export function ConsentPanel({
         )}
         {error ? (
           <p role="alert" className="text-sm text-destructive">
-            {errorMessage(error.message)}
+            {errorMessage(error)}
           </p>
         ) : null}
         {authorize.data?.authorized && !authorize.data.redirect_uri ? (

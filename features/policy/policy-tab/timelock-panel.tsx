@@ -52,7 +52,7 @@ export function TimelockPanel({
         ) : null}
         {error ? (
           <p role="alert" className="text-sm text-destructive">
-            {errorMessage(error.message)}
+            {errorMessage(error)}
           </p>
         ) : null}
       </div>

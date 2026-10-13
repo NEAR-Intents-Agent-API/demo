@@ -76,7 +76,7 @@ export function PolicyRules({ agent, view }: { agent: AgentView; view: PolicyVie
           catalog={catalog}
           usage={view.usage.budget}
           busy={busy}
-          error={error?.message}
+          error={error}
           onChange={setEditing}
           onClose={closeEditor}
         />
@@ -110,7 +110,7 @@ export function PolicyRules({ agent, view }: { agent: AgentView; view: PolicyVie
       ) : null}
       {error ? (
         <p role="alert" className="mt-4 text-sm text-destructive">
-          {errorMessage(error.message)}
+          {errorMessage(error)}
         </p>
       ) : null}
     </section>

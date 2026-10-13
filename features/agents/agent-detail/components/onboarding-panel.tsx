@@ -28,7 +28,7 @@ export function OnboardingPanel({ view }: { view: ReturnType<typeof useOnboardin
       </Button>
       {finish.error ? (
         <p role="alert" className="text-sm text-destructive">
-          {errorMessage(finish.error.message)}
+          {errorMessage(finish.error)}
         </p>
       ) : null}
     </div>

@@ -53,7 +53,7 @@ export function useAccessFlow(agent: AgentView, onEnabled?: () => void) {
       setStage("idle");
       setPending(prepared);
     },
-    onError: (cause: Error) => setError(errorMessage(cause.message)),
+    onError: (cause: Error) => setError(errorMessage(cause)),
   });
 
   const sign = useCallback(async () => {
@@ -82,7 +82,7 @@ export function useAccessFlow(agent: AgentView, onEnabled?: () => void) {
       }
     } catch (cause) {
       setStage("error");
-      setError(cause instanceof Error ? errorMessage(cause.message) : "signing_failed");
+      setError(errorMessage(cause));
       await refreshPermissions(cache, agent.id);
     }
   }, [agent.id, cache, onEnabled, pending, router]);

@@ -78,7 +78,7 @@ export function ConnectTab({
         plain={plain}
         clients={view.data.clients}
         pendingId={revoke.isPending ? revoke.variables : undefined}
-        error={revoke.error?.message}
+        error={revoke.error}
         onRevoke={(id) => revoke.mutate(id)}
         onResume={(client) => setDialog({ client })}
         onRefresh={() => void view.refetch()}

@@ -28,7 +28,7 @@ export function ApiKeyDialog({
     <div className="flex flex-col items-stretch gap-3 sm:items-end">
       {authorize.error ? (
         <p role="alert" className="text-sm text-destructive">
-          {errorMessage(authorize.error.message)}
+          {errorMessage(authorize.error)}
         </p>
       ) : null}
       <Button
