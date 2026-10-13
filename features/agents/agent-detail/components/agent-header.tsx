@@ -9,6 +9,7 @@ import { accountDate } from "@/lib/format/date";
 import { cn } from "@/lib/utils";
 import type { AgentState } from "../../model/agent-state";
 import { useAccountDetailsDialog } from "../hooks/use-account-details-dialog";
+import { AccountLifecycleActions } from "../lifecycle/account-lifecycle-actions";
 import { AccountDetailsDialog } from "./account-details-dialog";
 
 /**
@@ -50,19 +51,22 @@ export function AgentHeader({
               <span>Created · {accountDate(agent.created_at)}</span>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            aria-label="Refresh all account data"
-            onClick={onRefresh}
-            disabled={refreshing}
-          >
-            <HugeiconsIcon
-              icon={RefreshIcon}
-              className={refreshing ? "size-4 animate-spin" : "size-4"}
-            />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label="Refresh all account data"
+              onClick={onRefresh}
+              disabled={refreshing}
+            >
+              <HugeiconsIcon
+                icon={RefreshIcon}
+                className={refreshing ? "size-4 animate-spin" : "size-4"}
+              />
+              Refresh
+            </Button>
+            <AccountLifecycleActions agent={agent} />
+          </div>
         </div>
         <Button
           ref={details.trigger}

@@ -42,6 +42,7 @@ export async function agentMcpView(userId: string, agentId: string) {
         prepared: Boolean(client.grantCorrelationId),
         status,
         expiresAt: expiry === null ? null : new Date(expiry).toISOString(),
+        revokedAt: grant?.revoked_at ?? null,
         lastUsedAt: client.lastUsedAt?.toISOString() ?? null,
         prefix: client.prefix,
         grantId: client.grantId,

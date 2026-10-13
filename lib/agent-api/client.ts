@@ -1,3 +1,4 @@
+import "server-only";
 import { AgentApi } from "@near-intents-agent-api/sdk";
 import { parseDemoEnv } from "@/lib/config/env";
 

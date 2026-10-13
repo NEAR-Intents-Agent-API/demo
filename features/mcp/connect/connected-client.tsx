@@ -35,6 +35,11 @@ export function ConnectedClient({
           {client.lastUsedAt
             ? `Last used ${new Date(client.lastUsedAt).toLocaleString()}`
             : "Not used yet"}
+          {client.status === "revoked" && client.revokedAt
+            ? ` · Revoked ${new Date(client.revokedAt).toLocaleString()}`
+            : client.status === "expired" && client.expiresAt
+              ? ` · Expired ${new Date(client.expiresAt).toLocaleString()}`
+              : ""}
         </p>
         {client.revocationPending ? (
           <p className="text-xs text-warning">

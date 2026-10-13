@@ -4,6 +4,10 @@ import type { AgentView } from "@near-intents-agent-api/sdk";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
+import { ResponsiveDialog } from "@/components/responsive-dialog";
+import { Callout } from "@/components/shared/callout";
+import { REVOKE_NOTICE_TITLE, RevokeNotice } from "@/components/shared/revoke-notice";
+import { Button } from "@/components/ui/button";
 import { type IntentStep, intentsApi, operationFailure } from "@/features/intents";
 import {
   type ConsentChallenge,
@@ -11,10 +15,12 @@ import {
   type ConsentStage,
   signIntent,
 } from "@/features/wallet/index";
+import { type CommittedOperations, committedAfterRevoke } from "@/lib/agent-api/committed";
 import { errorMessage } from "@/lib/http/messages";
 import { fundsApi } from "../api";
-import type { AccessDuration } from "./access-form-utils";
 import { refreshPermissions } from "./refresh-permission-utils";
+import { signedPayloadText } from "./signature-utils";
+import type { AccessRequest } from "./use-access-form";
 import { useDestinationsFlow } from "./use-destinations-flow";
 
 const enableDialog = "Authorize dashboard";
@@ -32,19 +38,21 @@ export function useAccessFlow(agent: AgentView, onEnabled?: () => void) {
   } | null>(null);
   const [stage, setStage] = useState<ConsentStage>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [committed, setCommitted] = useState<CommittedOperations | null>(null);
 
   const prepare = useMutation({
-    mutationFn: async (input: { kind: "enable"; days: AccessDuration } | { kind: "revoke" }) => {
+    mutationFn: async (input: ({ kind: "enable" } & AccessRequest) | { kind: "revoke" }) => {
       const step =
         input.kind === "enable"
           ? await fundsApi.enableAccess(agent.id, {
-              days: input.days,
+              label: input.label,
+              expiresAt: input.expiresAt,
             })
           : await fundsApi.revokeAccess(agent.id);
       const consent: ConsentChallenge = {
         owner: step.generated.signer,
         message: step.generated.preview,
-        displayMessage: JSON.stringify(step.generated.intent.payload, null, 2),
+        displayMessage: signedPayloadText(step.generated.intent),
       };
       return { step, consent, kind: input.kind };
     },
@@ -55,6 +63,11 @@ export function useAccessFlow(agent: AgentView, onEnabled?: () => void) {
     },
     onError: (cause: Error) => setError(errorMessage(cause)),
   });
+
+  const enabled = useCallback(() => {
+    if (onEnabled) onEnabled();
+    else router.push(`/agents/${encodeURIComponent(agent.id)}`);
+  }, [agent.id, onEnabled, router]);
 
   const sign = useCallback(async () => {
     if (!pending) return;
@@ -76,22 +89,20 @@ export function useAccessFlow(agent: AgentView, onEnabled?: () => void) {
       await refreshPermissions(cache, agent.id);
       setStage("idle");
       setPending(null);
-      if (pending.kind === "enable") {
-        if (onEnabled) onEnabled();
-        else router.push(`/agents/${encodeURIComponent(agent.id)}`);
-      }
+      if (pending.kind === "revoke") setCommitted(committedAfterRevoke(submitted.operation));
+      else enabled();
     } catch (cause) {
       setStage("error");
       setError(errorMessage(cause));
       await refreshPermissions(cache, agent.id);
     }
-  }, [agent.id, cache, onEnabled, pending, router]);
+  }, [agent.id, cache, enabled, pending]);
 
   const openForm = useCallback(
     () => router.push(`/agents/${encodeURIComponent(agent.id)}/access`),
     [agent.id, router],
   );
-  const enable = (days: AccessDuration) => prepare.mutate({ kind: "enable", days });
+  const enable = (request: AccessRequest) => prepare.mutate({ kind: "enable", ...request });
   const revoke = useCallback(() => prepare.mutate({ kind: "revoke" }), [prepare]);
   const revoking = prepare.isPending && prepare.variables?.kind === "revoke";
 
@@ -100,6 +111,29 @@ export function useAccessFlow(agent: AgentView, onEnabled?: () => void) {
     () => () => (
       <>
         {destinations.dialogs}
+        <ResponsiveDialog
+          open={committed !== null}
+          onOpenChange={(open) => {
+            if (!open) setCommitted(null);
+          }}
+          title="Dashboard access revoked"
+          description="The dashboard can no longer start operations on this account."
+          footer={
+            <Button size="lg" className="w-full" onClick={() => setCommitted(null)}>
+              Done
+            </Button>
+          }
+        >
+          {committed ? (
+            <Callout tone="warning" title={REVOKE_NOTICE_TITLE}>
+              <RevokeNotice
+                ids={committed.ids}
+                truncated={committed.truncated}
+                activityHref={`/agents/${encodeURIComponent(agent.id)}?tab=activity`}
+              />
+            </Callout>
+          ) : null}
+        </ResponsiveDialog>
         <ConsentDialog
           open={pending !== null}
           onOpenChange={(open) => {
@@ -121,7 +155,7 @@ export function useAccessFlow(agent: AgentView, onEnabled?: () => void) {
         />
       </>
     ),
-    [destinations.dialogs, error, pending, sign, stage],
+    [agent.id, committed, destinations.dialogs, error, pending, sign, stage],
   );
 
   return {

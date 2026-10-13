@@ -2,37 +2,45 @@
 import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { AccessGrantView as Access } from "@/features/funds";
+import { accessWhen } from "./access-display";
+import { useGrants } from "./use-grants";
 
 export { useAccessFlow } from "./use-access-flow";
 
 /** Status line for the top of the move panel. */
 export function AccessStatus({
+  agentId,
   access,
   onManage,
   onRevoke,
   onDestinations,
   revoking,
 }: {
+  agentId: string;
   access: Access | null | undefined;
   onManage: () => void;
   onRevoke: () => void;
   onDestinations: () => void;
   revoking: boolean;
 }) {
-  if (!access) return null;
+  const { view } = useGrants(agentId);
+  if (!access) {
+    // Dashboard access that ended stays on record: say when, instead of showing nothing.
+    const ended = view.data?.data.find((grant) => grant.holder === "dashboard");
+    if (!ended || ended.status === "active") return null;
+    return (
+      <div className="mt-2 border-t pt-4 text-xs text-muted-foreground">
+        <span className="font-medium text-foreground">Dashboard access {accessWhen(ended)}</span>
+      </div>
+    );
+  }
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-4 text-xs text-muted-foreground">
       <span className="inline-flex items-center gap-1.5 font-medium text-success">
         <HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-3.5" />
         Dashboard authorized
       </span>
-      <span>
-        until{" "}
-        {new Date(access.expiresAt).toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
-        })}
-      </span>
+      <span>{accessWhen(access)}</span>
       <button
         type="button"
         onClick={() => onManage()}
