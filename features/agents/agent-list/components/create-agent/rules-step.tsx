@@ -43,7 +43,6 @@ export function RulesStep({
           rules={rules}
           onChange={onRulesChange}
           catalog={catalog}
-          approvalAvailable={false}
           disabled={pending || hasPendingActivation}
         />
       ) : (

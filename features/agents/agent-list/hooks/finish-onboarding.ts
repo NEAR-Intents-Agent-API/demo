@@ -3,6 +3,7 @@
 import type { IntentStep } from "@/features/intents";
 import { observeIntent, operationFailure } from "@/features/intents";
 import { signIntent } from "@/features/wallet/index";
+import { onboardingState } from "../../agent-detail/onboarding-state";
 import { agentsApi } from "../../api/agents-api";
 
 /**
@@ -16,6 +17,8 @@ export async function finishOnboarding(
 ): Promise<IntentStep> {
   const agentId = state.generated.agent_id;
   let current = state;
+  // An expired request is never put in front of the wallet; the caller starts a fresh one.
+  if (onboardingState(current) === "expired") throw new Error("intent_expired");
   if (current.operation.status === "PENDING_SIGNATURE") {
     onStage("Confirm in your wallet…");
     const signature = await signIntent(current.generated);
