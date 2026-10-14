@@ -164,6 +164,18 @@ export function withdrawalAddressProblem(chain: string, address: string): string
   return !checker || checker.valid(address) ? null : `Not a valid ${checker.label} address`;
 }
 
+const NEARCOM_PREFIX = "nearcom:";
+
+/** near.com shows an Intents account as `nearcom:<account>`; Intents itself takes the bare account. */
+export function isNearcomAddress(text: string): boolean {
+  return text.toLowerCase().startsWith(NEARCOM_PREFIX);
+}
+
+/** The NEAR Intents account a transfer recipient names, with any near.com prefix stripped. */
+export function intentsAccount(text: string): string {
+  return isNearcomAddress(text) ? text.slice(NEARCOM_PREFIX.length).toLowerCase() : text;
+}
+
 /** Why `address` cannot be a NEAR Intents account to transfer to, or null when it can. */
 export function transferRecipientProblem(address: string): string | null {
   return isNearAccountId(address) ? null : "Not a valid NEAR account";

@@ -1,6 +1,10 @@
 "use client";
 import { useState } from "react";
-import { transferRecipientProblem } from "@/lib/agent-api/address";
+import {
+  intentsAccount,
+  isNearcomAddress,
+  transferRecipientProblem,
+} from "@/lib/agent-api/address";
 import type { DestinationAction } from "../access/destination-utils";
 import type { BalanceLane } from "../flows/flow-parts";
 import { useFunds } from "../funds-context";
@@ -18,11 +22,10 @@ export function useSendFlow(initialLane: BalanceLane = "public") {
   const transferAction: DestinationAction = confidential
     ? "confidential_transfer"
     : "intents_transfer";
-  const { open, destinations, recipient } = transferRecipient(
-    funds.rules?.destinations,
-    transferAction,
-    selectedRecipient,
-  );
+  const picked = transferRecipient(funds.rules?.destinations, transferAction, selectedRecipient);
+  const { open, destinations } = picked;
+  const recipient = picked.recipient && intentsAccount(picked.recipient);
+  const nearcom = Boolean(selectedRecipient && isNearcomAddress(selectedRecipient));
   const { tracking, track, clear } = useTracking();
   const action = useFundsAction(funds.agent.id);
   const { token, atomic } = source;
@@ -68,6 +71,7 @@ export function useSendFlow(initialLane: BalanceLane = "public") {
     transferAction,
     displayRecipient: open ? selectedRecipient : recipient ? selectedRecipient : null,
     recipient,
+    nearcom,
     tracking,
     clear,
     action,

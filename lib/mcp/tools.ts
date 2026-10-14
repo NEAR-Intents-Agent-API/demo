@@ -1,5 +1,6 @@
 import type { AgentApi, StatusResponse } from "@near-intents-agent-api/sdk";
 import { z } from "zod";
+import { intentsAccount } from "@/lib/agent-api/address";
 import { correlationIdSchema, operationCorrelationIdSchema } from "@/lib/agent-api/schemas";
 import { demoEnv } from "@/lib/config/runtime";
 
@@ -74,6 +75,10 @@ const wrapped = z
 const idempotencyKey = z.string().min(8).max(128);
 const operationId = correlationIdSchema;
 const approvalId = z.string().min(1).max(64);
+
+const recipient = text.describe(
+  "Recipient NEAR Intents account: a named account (alice.near), a 64-hex implicit account or a 0x EVM address. A near.com address `nearcom:<account>` is that account; the prefix is stripped.",
+);
 
 /** Shared by every write tool: an idempotency key is the double-spend guard. */
 const writeArgs = { idempotencyKey };
@@ -185,7 +190,7 @@ export const toolDefinitions = {
   },
   withdraw: {
     description:
-      "Withdraw to an address on another chain, or to a NEAR account with chain near. NEAR (nep141:wrap.near) to chain near arrives as native NEAR unless wrapped is true. Cross-chain settles asynchronously.",
+      "Withdraw to an address on another chain, or to a NEAR account with chain near. NEAR (nep141:wrap.near) to chain near arrives as native NEAR unless wrapped is true. Cross-chain settles asynchronously. A near.com `nearcom:` address is not on any chain: send to it with a transfer instead.",
     inputSchema: z
       .object({
         token: text,
@@ -201,12 +206,14 @@ export const toolDefinitions = {
       .strict(),
   },
   intents_transfer: {
-    description: "Send an Intents transfer to another NEAR Intents account.",
-    inputSchema: z.object({ token: text, amount, to: text, ...writeArgs }).strict(),
+    description:
+      "Send from this account's public balance to another NEAR Intents account's public balance. For a near.com (`nearcom:`) recipient this is allowed but lands in their legacy public balance, not the private balance near.com shows: prefer confidential_transfer unless the user asks for public, and tell them where it lands.",
+    inputSchema: z.object({ token: text, amount, to: recipient, ...writeArgs }).strict(),
   },
   confidential_transfer: {
-    description: "Send a confidential transfer from the private shard.",
-    inputSchema: z.object({ token: text, amount, to: text, ...writeArgs }).strict(),
+    description:
+      "Send from this account's confidential balance to another NEAR Intents account's confidential balance, the balance near.com shows its users. If the confidential balance is short, shield the difference first.",
+    inputSchema: z.object({ token: text, amount, to: recipient, ...writeArgs }).strict(),
   },
   create_cross_chain_deposit: {
     description:
@@ -406,7 +413,7 @@ export async function runWriteTool(
         agentId,
         {
           ...move,
-          recipient: String(args.to),
+          recipient: intentsAccount(String(args.to)),
           confidential: name === "confidential_transfer",
         },
         options,

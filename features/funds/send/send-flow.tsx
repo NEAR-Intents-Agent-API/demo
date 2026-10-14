@@ -16,6 +16,7 @@ export function SendFlow({ view }: { view: ReturnType<typeof useSendFlow> }) {
     setRecipient,
     destinations,
     recipient,
+    nearcom,
     tracking,
     action,
     confidential,
@@ -56,7 +57,16 @@ export function SendFlow({ view }: { view: ReturnType<typeof useSendFlow> }) {
           onChange={setRecipient}
           open={view.open}
           onManage={() => funds.manageDestinations({ action: view.transferAction })}
+          placeholder="NEAR account or near.com address (nearcom:…)"
         />
+
+        {nearcom ? (
+          <p className="text-xs leading-5 text-muted-foreground">
+            {confidential
+              ? "near.com address: it arrives in the private balance near.com shows."
+              : "near.com address: a public transfer arrives in their legacy public balance, not the private balance near.com shows. Transfer from the private balance to reach it."}
+          </p>
+        ) : null}
 
         {token && atomic && recipient ? (
           <ReviewCard
