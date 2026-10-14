@@ -11,7 +11,12 @@ import type {
   Status,
 } from "@near-intents-agent-api/sdk";
 import { z } from "zod";
-import { evmChains, transferRecipientProblem, withdrawalAddressProblem } from "./address";
+import {
+  evmChains,
+  intentsAccount,
+  transferRecipientProblem,
+  withdrawalAddressProblem,
+} from "./address";
 
 /**
  * Runtime validation for the Agent API payloads this app handles. The SDK ships plain types and
@@ -126,7 +131,8 @@ const typedDestinationSchema = destinationUnion.superRefine((value, ctx) => {
  * is never altered. Throws a `ZodError` naming the first problem, malformed addresses included.
  */
 export function canonicalDestination(input: Destination): Destination {
-  if (input.action === "transfer") return typedDestinationSchema.parse(input);
+  if (input.action === "transfer")
+    return typedDestinationSchema.parse({ ...input, address: intentsAccount(input.address) });
   const chain = canonicalChain(input.chain);
   const address = evmChains.has(chain) ? input.address.toLowerCase() : input.address;
   return typedDestinationSchema.parse({ ...input, chain, address });

@@ -18,6 +18,7 @@ export function DestinationPicker({
   actionLabel,
   embedded = false,
   open = false,
+  placeholder = "Paste the recipient's address",
 }: {
   label: string;
   destinations: readonly string[];
@@ -29,6 +30,7 @@ export function DestinationPicker({
   actionLabel: string;
   embedded?: boolean;
   open?: boolean;
+  placeholder?: string;
 }) {
   return (
     <fieldset
@@ -60,7 +62,7 @@ export function DestinationPicker({
             autoCapitalize="none"
             autoComplete="off"
             maxLength={256}
-            placeholder="Paste the recipient's address"
+            placeholder={placeholder}
           />
           <p className="text-xs leading-5 text-muted-foreground">
             Account destination rule allows this unless destination is blocked.
