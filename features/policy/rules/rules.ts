@@ -22,7 +22,7 @@ export type TokenLimit = { assetId: string; perTransaction: string };
 
 export type Rules = {
   abilities: Record<Ability, boolean>;
-  /** `"any"`, or the exact asset ids the agent may touch. */
+  /** `"any"`, or the exact asset ids the agent may spend; a swap may still buy an unlisted one. */
   tokens: "any" | string[];
   limits: TokenLimit[];
   /** Most money actions per hour, as typed; empty means no cap. */
