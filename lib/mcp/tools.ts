@@ -67,6 +67,10 @@ export type WriteToolName = (typeof WRITE_TOOLS)[number];
 
 const text = z.string().min(1).max(256);
 const amount = z.string().regex(/^[0-9]{1,78}$/);
+const wrapped = z
+  .boolean()
+  .default(false)
+  .describe("Deliver wNEAR instead of native NEAR; only for NEAR withdrawn to chain near.");
 const idempotencyKey = z.string().min(8).max(128);
 const operationId = correlationIdSchema;
 const approvalId = z.string().min(1).max(64);
@@ -113,7 +117,8 @@ export const toolDefinitions = {
     }),
   },
   withdraw_preview: {
-    description: "Preview a cross-chain withdrawal without executing it.",
+    description:
+      "Preview a withdrawal (fees and received amount) without executing it. NEAR to chain near arrives as native NEAR unless wrapped is true.",
     inputSchema: z.object({
       token: text,
       amount,
@@ -121,6 +126,7 @@ export const toolDefinitions = {
       to: text,
       memo: z.string().max(256).optional(),
       confidential: z.boolean().default(false),
+      wrapped,
     }),
   },
   get_deposit_status: {
@@ -178,7 +184,8 @@ export const toolDefinitions = {
     inputSchema: z.object({ token: text, amount, ...writeArgs }).strict(),
   },
   withdraw: {
-    description: "Withdraw to another chain through Intents. Cross-chain settles asynchronously.",
+    description:
+      "Withdraw to an address on another chain, or to a NEAR account with chain near. NEAR (nep141:wrap.near) to chain near arrives as native NEAR unless wrapped is true. Cross-chain settles asynchronously.",
     inputSchema: z
       .object({
         token: text,
@@ -187,6 +194,7 @@ export const toolDefinitions = {
         to: text,
         memo: z.string().max(256).optional(),
         confidential: z.boolean().default(false),
+        wrapped,
         async: z.boolean().default(false),
         ...writeArgs,
       })
@@ -436,6 +444,8 @@ function withdrawRequest(args: Record<string, unknown>) {
     recipient: String(args.to),
     memo: optionalString(args.memo),
     confidential: Boolean(args.confidential),
+    // Sent only when set, so the field never reaches an API that predates it.
+    ...(args.wrapped === true ? { wrapped: true } : {}),
     async: Boolean(args.async),
   };
 }

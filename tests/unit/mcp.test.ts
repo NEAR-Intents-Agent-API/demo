@@ -194,6 +194,32 @@ test("MCP passes destinations unchanged; the account's destination rule decides"
   assert.match(JSON.stringify(sent[0]), /"recipient":"CaseSensitive"/);
 });
 
+test("MCP NEAR withdrawals send `wrapped` only when the caller asks for wNEAR", async () => {
+  const sent: Array<Record<string, unknown>> = [];
+  const client = {
+    withdraw: async (_agentId: string, request: Record<string, unknown>) => {
+      sent.push(request);
+      return operation;
+    },
+  } as unknown as McpAgentClient;
+  const args = {
+    chain: "near",
+    to: "shop.near",
+    token: "nep141:wrap.near",
+    amount: "1",
+    idempotencyKey: "native-near",
+  };
+  await runWriteTool("withdraw", args, { agentId, client });
+  await runWriteTool(
+    "withdraw",
+    { ...args, wrapped: true, idempotencyKey: "wrapped-near" },
+    { agentId, client },
+  );
+  assert.equal("wrapped" in (sent[0] ?? {}), false, "native NEAR is the API default");
+  assert.equal(sent[1]?.wrapped, true);
+  assert.equal(toolDefinitions.withdraw.inputSchema.safeParse(args).success, true);
+});
+
 test("MCP deposits require an exact source asset id, never a chain or symbol", async () => {
   const shape = toolDefinitions.create_cross_chain_deposit.inputSchema;
   const base = { amount: "100", idempotencyKey: "mcp-deposit-shape" };

@@ -41,7 +41,8 @@ export function createAgentMcpServer(scope: McpToolScope): McpServer {
     {
       instructions: [
         "This server uses one NEAR Intents agent account. Its owner's rules and USD budget are shared with every other client to it. This client may do exactly what the account rules allow: an action the rules turn off fails with policy_action_denied, and transfers and withdrawals only reach destinations the rules allow (policy_destination_denied otherwise). Either way, ask the owner to change the rule; no new grant is needed. Incoming deposit addresses need no spending grant.",
-        "Balances, swaps, confidential shield/unshield, cross-chain withdrawals, Intents transfers and deposit intents are available; there is no native NEAR transfer.",
+        "Balances, swaps, confidential shield/unshield, withdrawals (to a NEAR account or another chain), Intents transfers and deposit intents are available.",
+        "Withdrawing NEAR (nep141:wrap.near) to chain near delivers native NEAR, like a NEAR wallet: the recipient needs no wrap.near registration, and exchanges and invoices expect it. Pass wrapped: true only when the recipient explicitly asks for wNEAR.",
         "Every write needs a unique idempotencyKey. Reusing one with different arguments is rejected.",
         "If a write returns owner_action_required, a human must approve it in the dashboard at the given url. Poll get_operation; never retry the write.",
         "A completed operation is not settlement proof. Read get_history or refresh_operation for provider evidence.",
