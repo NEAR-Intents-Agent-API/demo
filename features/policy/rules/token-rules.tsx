@@ -9,7 +9,7 @@ import { RulesSection } from "./rules-section";
 
 type Catalog = { tokens: readonly CatalogOption[]; lookup: (assetId: string) => CatalogOption };
 
-/** Which tokens the account may touch at all: any, or an explicit list shown with logos. */
+/** Which tokens the account may spend: any, or an explicit list shown with logos. */
 export function TokenRules({
   rules,
   onChange,
@@ -28,7 +28,7 @@ export function TokenRules({
     <RulesSection
       embedded={embedded}
       title="Allowed tokens"
-      description="Swaps, transfers and withdrawals can only use allowed tokens."
+      description="The agent can only spend allowed tokens. A swap can still buy another token, but it stays put until you allow it."
     >
       <Choice
         label="Tokens"
