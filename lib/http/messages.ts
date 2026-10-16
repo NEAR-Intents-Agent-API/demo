@@ -129,6 +129,8 @@ export const errorMessages: Record<string, string> = {
     "Unfreezing has a short wait after a freeze. Try again in a few minutes.",
   provider_refused: "The provider refused the request.",
   provider_rate_limited: "The provider rate limit was reached. Retry shortly.",
+  provider_limit_reached:
+    "This account has used its 100 wallet operations for the day at the provider, previews included. Nothing was sent.",
   provider_unavailable: "The provider is temporarily unavailable.",
   provider_response_invalid: "The provider sent an answer this app could not read. Try again.",
   provider_credential_invalid: "The service could not reach the provider. Try again later.",
@@ -166,7 +168,7 @@ export const errorMessages: Record<string, string> = {
   route_unavailable:
     "This route is not available from the provider right now. Nothing was sent; try another token or try again later.",
   quote_unavailable:
-    "The swap quote timed out at the provider. Nothing was sent; try again in a moment.",
+    "The swap quote got no answer at the provider. Nothing was sent; try again in a moment.",
   wallet_busy:
     "Another move on this account is still running. Wait for it to finish, then try again.",
   wallet_frozen: "This account is frozen. Money moves are refused until you unfreeze it.",
