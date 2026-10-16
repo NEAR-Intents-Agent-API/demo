@@ -70,6 +70,8 @@ const apiCodes = [
   "policy_action_denied",
   "policy_blocks_delete",
   "policy_change_throttled",
+  "policy_delegate_action_mismatch",
+  "policy_delegate_owner_mismatch",
   "policy_delegate_signature_invalid",
   "policy_denied",
   "policy_deposit_limit",
@@ -199,4 +201,61 @@ test("cooldown and refusal states offer no instant retry", () => {
   for (const code of ["agent_unfreeze_throttled", "amount_too_low", "invalid_address"])
     assert.equal(isRetryable(code), false, code);
   assert.equal(isRetryable("wallet_busy"), true);
+});
+
+const mismatch = (code: string, pointer: string) =>
+  errorMessage(new DemoApiError(code, 409, { pointer }));
+
+test("owner_mismatch names what differs, from the signed field the API points at", () => {
+  const at = (field: string) => mismatch("owner_mismatch", `/signed_data/payload/message/${field}`);
+  assert.equal(at("network"), "This message was signed for another NEAR network.");
+  assert.equal(at("account_id"), "Sign with the wallet that owns this agent.");
+  assert.equal(at("owner"), "Sign with the wallet that owns this agent.");
+  assert.match(at("public_key"), /different key than this agent's owner key\. Reconnect/);
+  assert.match(at("previous_public_key"), /owner key changed since this request was prepared/);
+  for (const field of ["tenant_id", "agent_id", "recipient"])
+    assert.equal(at(field), "This request was prepared for another agent or app. Start again.");
+});
+
+test("a mismatch without a pointer keeps the generic text, never the old misleading one", () => {
+  assert.match(errorMessage("owner_mismatch"), /does not match this agent's owner/);
+  assert.doesNotMatch(errorMessage("owner_mismatch"), /cannot authorize/);
+  assert.equal(errorMessage(new DemoApiError("owner_mismatch", 409)), errorMessages.owner_mismatch);
+  assert.equal(
+    mismatch("wallet_busy", "/signed_data/payload/message/network"),
+    errorMessages.wallet_busy,
+  );
+});
+
+test("signer and delegate-owner mismatches point at the key, passkey or account", () => {
+  assert.match(mismatch("signer_mismatch", "/signed_data/public_key"), /different key/);
+  assert.match(mismatch("signer_mismatch", "/signed_data/credential/id"), /passkey/);
+  assert.match(
+    mismatch("policy_delegate_owner_mismatch", "/signed_data/signed_delegate/sender_id"),
+    /different NEAR account/,
+  );
+  assert.match(
+    mismatch("policy_delegate_owner_mismatch", "/signed_data/signed_delegate/public_key"),
+    /different key/,
+  );
+});
+
+test("a delegate action mismatch says which part of the transaction the wallet changed", () => {
+  const at = (field: string) =>
+    mismatch("policy_delegate_action_mismatch", `/signed_data/signed_delegate/${field}`);
+  assert.match(at("actions/0/gas"), /changed the transaction \(its gas\)/);
+  assert.match(at("actions/0/deposit"), /attached deposit/);
+  assert.match(at("receiver_id"), /the contract it calls/);
+  assert.match(at("actions/1/receiver_id"), /the contract it calls/);
+  assert.match(at("actions/0/method_name"), /the method it calls/);
+  assert.match(at("actions/0/args"), /call arguments/);
+  assert.match(at("actions"), /list of actions/);
+  assert.match(at("actions/0/gas"), /another wallet/);
+  assert.match(errorMessage("policy_delegate_action_mismatch"), /gas, deposit or target/);
+});
+
+test("a wallet that changed the transaction may retry; a wrong signer may not", () => {
+  assert.equal(isRetryable("policy_delegate_action_mismatch"), true);
+  assert.equal(isRetryable("policy_delegate_owner_mismatch"), false);
+  assert.equal(isRetryable("owner_mismatch"), false);
 });

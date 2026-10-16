@@ -4,7 +4,7 @@ import { agentApi } from "@/lib/agent-api/client";
 import { requireOwnedAgent } from "@/lib/agent-api/guard";
 import { currentSession, type DemoSession } from "@/lib/auth/session";
 import { guardBrowserMutation } from "@/lib/http/browser-guard";
-import type { ErrorDetails } from "@/lib/http/error-details";
+import { agentApiErrorDetails } from "@/lib/http/error-details";
 import { bffError, knownErrorCode, type RouteLog } from "@/lib/http/errors";
 import { errorFields, logger } from "@/lib/http/logger";
 
@@ -62,7 +62,7 @@ async function runLogged(
         provider_code: error.code,
         provider_status: error.status,
       });
-      const details: ErrorDetails = { available_at: error.availableAt };
+      const details = agentApiErrorDetails(error);
       if (error.code === "spend_budget_exceeded" && agentId)
         details.budget_remaining_usd = await budgetRemainingUsd(agentId);
       return bffError(error.code, error.status, context, details);
