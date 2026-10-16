@@ -88,7 +88,12 @@ export const errorMessages: Record<string, string> = {
   approval_not_allowed: "This owner is not on the approver list in the account's rules.",
   approval_signature_invalid: "The approval signature was refused. Prepare the vote again.",
   approval_vote_unsupported: "This owner's wallet cannot vote on approvals on this network.",
-  owner_mismatch: "This owner cannot authorize the requested action.",
+  owner_mismatch:
+    "The signed request does not match this agent's owner. Start again and sign with the wallet that owns this agent.",
+  policy_delegate_owner_mismatch:
+    "The rules change was signed by a different account or key than this agent's owner. Sign again with the wallet that owns this agent.",
+  policy_delegate_action_mismatch:
+    "Your wallet changed the transaction (its gas, deposit or target) before signing, so it cannot be accepted. Try again, or sign with another wallet.",
   owner_key_not_full_access: "The owner account key is not a full-access key.",
   client_not_found: "This client is unavailable for this account.",
   client_revoked: "This client was revoked. Connect it again to create new access.",
@@ -204,6 +209,54 @@ const timedMessages: Record<string, string> = {
     "The account's schedule does not allow money moves at the time this would run. Nothing was sent. Try again after {time}, or change the schedule on the Rules tab.",
 };
 
+const ownerKeyMessage =
+  "Your wallet signed with a different key than this agent's owner key. Reconnect the wallet and try again.";
+const ownerWalletMessage = "Sign with the wallet that owns this agent.";
+const otherAgentMessage = "This request was prepared for another agent or app. Start again.";
+const changedTransaction = (what: string) =>
+  `Your wallet changed the transaction (${what}) before signing, so it cannot be accepted. Try again, or sign with another wallet.`;
+
+/**
+ * Sharper text for the mismatch codes, by the last segment of the API's `source.pointer`. One code
+ * covers every binding the API checks, so the code alone cannot say what to fix.
+ */
+const pointerMessages: Record<string, Record<string, string>> = {
+  owner_mismatch: {
+    network: "This message was signed for another NEAR network.",
+    account_id: ownerWalletMessage,
+    owner: ownerWalletMessage,
+    public_key: ownerKeyMessage,
+    previous_public_key:
+      "This agent's owner key changed since this request was prepared. Start again.",
+    tenant_id: otherAgentMessage,
+    agent_id: otherAgentMessage,
+    recipient: otherAgentMessage,
+  },
+  signer_mismatch: {
+    public_key: ownerKeyMessage,
+    id: "This passkey is not the one that owns this agent. Choose the owner's passkey and try again.",
+  },
+  policy_delegate_owner_mismatch: {
+    sender_id:
+      "Your wallet signed as a different NEAR account than this agent's owner. Switch to the owner account and sign again.",
+    public_key: ownerKeyMessage,
+  },
+  policy_delegate_action_mismatch: {
+    gas: changedTransaction("its gas"),
+    deposit: changedTransaction("its attached deposit"),
+    receiver_id: changedTransaction("the contract it calls"),
+    method_name: changedTransaction("the method it calls"),
+    args: changedTransaction("its call arguments"),
+    actions: changedTransaction("its list of actions"),
+  },
+};
+
+function pointerMessage(code: string, pointer: string): string | undefined {
+  const byField = Object.hasOwn(pointerMessages, code) ? pointerMessages[code] : undefined;
+  const field = pointer.slice(pointer.lastIndexOf("/") + 1);
+  return byField && Object.hasOwn(byField, field) ? byField[field] : undefined;
+}
+
 /** "14:32, 13 Oct" in the viewer's time zone (or `timeZone`, for tests). */
 export function formatRetryTime(iso: string, timeZone?: string): string {
   const at = new Date(iso);
@@ -240,13 +293,16 @@ function usdLeft(usd: number): string {
 
 /**
  * Human-readable text for an API error code, or for the error carrying one. Pass the error itself
- * whenever you have it: its details add a local retry time and the USD left in a budget. Unknown
- * codes get a plain sentence that names the code, never advice about server logs.
+ * whenever you have it: its details add a local retry time, the USD left in a budget, and the
+ * signed field a mismatch is about. Unknown codes get a plain sentence that names the code, never
+ * advice about server logs.
  */
 export function errorMessage(source: unknown): string {
   const { code, details } = parseErrorSource(source);
   if (code === "spend_budget_exceeded" && details.budget_remaining_usd !== undefined)
     return `The account has ${usdLeft(Number(details.budget_remaining_usd))} left in its USD budget, which is not enough for this. ${budgetAdvice}`;
+  const pointed = details.pointer ? pointerMessage(code, details.pointer) : undefined;
+  if (pointed) return pointed;
   const message = baseMessage(code);
   const retryAt = details.available_at;
   if (!retryAt || Date.parse(retryAt) <= Date.now()) return message;
@@ -278,6 +334,7 @@ const PERMANENT_CODES = new Set([
   "onboarding_not_found",
   "policy_transaction_failed",
   "owner_mismatch",
+  "policy_delegate_owner_mismatch",
   "wallet_network_unsupported",
   "wallet_recovery_requires_policy_transfer",
   "owner_key_not_full_access",

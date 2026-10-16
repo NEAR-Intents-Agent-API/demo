@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { errorDetails } from "../../lib/http/error-details";
+import { AgentApiError } from "@near-intents-agent-api/sdk";
+import { agentApiErrorDetails, errorDetails } from "../../lib/http/error-details";
 import { bffError } from "../../lib/http/errors";
 import { DemoApiError, request } from "../../lib/http/request";
 
@@ -21,6 +22,75 @@ test("only well-formed allowlisted fields survive", () => {
   assert.deepEqual(errorDetails("available_at"), {});
 });
 
+test("only the pointer shapes the API names on mismatches are forwarded", () => {
+  const kept = [
+    "/signed_data/payload/message/tenant_id",
+    "/signed_data/payload/message/agent_id",
+    "/signed_data/payload/message/network",
+    "/signed_data/payload/message/recipient",
+    "/signed_data/payload/message/account_id",
+    "/signed_data/payload/message/public_key",
+    "/signed_data/payload/message/previous_public_key",
+    "/signed_data/payload/message/owner",
+    "/signed_data/public_key",
+    "/signed_data/credential/id",
+    "/signed_data/signed_delegate/sender_id",
+    "/signed_data/signed_delegate/public_key",
+    "/signed_data/signed_delegate/receiver_id",
+    "/signed_data/signed_delegate/actions",
+    "/signed_data/signed_delegate/actions/0/receiver_id",
+    "/signed_data/signed_delegate/actions/12/method_name",
+    "/signed_data/signed_delegate/actions/0/deposit",
+    "/signed_data/signed_delegate/actions/0/gas",
+    "/signed_data/signed_delegate/actions/0/args",
+  ];
+  for (const pointer of kept) assert.deepEqual(errorDetails({ pointer }), { pointer }, pointer);
+  const dropped = [
+    "/label",
+    "/signed_data",
+    "/signed_data/payload/message/label",
+    "/signed_data/payload/message/network/x",
+    "/signed_data/payload/message/network ",
+    "signed_data/public_key",
+    "/signed_data/signed_delegate/actions/x/gas",
+    "/signed_data/signed_delegate/actions/1234/gas",
+    "/signed_data/signed_delegate/actions/0/args/0",
+    "/signed_data/credential/id\nsecret",
+    "/SIGNED_DATA/PUBLIC_KEY",
+  ];
+  for (const pointer of dropped) assert.deepEqual(errorDetails({ pointer }), {}, pointer);
+  assert.deepEqual(errorDetails({ pointer: 7 }), {});
+  assert.deepEqual(errorDetails({ source: { pointer: "/signed_data/public_key" } }), {});
+});
+
+test("an Agent API refusal hands over its pointer and retry time, never its detail", () => {
+  const refusal = (source?: { pointer: string }) =>
+    new AgentApiError(409, {
+      errors: [
+        {
+          status: "409",
+          code: "owner_mismatch",
+          title: "Owner mismatch",
+          detail: "The message was signed for testnet; this agent is on mainnet.",
+          ...(source ? { source } : {}),
+          meta: { retryable: false, available_at: "2026-10-13T14:32:00.000Z" },
+        },
+      ],
+      meta: { request_id: "r" },
+    });
+  assert.deepEqual(
+    agentApiErrorDetails(refusal({ pointer: "/signed_data/payload/message/network" })),
+    {
+      available_at: "2026-10-13T14:32:00.000Z",
+      pointer: "/signed_data/payload/message/network",
+    },
+  );
+  assert.deepEqual(agentApiErrorDetails(refusal({ pointer: "/label" })), {
+    available_at: "2026-10-13T14:32:00.000Z",
+  });
+  assert.deepEqual(agentApiErrorDetails(refusal()), { available_at: "2026-10-13T14:32:00.000Z" });
+});
+
 test("the BFF error body carries the allowlisted details and nothing else", async () => {
   const response = bffError("policy_change_throttled", 429, {}, {
     available_at: "2026-10-13T14:32:00.000Z",
@@ -31,6 +101,13 @@ test("the BFF error body carries the allowlisted details and nothing else", asyn
     error: { code: "policy_change_throttled", available_at: "2026-10-13T14:32:00.000Z" },
   });
   assert.deepEqual(await bffError("wallet_busy").json(), { error: { code: "wallet_busy" } });
+  const mismatch = bffError("owner_mismatch", 409, {}, {
+    pointer: "/signed_data/payload/message/network",
+    detail: "The message was signed for testnet; this agent is on mainnet.",
+  } as never);
+  assert.deepEqual(await mismatch.json(), {
+    error: { code: "owner_mismatch", pointer: "/signed_data/payload/message/network" },
+  });
 });
 
 test("the transport hands the details to DemoApiError", async (t) => {
@@ -53,6 +130,20 @@ test("the transport hands the details to DemoApiError", async (t) => {
       error.code === "agent_unfreeze_throttled" &&
       error.status === 429 &&
       JSON.stringify(error.details) === '{"available_at":"2026-10-13T14:32:00.000Z"}',
+  );
+});
+
+test("the transport keeps an allowlisted pointer on DemoApiError", async (t) => {
+  t.mock.method(globalThis, "fetch", async () =>
+    Response.json(
+      { error: { code: "signer_mismatch", pointer: "/signed_data/credential/id" } },
+      { status: 403 },
+    ),
+  );
+  await assert.rejects(
+    request("/api/agents/a/policy"),
+    (error: unknown) =>
+      error instanceof DemoApiError && error.details.pointer === "/signed_data/credential/id",
   );
 });
 
