@@ -231,3 +231,30 @@ test("MCP deposits require an exact source asset id, never a chain or symbol", a
   );
   assert.equal(shape.safeParse({ ...base, source_asset: "nep141:base.omft.near" }).success, true);
 });
+
+test("MCP withdraw previews pass the caller's idempotencyKey and otherwise leave it to the SDK", async () => {
+  const sent: Array<{ request: Record<string, unknown>; key?: string }> = [];
+  const client = {
+    withdraw: async (
+      _agentId: string,
+      request: Record<string, unknown>,
+      options?: { idempotencyKey?: string },
+    ) => {
+      sent.push({ request, key: options?.idempotencyKey });
+      return { dry: true, type: "withdraw", quote: {} };
+    },
+  } as unknown as McpAgentClient;
+  const context = { agentId: "agent", client };
+  const args = { token: "nep141:wrap.near", amount: "1", chain: "near", to: "shop.near" };
+  const schema = toolDefinitions.withdraw_preview.inputSchema;
+  await runReadTool("withdraw_preview", schema.parse(args), context);
+  await runReadTool(
+    "withdraw_preview",
+    schema.parse({ ...args, idempotencyKey: "preview-key-1" }),
+    context,
+  );
+  assert.equal(sent[0]?.request.dry, true);
+  assert.equal(sent[0]?.key, undefined, "the SDK creates the key");
+  assert.equal(sent[1]?.key, "preview-key-1");
+  assert.equal("idempotencyKey" in (sent[1]?.request ?? {}), false);
+});

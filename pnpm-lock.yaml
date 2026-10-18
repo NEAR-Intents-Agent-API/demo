@@ -39,8 +39,8 @@ importers:
         specifier: 2.0.0
         version: 2.0.0
       '@near-intents-agent-api/sdk':
-        specifier: ^0.5.1
-        version: 0.5.1
+        specifier: ^0.5.2
+        version: 0.5.2
       '@noble/hashes':
         specifier: 2.4.0
         version: 2.4.0
@@ -1514,8 +1514,8 @@ packages:
     resolution: {integrity: sha512-WrOw/bcXm0f9qHkumlT1QlArXSTWqaY9sunsDpOk+yCCorCKMxvWT/a3xko4EYHVdeZoh00yI2TydXn6eyICDA==}
     engines: {node: '>= 10'}
 
-  '@near-intents-agent-api/sdk@0.5.1':
-    resolution: {integrity: sha512-2Oyoi7Umctdv/rTmMcSZ8ja+TPNK/8WIHIX/LUV6ci+Pahqd0zhVzdUg0vYsQp6VnGr+sCchf+//2tBHGfl8oA==}
+  '@near-intents-agent-api/sdk@0.5.2':
+    resolution: {integrity: sha512-hnwOYxTpRistJeKvlB7lqoN8lSusuxSfeaawxy17WoZmszitHmppasHnujEXE5KznRmhR0Jp2DbS0SVAJSU0mw==}
     engines: {node: '>=24'}
 
   '@next/env@16.3.4':
@@ -6532,7 +6532,7 @@ snapshots:
       '@napi-rs/keyring-win32-ia32-msvc': 1.3.0
       '@napi-rs/keyring-win32-x64-msvc': 1.3.0
 
-  '@near-intents-agent-api/sdk@0.5.1':
+  '@near-intents-agent-api/sdk@0.5.2':
     dependencies:
       '@noble/curves': 2.4.0
       '@noble/hashes': 2.4.0
