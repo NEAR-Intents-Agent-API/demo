@@ -123,7 +123,7 @@ export const toolDefinitions = {
   },
   withdraw_preview: {
     description:
-      "Preview a withdrawal (fees and received amount) without executing it. NEAR to chain near arrives as native NEAR unless wrapped is true.",
+      "Preview a withdrawal (fees and received amount) without executing it. NEAR to chain near arrives as native NEAR unless wrapped is true. Each preview runs under an idempotencyKey: pass the same key to repeat an identical preview within 60 seconds; omitted, a fresh key is used. Previews are limited to 20 per account per rolling 24 hours, failed ones included, so do not repeat them needlessly.",
     inputSchema: z.object({
       token: text,
       amount,
@@ -132,6 +132,7 @@ export const toolDefinitions = {
       memo: z.string().max(256).optional(),
       confidential: z.boolean().default(false),
       wrapped,
+      idempotencyKey: idempotencyKey.optional(),
     }),
   },
   get_deposit_status: {
@@ -181,11 +182,13 @@ export const toolDefinitions = {
       .strict(),
   },
   shield: {
-    description: "Move an Intents balance into the confidential shard.",
+    description:
+      "Move an Intents balance into the confidential shard. Counts toward the asset's per-asset limits and the hourly action cap.",
     inputSchema: z.object({ token: text, amount, ...writeArgs }).strict(),
   },
   unshield: {
-    description: "Move a confidential balance back to Intents.",
+    description:
+      "Move a confidential balance back to Intents. Counts toward the asset's per-asset limits and the hourly action cap.",
     inputSchema: z.object({ token: text, amount, ...writeArgs }).strict(),
   },
   withdraw: {
@@ -357,7 +360,14 @@ export async function runReadTool(
     case "swap_quote":
       return read(await client.swap(agentId, { ...swapRequest(args), dry: true }));
     case "withdraw_preview":
-      return read(await client.withdraw(agentId, { ...withdrawRequest(args), dry: true }));
+      // A preview runs under a key like the withdrawal; the SDK creates one unless the caller sent it.
+      return read(
+        await client.withdraw(
+          agentId,
+          { ...withdrawRequest(args), dry: true },
+          typeof args.idempotencyKey === "string" ? { idempotencyKey: args.idempotencyKey } : {},
+        ),
+      );
     case "get_deposit_status":
     case "get_operation":
     case "refresh_operation": {

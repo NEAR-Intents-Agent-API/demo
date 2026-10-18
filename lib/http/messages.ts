@@ -146,6 +146,16 @@ export const errorMessages: Record<string, string> = {
     "The transaction was sent, but its confirmation has not been seen yet. Check Activity before trying again.",
   policy_denied:
     "This account's rules do not allow this: the token, action, destination, per-token limit or moves-per-hour cap. Raising the USD budget will not change that; change the blocking rule on the Rules tab.",
+  policy_limit_exceeded:
+    "This would go over the account's per-token limit for this hour, day or month. Moving funds between the public and private balance counts too. Raise the limit on the Rules tab, or wait until earlier moves age out.",
+  policy_action_limit_exceeded:
+    "The account has used its moves for this hour. Wait until earlier moves age out of the hour, or raise the moves-per-hour cap on the Rules tab.",
+  policy_usage_unavailable:
+    "This account has earlier moves that cannot be counted against its per-token limits yet. Nothing was sent. Moves of limited tokens resume once those age out.",
+  withdraw_preview_pending: "A preview of this withdrawal is still running. Try again in a moment.",
+  withdraw_preview_expired: "This withdrawal preview has expired. Preview it again.",
+  withdraw_preview_limit_reached:
+    "This account has used its 20 withdrawal previews for the last 24 hours. Previews resume as earlier ones age out.",
   policy_not_ready:
     "The latest rules change is still applying. Moves on this account resume once the provider confirms it.",
   policy_action_denied:
@@ -359,6 +369,10 @@ const PERMANENT_CODES = new Set([
   "agent_unfreeze_throttled",
   "agent_creation_quota_exceeded",
   "spend_budget_exceeded",
+  "policy_limit_exceeded",
+  "policy_action_limit_exceeded",
+  "policy_usage_unavailable",
+  "withdraw_preview_limit_reached",
   "amount_too_low",
   "invalid_address",
   "unsupported_token",
