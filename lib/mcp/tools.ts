@@ -182,11 +182,13 @@ export const toolDefinitions = {
       .strict(),
   },
   shield: {
-    description: "Move an Intents balance into the confidential shard.",
+    description:
+      "Move an Intents balance into the confidential shard. Counts toward the asset's per-asset limits and the hourly action cap.",
     inputSchema: z.object({ token: text, amount, ...writeArgs }).strict(),
   },
   unshield: {
-    description: "Move a confidential balance back to Intents.",
+    description:
+      "Move a confidential balance back to Intents. Counts toward the asset's per-asset limits and the hourly action cap.",
     inputSchema: z.object({ token: text, amount, ...writeArgs }).strict(),
   },
   withdraw: {
