@@ -15,6 +15,8 @@ export function ruleDialogDescription(id: RuleSettingId): string {
       return "Choose when swaps, transfers and withdrawals may run, on your clock.";
     case "destinations":
       return "Choose where transfers and withdrawals may go.";
+    case "native":
+      return "Choose what the agent's own NEAR, EVM and Solana keys may sign or send.";
     default:
       return "Changes apply to this account and every connected client.";
   }

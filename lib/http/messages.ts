@@ -162,10 +162,16 @@ export const errorMessages: Record<string, string> = {
     "The account's rules turn this action off. Turn it on in Rules; the dashboard and every connected client can then use it, with no new grant.",
   policy_deposit_limit: "The rules change is too large to store. Simplify the rules and try again.",
   signing_policy_denied:
-    "The account's rules do not list this recipient for message signing. Add it in Rules first.",
+    "The account's rules do not list this service for NEAR sign-in. Add it under Native accounts in Rules first.",
   signing_recipient_forbidden: "Agent accounts never sign for the NEAR Intents contracts.",
+  signing_identity_challenge_invalid:
+    "This is not a valid identity challenge for the agent's NEAR account. Nothing was signed.",
+  native_method_denied:
+    "The account's rules do not switch this native method on, or do not list this contract or domain. Change it under Native accounts in Rules.",
+  native_contract_forbidden:
+    "Agent accounts never send to or call the NEAR Intents contracts from their NEAR account.",
   sign_recipient_denied:
-    "The account's rules do not list this recipient for message signing. Add it in Rules first.",
+    "The account's rules do not list this service for NEAR sign-in. Add it under Native accounts in Rules first.",
   insufficient_balance: "This account does not hold enough of this token.",
   amount_too_low: "This amount is below the minimum for this route. Try a larger amount.",
   invalid_address: "The provider rejected this address for the chosen network. Check it and retry.",

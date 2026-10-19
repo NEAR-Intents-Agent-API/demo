@@ -1,5 +1,6 @@
 import type { PolicyView } from "@near-intents-agent-api/sdk";
 import { formatDelayMs } from "@/lib/format/delay";
+import { NativeLine } from "../../rules/native-line";
 import type { Rules } from "../../rules/rules";
 import { describeSchedule } from "../../rules/schedule";
 import type { SummaryCatalog } from "../../rules/summary/summary-types";
@@ -29,6 +30,7 @@ export function RuleSettingValue({
   if (id === "delay")
     return <span>{formatDelayMs(Math.round(Number(rules.delaySeconds) * 1000))}</span>;
   if (id === "schedule") return <span>{describeSchedule(rules.schedule)}</span>;
+  if (id === "native") return <NativeLine native={rules.native} />;
   if (id === "approval")
     return <span>{rules.approval ? "Required for every move" : "Not required"}</span>;
   return isBudgetSetting(id) ? <BudgetSettingValue field={id} rules={rules} usage={usage} /> : null;

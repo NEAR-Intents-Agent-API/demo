@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { policySchema } from "@/lib/agent-api/schemas";
+import { describeNative, nativeOff } from "../../features/policy/rules/native";
 import {
   defaultRules,
   policyFromRules,
@@ -154,19 +155,57 @@ test("a schedule round-trips through the policy, and any time omits it", () => {
   assert.equal("schedule" in policyFromRules(policy, rules({ schedule: null })), false);
 });
 
-test("editing other rules keeps identity signing, and a new agent never signs", () => {
-  assert.equal("sign" in policyFromRules(null, rules()), false);
-  const current = policySchema.parse({
-    ...policyFromRules(null, rules()),
-    sign: { recipients: ["login.example.near"] },
-  });
-  const next = policyFromRules(current, {
-    ...rulesFromPolicy(current),
+test("native methods are off by default and omitted until one is switched on", () => {
+  assert.equal("native" in policyFromRules(null, rules()), false);
+  assert.deepEqual(rulesFromPolicy(policyFromRules(null, rules())).native, nativeOff);
+  const native = {
+    near: { sign_message: ["login.example.near"], transfer: false, call: [] },
+    evm: {
+      sign_typed_data: [{ name: "Exchange", version: "1", chain_id: 1337 }],
+      sign_message: false,
+      sign_transaction: false,
+    },
+    solana: { sign_message: false, sign_transaction: true },
+  };
+  const policy = policySchema.parse(policyFromRules(null, rules({ native })));
+  assert.deepEqual(policy.native, native, "the full block, every key present");
+  assert.deepEqual(rulesFromPolicy(policy).native, native);
+  const next = policyFromRules(policy, {
+    ...rulesFromPolicy(policy),
     budget: { dailyUsd: "50", weeklyUsd: "", monthlyUsd: "" },
-    delaySeconds: "60",
   });
-  assert.deepEqual(next.sign, { recipients: ["login.example.near"] });
-  assert.notEqual(next.sign, current.sign);
+  assert.deepEqual(next.native, native, "editing other rules keeps native methods");
+  assert.notEqual(next.native, policy.native);
+  assert.equal(
+    "native" in policyFromRules(policy, { ...rulesFromPolicy(policy), native: nativeOff }),
+    false,
+    "switching everything off omits the block",
+  );
+});
+
+test("native lists never accept the NEAR Intents contracts", () => {
+  for (const near of [
+    { sign_message: ["intents.near"], transfer: false, call: [] },
+    { sign_message: [], transfer: false, call: ["intents.far"] },
+  ])
+    assert.match(
+      rulesProblem(rules({ native: { ...nativeOff, near } })) ?? "",
+      /intents\.near and intents\.far/,
+    );
+  assert.match(
+    rulesProblem(
+      rules({ native: { ...nativeOff, near: { ...nativeOff.near, call: ["a.near", "a.near"] } } }),
+    ) ?? "",
+    /unique/,
+  );
+  assert.equal(
+    rulesProblem(
+      rules({
+        native: { ...nativeOff, near: { ...nativeOff.near, call: ["usdt.tether-token.near"] } },
+      }),
+    ),
+    null,
+  );
 });
 
 test("a schedule the API would refuse is named before signing", () => {
@@ -187,4 +226,29 @@ test("a schedule the API would refuse is named before signing", () => {
       /start and end/,
       JSON.stringify(bad),
     );
+});
+
+test("the native summary names every switch that is on", () => {
+  assert.deepEqual(describeNative(nativeOff), []);
+  assert.deepEqual(
+    describeNative({
+      near: { sign_message: ["app.near"], transfer: true, call: ["c.near"] },
+      evm: {
+        sign_typed_data: [{ name: "Exchange", chain_id: 1337 }],
+        sign_message: true,
+        sign_transaction: true,
+      },
+      solana: { sign_message: true, sign_transaction: true },
+    }),
+    [
+      "NEAR sign-in to app.near",
+      "Send NEAR to any account",
+      "NEAR calls to c.near",
+      "EVM typed data for Exchange (chain 1337)",
+      "EVM messages",
+      "EVM transactions",
+      "Solana messages",
+      "Solana transactions",
+    ],
+  );
 });
