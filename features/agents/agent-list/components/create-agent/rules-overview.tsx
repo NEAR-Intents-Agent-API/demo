@@ -1,7 +1,7 @@
 "use client";
 
 import { useCatalog } from "@/features/assets";
-import { DestinationsLine, LimitsLine, TokensLine } from "@/features/policy";
+import { DestinationsLine, LimitsLine, NativeLine, TokensLine } from "@/features/policy";
 import { ABILITIES, ABILITY_INFO, describeSchedule, type Rules } from "@/features/policy/model";
 import { formatDelayMs } from "@/lib/format/delay";
 import { RulesOverviewRow } from "./rules-overview-row";
@@ -71,6 +71,9 @@ export function RulesOverview({ rules }: { rules: Rules }) {
         {rules.approval
           ? "Every swap, transfer and withdrawal waits for your approval"
           : "Not required: clients act on their own within these rules"}
+      </RulesOverviewRow>
+      <RulesOverviewRow label="Native accounts">
+        <NativeLine native={rules.native} />
       </RulesOverviewRow>
     </dl>
   );

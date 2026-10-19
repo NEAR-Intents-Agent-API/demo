@@ -57,6 +57,39 @@ export function AgentClaims({ agent }: { agent: AgentView }) {
               <span className="text-muted-foreground">Held by the provider until bound</span>
             )}
           </AccountAuthorityRow>
+          {agent.wallet?.evm_account_id || agent.wallet?.solana_account_id ? (
+            <AccountAuthorityRow
+              label="Native addresses"
+              description="The agent's own keys outside NEAR Intents. Account rules decide what they may sign."
+              ready
+              status="reported"
+            >
+              {agent.wallet.evm_account_id ? (
+                <span className="flex min-w-0 basis-full items-center gap-2">
+                  <span className="text-muted-foreground">EVM</span>
+                  <MonoId
+                    value={agent.wallet.evm_account_id}
+                    head={8}
+                    tail={6}
+                    className="max-w-full text-xs"
+                    label="Copy EVM address"
+                  />
+                </span>
+              ) : null}
+              {agent.wallet.solana_account_id ? (
+                <span className="flex min-w-0 basis-full items-center gap-2">
+                  <span className="text-muted-foreground">Solana</span>
+                  <MonoId
+                    value={agent.wallet.solana_account_id}
+                    head={8}
+                    tail={6}
+                    className="max-w-full text-xs"
+                    label="Copy Solana address"
+                  />
+                </span>
+              ) : null}
+            </AccountAuthorityRow>
+          ) : null}
         </dl>
         <p className="text-xs leading-5 text-muted-foreground">
           The owner cannot move funds directly. The custody provider enforces account rules.

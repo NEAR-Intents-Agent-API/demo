@@ -204,10 +204,74 @@ const nearRecipient = nearAccount.regex(
   /^(?:[a-z\d]+[-_])*[a-z\d]+(?:\.(?:[a-z\d]+[-_])*[a-z\d]+)*$/,
 );
 
-/** The owner's complete rulebook for one agent account, signed as a whole. */
-/** The NEAR Intents contracts; the API never signs for them. */
-const intentsContracts = ["intents.near", "intents.far"];
+/** The NEAR Intents contracts; no native method ever signs for or calls them. */
+export const intentsContracts: readonly string[] = ["intents.near", "intents.far"];
 
+/** Up to 256 unique NEAR accounts, never the NEAR Intents contracts. */
+const nativeTargets = (what: string) =>
+  z
+    .array(nearRecipient)
+    .max(256)
+    .refine((list) => new Set(list).size === list.length, `${what} must be unique`)
+    .refine(
+      (list) => !list.some((account) => intentsContracts.includes(account)),
+      "intents.near and intents.far can never be listed",
+    );
+
+/** One EIP-712 domain; typed data is signed only under a listed domain, matched field for field. */
+export const typedDataDomainSchema = z
+  .strictObject({
+    name: z.string().min(1).max(128).optional(),
+    version: z.string().min(1).max(64).optional(),
+    chain_id: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).optional(),
+    verifying_contract: z
+      .string()
+      .regex(/^0x[0-9a-f]{40}$/, "Use the lowercase 0x address")
+      .optional(),
+    salt: z
+      .string()
+      .regex(/^0x[0-9a-f]{64}$/, "Use the lowercase 0x bytes32 salt")
+      .optional(),
+  })
+  .refine((domain) => Object.keys(domain).length > 0, "A domain names at least one field");
+export type TypedDataDomain = z.infer<typeof typedDataDomainSchema>;
+
+/**
+ * The agent's own NEAR, EVM and Solana keys outside NEAR Intents, one switch per method. A list
+ * switches a method on for exactly those targets; an empty list is off.
+ */
+export const nativeSchema = z.strictObject({
+  near: z.strictObject({
+    sign_message: nativeTargets("Recipients"),
+    transfer: z.boolean(),
+    call: nativeTargets("Contracts"),
+  }),
+  evm: z.strictObject({
+    sign_typed_data: z
+      .array(typedDataDomainSchema)
+      .max(64)
+      .refine(
+        (list) => new Set(list.map((domain) => domainKey(domain))).size === list.length,
+        "Domains must be unique",
+      ),
+    sign_message: z.boolean(),
+    sign_transaction: z.boolean(),
+  }),
+  solana: z.strictObject({
+    sign_message: z.boolean(),
+    sign_transaction: z.boolean(),
+  }),
+});
+export type NativePolicy = NonNullable<Policy["native"]>;
+assertType<Equal<z.infer<typeof nativeSchema>, NativePolicy>>();
+assertType<Equal<keyof TypedDataDomain, keyof NativePolicy["evm"]["sign_typed_data"][number]>>();
+
+/** One domain's identity, independent of the order its fields were written in. */
+export function domainKey(domain: TypedDataDomain): string {
+  return JSON.stringify(Object.entries(domain).sort(([a], [b]) => a.localeCompare(b)));
+}
+
+/** The owner's complete rulebook for one agent account, signed as a whole. */
 export const policySchema = z.strictObject({
   frozen: z.boolean(),
   actions: z
@@ -232,21 +296,11 @@ export const policySchema = z.strictObject({
   }),
   timelock_ms: z.number().int().min(0).max(maxTimelockMs),
   schedule: scheduleSchema.optional(),
-  sign: z
-    .strictObject({
-      recipients: z
-        .array(nearRecipient)
-        .min(1)
-        .max(256)
-        .refine((list) => new Set(list).size === list.length, "Recipients must be unique")
-        .refine(
-          (list) => !list.some((account) => intentsContracts.includes(account)),
-          "intents.near and intents.far can never be signing recipients",
-        ),
-    })
-    .optional(),
+  native: nativeSchema.optional(),
 });
 assertType<Equal<z.infer<typeof policySchema>, Policy>>();
+// Optional keys pass the check above whatever their name, so the key sets are compared too.
+assertType<Equal<keyof z.infer<typeof policySchema>, keyof Policy>>();
 
 // ---- Ids and status
 

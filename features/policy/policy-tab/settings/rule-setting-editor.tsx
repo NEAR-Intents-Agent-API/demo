@@ -3,6 +3,7 @@ import { BudgetFields } from "../../rules/budget-fields";
 import { DelayField } from "../../rules/delay-field";
 import { DestinationRules } from "../../rules/destination-rules";
 import { LimitRules } from "../../rules/limit-rules";
+import { NativeRules } from "../../rules/native-rules";
 import type { Rules } from "../../rules/rules";
 import { ScheduleRules } from "../../rules/schedule-rules";
 import type { SummaryCatalog } from "../../rules/summary/summary-types";
@@ -37,6 +38,7 @@ export function RuleSettingEditor({
   else if (id === "schedule") fields = <ScheduleRules embedded rules={rules} onChange={onChange} />;
   else if (id === "destinations")
     fields = <DestinationRules embedded rules={rules} onChange={onChange} />;
+  else if (id === "native") fields = <NativeRules embedded rules={rules} onChange={onChange} />;
   else fields = <ApprovalRule embedded rules={rules} onChange={onChange} />;
 
   return (

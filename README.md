@@ -19,7 +19,8 @@ OpenClaw, all under rules the owner signed.
 
 - **Three login methods**: EVM wallet (SIWE), NEAR wallet (SIWN) and passkeys. No email or social login.
 - **One-signature agent creation** with a plain-language rules editor (what it can do, which
-  tokens, the most one move may spend, where funds can go, owner approval).
+  tokens, the most one move may spend, where funds can go, owner approval, and the agent's own
+  NEAR, EVM and Solana keys outside NEAR Intents, all off by default).
 - **Wallet tab**: holdings with USD values (public and private), swap, transfer, deposit,
   withdraw and make private/make public, each against the public or private balance.
 - **Activity and Rules tabs**: operations and pending owner approvals; live rules, emergency
@@ -69,7 +70,8 @@ Production: `pnpm build`, `pnpm start`, and run `pnpm db:migrate` before each de
 
 1. **Sign in** with an EVM wallet, NEAR wallet or passkey.
 2. **Create an agent**: a name, rules, one signature. New agents can do everything NEAR Intents
-   offers (swap, send, withdraw to any network, private balance). Rules map to the account policy
+   offers (swap, send, withdraw to any network, private balance); native methods stay off until
+   switched on. Rules map to the account policy
    in `features/policy/rules/rules.ts`. The dialog waits until the account is live; an
    interrupted activation resumes.
 3. **Fund it.** Deposits need only the signed-in owner's session: a one-time 1Click address for a

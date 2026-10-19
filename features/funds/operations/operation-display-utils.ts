@@ -46,11 +46,22 @@ const ACTION_LABELS: Readonly<Record<string, string>> = {
   unshield: "Make public",
   swap: "Swap tokens",
   withdraw: "Withdraw funds",
+  near_sign_message: "NEAR sign-in",
+  near_transfer: "Send NEAR",
+  near_call: "NEAR contract call",
+  evm_sign_typed_data: "EVM typed data",
+  evm_sign_message: "EVM message",
+  evm_sign_transaction: "EVM transaction",
+  solana_sign_message: "Solana message",
+  solana_sign_transaction: "Solana transaction",
 };
 
 export function operationActionLabel(operation: StatusResponse): string {
   const details = (operation.details ?? {}) as Record<string, unknown>;
-  const action = String(details.action ?? operation.type);
+  // A native request names its method (`near_transfer`, `evm_sign_typed_data`, …), not an action.
+  const action = String(
+    operation.type === "native" ? operation.details.method : (details.action ?? operation.type),
+  );
   const label = Object.hasOwn(ACTION_LABELS, action) ? ACTION_LABELS[action] : undefined;
   return label ?? humanize(action);
 }

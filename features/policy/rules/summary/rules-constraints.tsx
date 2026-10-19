@@ -2,9 +2,11 @@ import {
   Clock01Icon,
   Coins01Icon,
   DashboardSpeed01Icon,
+  Key01Icon,
   Location01Icon,
   UserCheck01Icon,
 } from "@hugeicons/core-free-icons";
+import { NativeLine } from "../native-line";
 import type { Rules } from "../rules";
 import { describeSchedule } from "../schedule";
 import { DestinationsLine } from "./destinations-line";
@@ -32,6 +34,9 @@ export function RulesConstraints({ rules, catalog }: { rules: Rules; catalog: Su
         </SummaryField>
         <SummaryField icon={UserCheck01Icon} label="Approval">
           {rules.approval ? "Every move waits for your approval" : "Acts on its own"}
+        </SummaryField>
+        <SummaryField icon={Key01Icon} label="Native accounts">
+          <NativeLine native={rules.native} />
         </SummaryField>
       </dl>
     </section>

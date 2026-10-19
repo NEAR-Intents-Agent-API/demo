@@ -8,6 +8,7 @@ import { AbilityRules } from "./ability-rules";
 import { ApprovalRule } from "./approval-rule";
 import { DestinationRules } from "./destination-rules";
 import { LimitRules } from "./limit-rules";
+import { NativeRules } from "./native-rules";
 import { PolicyControlsFields } from "./policy-controls-fields";
 import type { Rules } from "./rules";
 import { rulesProblem } from "./rules";
@@ -37,6 +38,7 @@ export function RulesEditor({
     <>
       <AbilityRules rules={rules} onChange={onChange} />
       <TokenRules rules={rules} onChange={onChange} catalog={catalog} />
+      <NativeRules rules={rules} onChange={onChange} />
     </>
   );
   const spending = (

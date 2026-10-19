@@ -1,5 +1,6 @@
 import type { DestinationRule, Policy, Schedule } from "@near-intents-agent-api/sdk";
-import { policySchema } from "@/lib/agent-api/schemas";
+import { type NativePolicy, policySchema } from "@/lib/agent-api/schemas";
+import { nativeEnabled, nativeOff } from "./native";
 
 /**
  * The agent's rules in the owner's words, and their translation to the API policy.
@@ -37,6 +38,8 @@ export type Rules = {
   delaySeconds: string;
   /** When money actions may run, on the owner's clock; `null` means any time. */
   schedule: Schedule | null;
+  /** The agent's own keys outside NEAR Intents; all off unless the owner switches one on. */
+  native: NativePolicy;
 };
 
 /** A new agent can do everything NEAR Intents offers, to any destination, until the owner narrows it. */
@@ -51,6 +54,7 @@ export const defaultRules: Rules = {
   budget: { dailyUsd: "", weeklyUsd: "", monthlyUsd: "" },
   delaySeconds: "0",
   schedule: null,
+  native: nativeOff,
 };
 
 export function rulesFromPolicy(policy: Policy | null): Rules {
@@ -77,14 +81,14 @@ export function rulesFromPolicy(policy: Policy | null): Rules {
     },
     delaySeconds: String(policy.timelock_ms / 1000),
     schedule: policy.schedule ? structuredClone(policy.schedule) : null,
+    native: structuredClone(policy.native ?? nativeOff),
   };
 }
 
 /**
  * The complete policy for these rules. Anything the editor does not expose (the hourly, daily
- * and monthly per-token buckets, and the identity signing recipients in `sign`) is carried over
- * from `current` untouched, so saving other rules never turns signing off. A new agent
- * (`current` null) never signs.
+ * and monthly per-token buckets) is carried over from `current` untouched. `native` is written
+ * in full when any method is on and omitted when all are off, which the API reads as all off.
  */
 export function policyFromRules(current: Policy | null, rules: Rules): Policy {
   const { abilities } = rules;
@@ -100,7 +104,7 @@ export function policyFromRules(current: Policy | null, rules: Rules): Policy {
     budget: budgetFromRules(rules),
     timelock_ms: delayMsFromRules(rules),
     ...(rules.schedule ? { schedule: rules.schedule } : {}),
-    ...(current?.sign ? { sign: structuredClone(current.sign) } : {}),
+    ...(nativeEnabled(rules.native) ? { native: structuredClone(rules.native) } : {}),
   };
 }
 
@@ -148,6 +152,11 @@ export function rulesProblem(rules: Rules): string | null {
     return rules.schedule.windows.some((window) => window.days.length === 0)
       ? "Pick at least one day for every schedule window."
       : "Every schedule window needs a start and end that differ, in a known time zone.";
+  const native = policySchema.shape.native.safeParse(rules.native);
+  if (!native.success)
+    return native.error.issues.some((issue) => issue.message.includes("intents.near"))
+      ? "intents.near and intents.far can never be listed for native methods."
+      : "Every native sign-in service and contract must be a unique NEAR account, and every typed data domain unique.";
   const perHour = rules.maxPerHour.trim();
   if (perHour && !/^[1-9][0-9]{0,6}$/.test(perHour))
     return "Actions per hour must be a whole number, or empty for no cap.";

@@ -1,4 +1,5 @@
 import { ABILITY_INFO } from "../../rules/abilities";
+import { NATIVE_WARNING } from "../../rules/native";
 import { ABILITIES, type Ability } from "../../rules/rules";
 import type { BudgetSettingId } from "./budget-setting-utils";
 
@@ -10,7 +11,8 @@ export type RuleSettingId =
   | "delay"
   | "schedule"
   | "destinations"
-  | "approval";
+  | "approval"
+  | "native";
 export type RuleSetting = { id: RuleSettingId; title: string; description: string };
 
 export const RULE_SETTING_GROUPS: readonly {
@@ -85,6 +87,18 @@ export const RULE_SETTING_GROUPS: readonly {
         title: "Owner approval",
         description:
           "Hold swaps, transfers and withdrawals for approval in Activity. Limits still apply.",
+      },
+    ],
+  },
+  {
+    title: "Native accounts",
+    description:
+      "The agent's own NEAR, EVM and Solana keys outside NEAR Intents. None of the rules above applies to them.",
+    rows: [
+      {
+        id: "native",
+        title: "Native accounts",
+        description: NATIVE_WARNING,
       },
     ],
   },
