@@ -294,9 +294,8 @@ export const nativeSchema = z.strictObject({
 });
 export type NativePolicy = z.infer<typeof nativeSchema>;
 assertType<Equal<NativePolicy, NonNullable<Policy["native"]>>>();
-// The SDK's `Policy` is plain types that predate `primary_types`; the key set may only differ by it.
 type SdkTypedDataDomain = NonNullable<Policy["native"]>["evm"]["sign_typed_data"][number];
-assertType<Equal<keyof TypedDataDomain, keyof SdkTypedDataDomain | "primary_types">>();
+assertType<Equal<TypedDataDomain, SdkTypedDataDomain>>();
 
 /**
  * One domain's identity, independent of the order its fields were written in. The message types
