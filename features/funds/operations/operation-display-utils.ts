@@ -46,7 +46,7 @@ const ACTION_LABELS: Readonly<Record<string, string>> = {
   unshield: "Make public",
   swap: "Swap tokens",
   withdraw: "Withdraw funds",
-  near_sign_message: "NEAR sign-in",
+  near_sign_message: "NEAR message signing",
   near_transfer: "Send NEAR",
   near_call: "NEAR contract call",
   evm_sign_typed_data: "EVM typed data",

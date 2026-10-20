@@ -183,6 +183,19 @@ test("native methods are off by default and omitted until one is switched on", (
   );
 });
 
+test("native sign-in recipients may be domains, and still never the NEAR Intents contracts", () => {
+  const domain = { ...nativeOff.near, sign_message: ["App.Example.com"] };
+  assert.equal(rulesProblem(rules({ native: { ...nativeOff, near: domain } })), null);
+  assert.match(
+    rulesProblem(
+      rules({
+        native: { ...nativeOff, near: { ...nativeOff.near, sign_message: ["INTENTS.near"] } },
+      }),
+    ) ?? "",
+    /intents\.near and intents\.far/,
+  );
+});
+
 test("native lists never accept the NEAR Intents contracts", () => {
   for (const near of [
     { sign_message: ["intents.near"], transfer: false, call: [] },
@@ -241,7 +254,7 @@ test("the native summary names every switch that is on", () => {
       solana: { sign_message: true, sign_transaction: true },
     }),
     [
-      "NEAR sign-in to app.near",
+      "NEAR message signing for app.near",
       "Send NEAR to any account",
       "NEAR calls to c.near",
       "EVM typed data for Exchange (chain 1337)",
