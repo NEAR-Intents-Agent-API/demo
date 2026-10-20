@@ -4,8 +4,9 @@ import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { domainKey, type TypedDataDomain, typedDataDomainSchema } from "@/lib/agent-api/schemas";
-import { domainLabel } from "./native";
+import { domainLabel, parsePrimaryTypes } from "./native";
 import { NativeEntries } from "./native-list";
 
 const FIELDS = [
@@ -14,8 +15,8 @@ const FIELDS = [
   { key: "chainId", label: "Chain id", placeholder: "1337" },
   { key: "contract", label: "Verifying contract", placeholder: "0x…" },
 ] as const;
-type Draft = Record<(typeof FIELDS)[number]["key"], string>;
-const emptyDraft: Draft = { name: "", version: "", chainId: "", contract: "" };
+type Draft = Record<(typeof FIELDS)[number]["key"] | "primaryTypes", string>;
+const emptyDraft: Draft = { name: "", version: "", chainId: "", contract: "", primaryTypes: "" };
 
 /** The typed fields as a domain: only what was filled in, the contract lowercased. */
 function domainFromDraft(draft: Draft): Record<string, unknown> {
@@ -23,17 +24,20 @@ function domainFromDraft(draft: Draft): Record<string, unknown> {
   const version = draft.version.trim();
   const chainId = draft.chainId.trim();
   const contract = draft.contract.trim().toLowerCase();
+  const primaryTypes = parsePrimaryTypes(draft.primaryTypes);
   return {
     ...(name ? { name } : {}),
     ...(version ? { version } : {}),
     ...(chainId ? { chain_id: /^[0-9]{1,16}$/.test(chainId) ? Number(chainId) : chainId } : {}),
     ...(contract ? { verifying_contract: contract } : {}),
+    ...(primaryTypes.length ? { primary_types: primaryTypes } : {}),
   };
 }
 
 /**
  * EIP-712 domains the agent may sign typed data under. A request's domain must equal one entry
- * field for field, so each entry names exactly the fields the service's domain carries.
+ * field for field, so each entry names exactly the fields the service's domain carries. An entry
+ * may also name the message types it admits; without any, every message type under it is signed.
  */
 export function NativeDomains({
   value,
@@ -48,13 +52,16 @@ export function NativeDomains({
   const add = () => {
     const parsed = typedDataDomainSchema.safeParse(domainFromDraft(draft));
     if (!parsed.success) {
+      const issue = parsed.error.issues[0];
       setError(
-        `${parsed.error.issues[0]?.message ?? "Invalid domain"}. Fill in the fields the service's domain uses.`,
+        issue?.path[0] === "primary_types"
+          ? `${issue.message}.`
+          : `${issue?.message ?? "Invalid domain"}. Fill in the fields the service's domain uses.`,
       );
       return;
     }
     if (value.some((domain) => domainKey(domain) === domainKey(parsed.data))) {
-      setError("This domain is already listed.");
+      setError("This domain is already listed. Remove it first to change its message types.");
       return;
     }
     onChange([...value, parsed.data]);
@@ -87,6 +94,28 @@ export function NativeDomains({
             />
           </div>
         ))}
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor={`${id}-primaryTypes`} className="text-xs">
+          Allowed message types (optional)
+        </Label>
+        <Textarea
+          id={`${id}-primaryTypes`}
+          value={draft.primaryTypes}
+          placeholder="Agent"
+          rows={2}
+          autoCapitalize="none"
+          spellCheck={false}
+          onChange={(event) => {
+            setDraft({ ...draft, primaryTypes: event.target.value });
+            setError(null);
+          }}
+        />
+        <p className="text-xs leading-5 text-muted-foreground">
+          One per line or comma separated, spelled exactly as the request&rsquo;s primary type.
+          Leave empty to allow any message type under this domain. This limits the kind of message,
+          not its contents: a listed type can still carry any destination or amount.
+        </p>
       </div>
       <div className="flex justify-end">
         <Button
