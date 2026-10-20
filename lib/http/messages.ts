@@ -164,8 +164,6 @@ export const errorMessages: Record<string, string> = {
   signing_policy_denied:
     "The account's rules do not list this service for NEAR sign-in. Add it under Native accounts in Rules first.",
   signing_recipient_forbidden: "Agent accounts never sign for the NEAR Intents contracts.",
-  signing_identity_challenge_invalid:
-    "This is not a valid identity challenge for the agent's NEAR account. Nothing was signed.",
   native_method_denied:
     "The account's rules do not switch this native method on, or do not list this contract or domain. Change it under Native accounts in Rules.",
   native_contract_forbidden:

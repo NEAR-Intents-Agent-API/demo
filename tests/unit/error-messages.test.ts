@@ -97,7 +97,6 @@ const apiCodes = [
   "sign_recipient_denied",
   "signature_invalid",
   "signer_mismatch",
-  "signing_identity_challenge_invalid",
   "signing_policy_denied",
   "signing_recipient_forbidden",
   "spend_budget_exceeded",

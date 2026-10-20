@@ -50,7 +50,7 @@ export function domainLabel(domain: TypedDataDomain): string {
 export function describeNative(native: NativePolicy): string[] {
   return [
     native.near.sign_message.length
-      ? `NEAR sign-in to ${native.near.sign_message.join(", ")}`
+      ? `NEAR message signing for ${native.near.sign_message.join(", ")}`
       : null,
     native.near.transfer ? "Send NEAR to any account" : null,
     native.near.call.length ? `NEAR calls to ${native.near.call.join(", ")}` : null,

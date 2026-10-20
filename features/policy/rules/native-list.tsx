@@ -41,6 +41,7 @@ export function NativeAccountList({
   empty,
   value,
   problem,
+  keepCase = false,
   onChange,
 }: {
   label: string;
@@ -49,13 +50,15 @@ export function NativeAccountList({
   empty: string;
   value: readonly string[];
   problem: (account: string) => string | null;
+  /** Keep entries as typed instead of lowercasing them (domains are matched exactly). */
+  keepCase?: boolean;
   onChange: (value: string[]) => void;
 }) {
   const id = useId();
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const add = () => {
-    const account = draft.trim().toLowerCase();
+    const account = keepCase ? draft.trim() : draft.trim().toLowerCase();
     const reason = problem(account);
     setError(reason);
     if (reason) return;

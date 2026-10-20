@@ -2,7 +2,7 @@
 
 import { Callout } from "@/components/shared/callout";
 import { Switch } from "@/components/ui/switch";
-import { intentsContracts, nativeSchema } from "@/lib/agent-api/schemas";
+import { intentsContracts, nativeSchema, nearSignRecipient } from "@/lib/agent-api/schemas";
 import { NATIVE_WARNING, nativeEnabled } from "./native";
 import { NativeDomains } from "./native-domains";
 import { NativeAccountList } from "./native-list";
@@ -19,6 +19,16 @@ function accountProblem(list: readonly string[], account: string): string | null
   return nativeSchema.shape.near.shape.call.safeParse([account]).success
     ? null
     : "Enter a NEAR account, such as app.near.";
+}
+
+/** Same for the sign-in list, which also takes domains and keeps the case as typed. */
+function recipientProblem(list: readonly string[], recipient: string): string | null {
+  if (intentsContracts.includes(recipient.toLowerCase()))
+    return "intents.near and intents.far can never be listed.";
+  if (list.includes(recipient)) return "Already listed.";
+  return nearSignRecipient.safeParse(recipient).success
+    ? null
+    : "Enter a NEAR account or domain, such as app.example.com.";
 }
 
 function ChainHeading({ title, address }: { title: string; address: string }) {
@@ -64,12 +74,13 @@ export function NativeRules({
       <div className="flex flex-col gap-4">
         <ChainHeading title="NEAR" address="The agent's NEAR account." />
         <NativeAccountList
-          label="Sign in to these services"
-          description="The agent proves it controls its NEAR account to a listed service. It signs only identity challenges, never a transaction."
-          placeholder="app.near"
-          empty="No services: NEAR sign-in is off."
+          label="Sign messages for these services"
+          description="The agent signs NEP-413 messages (site logins) with its NEAR key for a listed service, by NEAR account or domain. It never signs a transaction."
+          placeholder="app.example.com"
+          empty="No services: NEAR message signing is off."
           value={near.sign_message}
-          problem={(account) => accountProblem(near.sign_message, account)}
+          problem={(recipient) => recipientProblem(near.sign_message, recipient)}
+          keepCase
           onChange={(sign_message) => set({ ...rules.native, near: { ...near, sign_message } })}
         />
         <Switch

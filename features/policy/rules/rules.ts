@@ -156,7 +156,7 @@ export function rulesProblem(rules: Rules): string | null {
   if (!native.success)
     return native.error.issues.some((issue) => issue.message.includes("intents.near"))
       ? "intents.near and intents.far can never be listed for native methods."
-      : "Every native sign-in service and contract must be a unique NEAR account, and every typed data domain unique.";
+      : "Every native sign-in service must be a unique NEAR account or domain, every contract a unique NEAR account, and every typed data domain unique.";
   const perHour = rules.maxPerHour.trim();
   if (perHour && !/^[1-9][0-9]{0,6}$/.test(perHour))
     return "Actions per hour must be a whole number, or empty for no cap.";

@@ -207,14 +207,21 @@ const nearRecipient = nearAccount.regex(
 /** The NEAR Intents contracts; no native method ever signs for or calls them. */
 export const intentsContracts: readonly string[] = ["intents.near", "intents.far"];
 
-/** Up to 256 unique NEAR accounts, never the NEAR Intents contracts. */
-const nativeTargets = (what: string) =>
+/** A NEP-413 recipient: a NEAR account or a domain, printable ASCII without spaces. */
+export const nearSignRecipient = z
+  .string()
+  .min(1)
+  .max(128)
+  .regex(/^[\x21-\x7e]+$/);
+
+/** Up to 256 unique entries, never the NEAR Intents contracts. */
+const nativeTargets = (what: string, target: z.ZodString = nearRecipient) =>
   z
-    .array(nearRecipient)
+    .array(target)
     .max(256)
     .refine((list) => new Set(list).size === list.length, `${what} must be unique`)
     .refine(
-      (list) => !list.some((account) => intentsContracts.includes(account)),
+      (list) => !list.some((account) => intentsContracts.includes(account.toLowerCase())),
       "intents.near and intents.far can never be listed",
     );
 
@@ -265,7 +272,7 @@ export type TypedDataDomain = z.infer<typeof typedDataDomainSchema>;
  */
 export const nativeSchema = z.strictObject({
   near: z.strictObject({
-    sign_message: nativeTargets("Recipients"),
+    sign_message: nativeTargets("Recipients", nearSignRecipient),
     transfer: z.boolean(),
     call: nativeTargets("Contracts"),
   }),
