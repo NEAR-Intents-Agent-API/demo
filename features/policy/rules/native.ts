@@ -16,7 +16,19 @@ export const nativeOff: NativePolicy = {
 export const NATIVE_WARNING =
   "Native methods skip destinations, budget, execution delay, schedule and owner approval. A signed EVM or Solana transaction, or typed data such as a permit, can move everything at that address.";
 
-/** A listed EIP-712 domain as the owner reads it. */
+/** The typed message types: one per line or comma separated, trimmed and listed once each. */
+export function parsePrimaryTypes(text: string): string[] {
+  return [
+    ...new Set(
+      text
+        .split(/[\n,]/)
+        .map((type) => type.trim())
+        .filter(Boolean),
+    ),
+  ];
+}
+
+/** A listed EIP-712 domain as the owner reads it, with the message types it admits. */
 export function domainLabel(domain: TypedDataDomain): string {
   const where = [
     domain.version === undefined ? null : `v${domain.version}`,
@@ -25,10 +37,16 @@ export function domainLabel(domain: TypedDataDomain): string {
     domain.salt === undefined ? null : `salt ${domain.salt}`,
   ].filter((part) => part !== null);
   const name = domain.name ?? "Unnamed domain";
-  return where.length ? `${name} (${where.join(", ")})` : name;
+  const types = domain.primary_types
+    ? `only ${domain.primary_types.join(", ")}`
+    : "any message type";
+  return `${where.length ? `${name} (${where.join(", ")})` : name}: ${types}`;
 }
 
-/** What the native block switches on, one plain entry per method; empty when all is off. */
+/**
+ * What the native block switches on, one plain entry per method (one per domain for typed data);
+ * empty when all is off.
+ */
 export function describeNative(native: NativePolicy): string[] {
   return [
     native.near.sign_message.length
@@ -36,9 +54,7 @@ export function describeNative(native: NativePolicy): string[] {
       : null,
     native.near.transfer ? "Send NEAR to any account" : null,
     native.near.call.length ? `NEAR calls to ${native.near.call.join(", ")}` : null,
-    native.evm.sign_typed_data.length
-      ? `EVM typed data for ${native.evm.sign_typed_data.map(domainLabel).join(", ")}`
-      : null,
+    ...native.evm.sign_typed_data.map((domain) => `EVM typed data for ${domainLabel(domain)}`),
     native.evm.sign_message ? "EVM messages" : null,
     native.evm.sign_transaction ? "EVM transactions" : null,
     native.solana.sign_message ? "Solana messages" : null,

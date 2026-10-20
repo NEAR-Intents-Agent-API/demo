@@ -218,7 +218,26 @@ const nativeTargets = (what: string) =>
       "intents.near and intents.far can never be listed",
     );
 
-/** One EIP-712 domain; typed data is signed only under a listed domain, matched field for field. */
+/**
+ * The EIP-712 `primaryType`s a listed domain admits: 1 to 32 unique, case-sensitive names. Absent
+ * means any message type under the domain; `EIP712Domain` is the domain itself, never a message.
+ */
+const typedDataPrimaryTypesSchema = z
+  .array(
+    z
+      .string()
+      .min(1, "A message type cannot be empty")
+      .max(256, "A message type is at most 256 characters")
+      .refine((type) => type !== "EIP712Domain", "EIP712Domain is the domain, not a message type"),
+  )
+  .min(1, "Name at least one message type, or leave the field out")
+  .max(32, "List at most 32 message types")
+  .refine((list) => new Set(list).size === list.length, "Message types must be unique");
+
+/**
+ * One EIP-712 domain; typed data is signed only under a listed domain, matched field for field.
+ * `primary_types` narrows which kind of message may be signed under it, not what the message says.
+ */
 export const typedDataDomainSchema = z
   .strictObject({
     name: z.string().min(1).max(128).optional(),
@@ -232,8 +251,12 @@ export const typedDataDomainSchema = z
       .string()
       .regex(/^0x[0-9a-f]{64}$/, "Use the lowercase 0x bytes32 salt")
       .optional(),
+    primary_types: typedDataPrimaryTypesSchema.optional(),
   })
-  .refine((domain) => Object.keys(domain).length > 0, "A domain names at least one field");
+  .refine(
+    (domain) => Object.keys(domain).some((key) => key !== "primary_types"),
+    "A domain names at least one field",
+  );
 export type TypedDataDomain = z.infer<typeof typedDataDomainSchema>;
 
 /**
@@ -262,13 +285,22 @@ export const nativeSchema = z.strictObject({
     sign_transaction: z.boolean(),
   }),
 });
-export type NativePolicy = NonNullable<Policy["native"]>;
-assertType<Equal<z.infer<typeof nativeSchema>, NativePolicy>>();
-assertType<Equal<keyof TypedDataDomain, keyof NativePolicy["evm"]["sign_typed_data"][number]>>();
+export type NativePolicy = z.infer<typeof nativeSchema>;
+assertType<Equal<NativePolicy, NonNullable<Policy["native"]>>>();
+// The SDK's `Policy` is plain types that predate `primary_types`; the key set may only differ by it.
+type SdkTypedDataDomain = NonNullable<Policy["native"]>["evm"]["sign_typed_data"][number];
+assertType<Equal<keyof TypedDataDomain, keyof SdkTypedDataDomain | "primary_types">>();
 
-/** One domain's identity, independent of the order its fields were written in. */
+/**
+ * One domain's identity, independent of the order its fields were written in. The message types
+ * are not part of it: the API keeps one entry per domain.
+ */
 export function domainKey(domain: TypedDataDomain): string {
-  return JSON.stringify(Object.entries(domain).sort(([a], [b]) => a.localeCompare(b)));
+  return JSON.stringify(
+    Object.entries(domain)
+      .filter(([key]) => key !== "primary_types")
+      .sort(([a], [b]) => a.localeCompare(b)),
+  );
 }
 
 /** The owner's complete rulebook for one agent account, signed as a whole. */

@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { policySchema } from "@/lib/agent-api/schemas";
-import { describeNative, nativeOff } from "../../features/policy/rules/native";
+import { domainKey, policySchema, typedDataDomainSchema } from "@/lib/agent-api/schemas";
+import {
+  describeNative,
+  domainLabel,
+  nativeOff,
+  parsePrimaryTypes,
+} from "../../features/policy/rules/native";
 import {
   defaultRules,
   policyFromRules,
@@ -161,7 +166,16 @@ test("native methods are off by default and omitted until one is switched on", (
   const native = {
     near: { sign_message: ["login.example.near"], transfer: false, call: [] },
     evm: {
-      sign_typed_data: [{ name: "Exchange", version: "1", chain_id: 1337 }],
+      sign_typed_data: [
+        { name: "Exchange", version: "1", chain_id: 1337 },
+        {
+          name: "HyperliquidSignTransaction",
+          version: "1",
+          chain_id: 42161,
+          verifying_contract: `0x${"0".repeat(40)}`,
+          primary_types: ["HyperliquidTransaction:Withdraw"],
+        },
+      ],
       sign_message: false,
       sign_transaction: false,
     },
@@ -234,7 +248,10 @@ test("the native summary names every switch that is on", () => {
     describeNative({
       near: { sign_message: ["app.near"], transfer: true, call: ["c.near"] },
       evm: {
-        sign_typed_data: [{ name: "Exchange", chain_id: 1337 }],
+        sign_typed_data: [
+          { name: "Exchange", chain_id: 1337 },
+          { name: "Orders", primary_types: ["Order", "Cancel"] },
+        ],
         sign_message: true,
         sign_transaction: true,
       },
@@ -244,11 +261,91 @@ test("the native summary names every switch that is on", () => {
       "NEAR sign-in to app.near",
       "Send NEAR to any account",
       "NEAR calls to c.near",
-      "EVM typed data for Exchange (chain 1337)",
+      "EVM typed data for Exchange (chain 1337): any message type",
+      "EVM typed data for Orders: only Order, Cancel",
       "EVM messages",
       "EVM transactions",
       "Solana messages",
       "Solana transactions",
     ],
+  );
+});
+
+test("a typed data domain may name the message types it admits", () => {
+  const domain = { name: "Exchange", chain_id: 1337 };
+  assert.deepEqual(typedDataDomainSchema.parse(domain), domain, "absent means any message type");
+  const narrowed = { ...domain, primary_types: ["Agent", "HyperliquidTransaction:Withdraw"] };
+  assert.deepEqual(typedDataDomainSchema.parse(narrowed), narrowed);
+  for (const primary_types of [
+    [],
+    ["Agent", "Agent"],
+    ["EIP712Domain"],
+    [""],
+    ["T".repeat(257)],
+    Array.from({ length: 33 }, (_, index) => `Type${index}`),
+  ])
+    assert.equal(
+      typedDataDomainSchema.safeParse({ ...domain, primary_types }).success,
+      false,
+      JSON.stringify(primary_types).slice(0, 40),
+    );
+  assert.equal(
+    typedDataDomainSchema.safeParse({
+      ...domain,
+      primary_types: Array.from({ length: 32 }, (_, index) => `Type${index}`),
+    }).success,
+    true,
+    "32 types is the cap",
+  );
+  assert.equal(
+    typedDataDomainSchema.safeParse({ ...domain, primary_types: ["agent", "Agent"] }).success,
+    true,
+    "case-sensitive",
+  );
+  assert.equal(
+    typedDataDomainSchema.safeParse({ primary_types: ["Agent"] }).success,
+    false,
+    "message types alone do not name a domain",
+  );
+});
+
+test("one domain is one entry whatever message types it names", () => {
+  const domain = { name: "Exchange", chain_id: 1337 };
+  assert.equal(domainKey({ ...domain, primary_types: ["Agent"] }), domainKey(domain));
+  const sameDomain = {
+    ...nativeOff,
+    evm: {
+      ...nativeOff.evm,
+      sign_typed_data: [domain, { ...domain, primary_types: ["Agent"] }],
+    },
+  };
+  assert.match(rulesProblem(rules({ native: sameDomain })) ?? "", /domain unique/);
+});
+
+test("message types are read one per line or comma separated, once each", () => {
+  assert.deepEqual(parsePrimaryTypes(""), []);
+  assert.deepEqual(parsePrimaryTypes(" , \n"), []);
+  assert.deepEqual(parsePrimaryTypes("Agent, Order\n HyperliquidTransaction:Withdraw ,Agent"), [
+    "Agent",
+    "Order",
+    "HyperliquidTransaction:Withdraw",
+  ]);
+  assert.deepEqual(parsePrimaryTypes("agent,Agent"), ["agent", "Agent"], "case-sensitive");
+});
+
+test("a domain reads with the message types it admits", () => {
+  assert.equal(domainLabel({ name: "Exchange" }), "Exchange: any message type");
+  assert.equal(
+    domainLabel({
+      name: "Exchange",
+      version: "1",
+      chain_id: 1337,
+      primary_types: ["Agent"],
+    }),
+    "Exchange (v1, chain 1337): only Agent",
+  );
+  assert.equal(
+    domainLabel({ chain_id: 1, primary_types: ["A", "B"] }),
+    "Unnamed domain (chain 1): only A, B",
   );
 });
