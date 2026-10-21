@@ -34,8 +34,9 @@ export function BudgetEditUsage({
       <Disclosure summary="How usage is counted">
         <div className="space-y-2 pt-2">
           <p>
-            Swaps, transfers and withdrawals count at their USD value when they run. Deposits and
-            moves between public and private balances do not. Assets without a current price are
+            Swaps, transfers and withdrawals count at their USD value when they dispatch, and stay
+            counted unless the provider provably refused them. Deposits and moves between public and
+            private balances do not count. With a cap on, assets without a current price are
             refused.
           </p>
           <p>

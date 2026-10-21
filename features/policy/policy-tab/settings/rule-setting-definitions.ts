@@ -49,19 +49,19 @@ export const RULE_SETTING_GROUPS: readonly {
         id: "dailyUsd",
         title: "Daily budget",
         description:
-          "USD cap per day, counted from when it was turned on. Resets in full each day.",
+          "USD cap per day, counted from when it was turned on. Resets in full every 24 hours from that moment.",
       },
       {
         id: "weeklyUsd",
         title: "Weekly budget",
         description:
-          "USD cap per week, counted from when it was turned on. Resets in full each week.",
+          "USD cap per week, counted from when it was turned on. Resets in full every 7 days from that moment.",
       },
       {
         id: "monthlyUsd",
         title: "Monthly budget",
         description:
-          "USD cap per calendar month, counted from when it was turned on. Resets in full each month.",
+          "USD cap per month, counted from when it was turned on. Resets in full on the same date and time each month (UTC), or the last day of a shorter month.",
       },
       {
         id: "delay",
