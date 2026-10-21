@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { type AgentApi, AgentApiError } from "@near-intents-agent-api/sdk";
+import { agentApiErrorDetails } from "@/lib/http/error-details";
 import { recordMcpActivity } from "@/lib/mcp/activity";
 import {
   runTool,
@@ -93,7 +94,7 @@ export function createAgentMcpServer(scope: McpToolScope): McpServer {
             status: "error",
             detail: code,
           });
-          return toolError(code, error instanceof AgentApiError ? error.availableAt : undefined);
+          return toolError(code, error instanceof AgentApiError ? agentApiErrorDetails(error) : {});
         }
       },
     );

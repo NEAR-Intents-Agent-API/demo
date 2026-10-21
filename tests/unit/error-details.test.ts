@@ -22,6 +22,14 @@ test("only well-formed allowlisted fields survive", () => {
   assert.deepEqual(errorDetails("available_at"), {});
 });
 
+test("min_amount is forwarded only as a whole number of atomic units", () => {
+  assert.deepEqual(errorDetails({ min_amount: "1000000" }), { min_amount: "1000000" });
+  assert.deepEqual(errorDetails({ min_amount: "0" }), { min_amount: "0" });
+  assert.deepEqual(errorDetails({ min_amount: "9".repeat(78) }), { min_amount: "9".repeat(78) });
+  for (const malformed of ["1.5", "", "-1", "1e6", " 10", "9".repeat(79), 10, null, undefined])
+    assert.deepEqual(errorDetails({ min_amount: malformed }), {}, String(malformed));
+});
+
 test("only the pointer shapes the API names on mismatches are forwarded", () => {
   const kept = [
     "/signed_data/payload/message/tenant_id",
@@ -89,6 +97,27 @@ test("an Agent API refusal hands over its pointer and retry time, never its deta
     available_at: "2026-10-13T14:32:00.000Z",
   });
   assert.deepEqual(agentApiErrorDetails(refusal()), { available_at: "2026-10-13T14:32:00.000Z" });
+});
+
+test("an amount_too_low refusal hands over the route minimum when it is well-formed", () => {
+  const refusal = (min_amount: unknown) =>
+    new AgentApiError(422, {
+      errors: [
+        {
+          status: "422",
+          code: "amount_too_low",
+          title: "Amount too low",
+          detail: "Below the route minimum.",
+          meta: { retryable: false, min_amount } as never,
+        },
+      ],
+      meta: { request_id: "r" },
+    });
+  assert.deepEqual(agentApiErrorDetails(refusal("1000000")), { min_amount: "1000000" });
+  assert.deepEqual(agentApiErrorDetails(refusal("1.5")), {});
+  assert.deepEqual(agentApiErrorDetails(refusal("")), {});
+  assert.deepEqual(agentApiErrorDetails(refusal(1000000)), {});
+  assert.deepEqual(agentApiErrorDetails(refusal(undefined)), {});
 });
 
 test("the BFF error body carries the allowlisted details and nothing else", async () => {

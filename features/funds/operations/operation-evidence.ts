@@ -1,3 +1,5 @@
+import { formatDisplay } from "@/lib/format/amount";
+
 /** What the Agent API recorded about an operation's money, as plain optional strings. */
 export type OperationEvidence = {
   txHash: string | null;
@@ -13,6 +15,8 @@ export type OperationEvidence = {
   /** The asset and atomic amount the provider echoed back, when it did. */
   token: string | null;
   amount: string | null;
+  /** The route minimum in atomic units of the asset sent: a deposit's floor, or why a move was too low. */
+  minAmount: string | null;
 };
 
 function text(details: Record<string, unknown>, key: string): string | null {
@@ -36,5 +40,12 @@ export function operationEvidence(
     failureReason: text(details, "failure_reason"),
     token: text(details, "token"),
     amount: text(details, "amount"),
+    minAmount: text(details, "min_amount"),
   };
+}
+
+/** Atomic units shown in the token's own units when the screen knows them, raw otherwise. */
+export function evidenceAmount(raw: string, token?: { symbol: string; decimals: number } | null) {
+  if (!/^[0-9]{1,78}$/.test(raw)) return raw;
+  return token ? `${formatDisplay(raw, token.decimals)} ${token.symbol}` : `${raw} base units`;
 }

@@ -1,8 +1,8 @@
 import { MonoId } from "@/components/shared/identifiers";
-import { errorMessage } from "@/lib/http/messages";
 import { operationEvidence } from "./operation-evidence";
 import { evidenceRows } from "./operation-evidence-rows";
 import { Row } from "./operation-fact-row";
+import { failureReason } from "./operation-status";
 
 export function OperationTrackerFacts({
   status,
@@ -25,7 +25,12 @@ export function OperationTrackerFacts({
       {evidenceRows(evidence, token).map((row) => (
         <Row key={row.label} label={row.label} value={row.value} />
       ))}
-      {failureCode ? <Row label="Reason" value={errorMessage(failureCode)} /> : null}
+      {failureCode ? (
+        <Row
+          label="Reason"
+          value={failureReason(failureCode, { minAmount: evidence.minAmount, token })}
+        />
+      ) : null}
       {evidence.failureReason ? <Row label="Provider note" value={evidence.failureReason} /> : null}
     </dl>
   );

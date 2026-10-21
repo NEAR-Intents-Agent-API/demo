@@ -6,7 +6,6 @@ import { MonoId } from "@/components/shared/identifiers";
 import { StatusPill } from "@/components/shared/status";
 import { useCatalog } from "@/features/assets";
 import { accountTimestamp } from "@/lib/format/date";
-import { errorMessage } from "@/lib/http/messages";
 import {
   humanize,
   operationActionLabel,
@@ -16,6 +15,7 @@ import {
 } from "./operation-display-utils";
 import { operationEvidence } from "./operation-evidence";
 import { evidenceRows } from "./operation-evidence-rows";
+import { failureReason } from "./operation-status";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -40,7 +40,9 @@ export function RequestDetails({ operation }: { operation: StatusResponse }) {
           </StatusPill>
         </Field>
         {operation.failure_code ? (
-          <Field label="Reason">{errorMessage(operation.failure_code)}</Field>
+          <Field label="Reason">
+            {failureReason(operation.failure_code, { minAmount: evidence.minAmount, token: asset })}
+          </Field>
         ) : null}
         {evidence.failureReason ? (
           <Field label="Provider note">{evidence.failureReason}</Field>

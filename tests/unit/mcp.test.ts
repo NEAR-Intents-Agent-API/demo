@@ -7,6 +7,7 @@ import {
   runReadTool,
   runWriteTool,
   toolDefinitions,
+  toolError,
 } from "../../lib/mcp/tools";
 
 process.env.NEAR_INTENTS_AGENT_API_URL = "https://api.example.test";
@@ -257,4 +258,22 @@ test("MCP withdraw previews pass the caller's idempotencyKey and otherwise leave
   assert.equal(sent[0]?.key, undefined, "the SDK creates the key");
   assert.equal(sent[1]?.key, "preview-key-1");
   assert.equal("idempotencyKey" in (sent[1]?.request ?? {}), false);
+});
+
+test("MCP tool errors carry only the code and the facts the API named", () => {
+  const body = (result: ReturnType<typeof toolError>) => JSON.parse(result.content[0]?.text ?? "");
+  assert.equal(toolError("policy_denied").isError, true);
+  assert.deepEqual(body(toolError("policy_denied")), { error: { code: "policy_denied" } });
+  assert.deepEqual(
+    body(toolError("policy_change_throttled", { available_at: "2026-10-13T14:32:00.000Z" })),
+    { error: { code: "policy_change_throttled", available_at: "2026-10-13T14:32:00.000Z" } },
+  );
+  assert.deepEqual(body(toolError("amount_too_low", { min_amount: "1000000" })), {
+    error: { code: "amount_too_low", min_amount: "1000000" },
+  });
+  assert.deepEqual(
+    body(toolError("amount_too_low", { min_amount: "1000000", pointer: "/x" } as never)),
+    { error: { code: "amount_too_low", min_amount: "1000000" } },
+    "unlisted facts never reach the harness",
+  );
 });
