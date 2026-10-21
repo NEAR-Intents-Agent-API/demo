@@ -4,9 +4,9 @@ import type { Rules } from "./rules/rules";
 /** The account-wide spending caps and delay every grant draws on. */
 export function GrantSharedControls({ rules }: { rules: Rules }) {
   const caps = [
-    ["per rolling 24 hours", rules.budget.dailyUsd],
-    ["per rolling 7 days", rules.budget.weeklyUsd],
-    ["per rolling 30 days", rules.budget.monthlyUsd],
+    ["per day", rules.budget.dailyUsd],
+    ["per week", rules.budget.weeklyUsd],
+    ["per month", rules.budget.monthlyUsd],
   ].filter(([, value]) => value);
   const delayMs = Math.round(Number(rules.delaySeconds) * 1000);
   return (

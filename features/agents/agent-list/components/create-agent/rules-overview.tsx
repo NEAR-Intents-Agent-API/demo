@@ -16,9 +16,9 @@ export function RulesOverview({ rules }: { rules: Rules }) {
   const catalog = useCatalog();
   const actions = MONEY_ACTIONS.filter((ability) => rules.abilities[ability]);
   const capped = [
-    { value: rules.budget.dailyUsd, period: "rolling 24 hours" },
-    { value: rules.budget.weeklyUsd, period: "rolling 7 days" },
-    { value: rules.budget.monthlyUsd, period: "rolling 30 days" },
+    { value: rules.budget.dailyUsd, period: "day" },
+    { value: rules.budget.weeklyUsd, period: "week" },
+    { value: rules.budget.monthlyUsd, period: "month" },
   ].filter(({ value }) => value.trim());
   return (
     <dl className="divide-y divide-border rounded-lg border border-border px-4">

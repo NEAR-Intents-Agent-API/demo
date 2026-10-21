@@ -22,9 +22,9 @@ export function BudgetSettingValue({
         ${cents(window.spent_usd)} counted
         {window.limit_usd !== null ? ` · $${cents(window.remaining_usd ?? "0", "down")} left` : ""}
       </p>
-      {window.limit_usd !== null && window.resets_at ? (
+      {window.resets_at ? (
         <p className="text-xs text-muted-foreground">
-          Next release {new Date(window.resets_at).toLocaleString()}
+          Resets {new Date(window.resets_at).toLocaleString()}
         </p>
       ) : null}
     </div>

@@ -27,7 +27,10 @@ export function BudgetEditUsage({
           </dd>
         </div>
       </dl>
-      <p>Leave empty for no cap. Changing a cap keeps counted usage.</p>
+      <p>
+        Leave empty for no cap. A new amount keeps the current period and its usage; removing the
+        cap and adding it again starts a new period.
+      </p>
       <Disclosure summary="How usage is counted">
         <div className="space-y-2 pt-2">
           <p>
@@ -36,13 +39,11 @@ export function BudgetEditUsage({
             refused.
           </p>
           <p>
-            Each charge expires after {BUDGET_SETTINGS[field].label}. Usage stays tracked without a
-            cap. Token caps also apply.
+            The cap resets in full every {BUDGET_SETTINGS[field].label}, counted from when it was
+            turned on. Nothing is counted without a cap. Token caps also apply.
           </p>
           {window.limit_usd !== null ? <p>Installed cap: ${window.limit_usd}.</p> : null}
-          {window.limit_usd !== null && window.resets_at ? (
-            <p>Next release: {new Date(window.resets_at).toLocaleString()}.</p>
-          ) : null}
+          {window.resets_at ? <p>Resets: {new Date(window.resets_at).toLocaleString()}.</p> : null}
         </div>
       </Disclosure>
     </div>
