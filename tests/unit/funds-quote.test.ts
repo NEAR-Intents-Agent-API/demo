@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   extractQuote,
+  extractWithdrawPreview,
   isAtomic,
   labelFor,
   pick,
@@ -16,6 +17,28 @@ test("extractQuote unwraps a tool result and a bare response", () => {
   assert.deepEqual(extractQuote(tool), { amount_out: "1248", nested: { fee: "3" } });
   assert.deepEqual(extractQuote({ quote: { a: "1" } }), { a: "1" });
   assert.equal(extractQuote("nope"), null);
+});
+
+test("extractWithdrawPreview keeps the API's top-level fee next to the quote", () => {
+  const fee = { amount_usd: "0.25", percent: "0.5" };
+  const quote = { amount_out: "995000", fee_amount: "5000" };
+  assert.deepEqual(
+    extractWithdrawPreview({ data: { dry: true, type: "withdraw", quote, fee, warnings: [] } }),
+    { quote, fee },
+  );
+  assert.deepEqual(extractWithdrawPreview({ quote, fee: null }), { quote, fee: null });
+  assert.deepEqual(extractWithdrawPreview({ quote }), { quote, fee: null });
+  // A malformed fee is dropped, never half-read.
+  assert.deepEqual(extractWithdrawPreview({ quote, fee: { amount_usd: "0.25" } }).fee, null);
+  assert.deepEqual(
+    extractWithdrawPreview({ quote, fee: { amount_usd: 1, percent: "1" } }).fee,
+    null,
+  );
+  assert.deepEqual(
+    extractWithdrawPreview({ quote, fee: { amount_usd: "x", percent: "1" } }).fee,
+    null,
+  );
+  assert.deepEqual(extractWithdrawPreview("nope"), { quote: null, fee: null });
 });
 
 test("pick reads a key one object level down and ignores empty values", () => {

@@ -69,7 +69,7 @@ export function WithdrawFlow({ view }: { view: ReturnType<typeof useWithdrawFlow
             network={view.network}
             recipient={args.to}
             loading={preview.isFetching}
-            quote={preview.data ?? null}
+            preview={preview.data ?? null}
           />
         ) : null}
 

@@ -123,7 +123,7 @@ export const toolDefinitions = {
   },
   withdraw_preview: {
     description:
-      "Preview a withdrawal (fees and received amount) without executing it. NEAR to chain near arrives as native NEAR unless wrapped is true. Each preview runs under an idempotencyKey: pass the same key to repeat an identical preview within 60 seconds; omitted, a fresh key is used. Previews are limited to 20 per account per rolling 24 hours, failed ones included, so do not repeat them needlessly.",
+      "Preview a withdrawal without executing it: the received amount is quote.amount_out. `fee` ({ amount_usd, percent }) is valued only on chain near; for a bridged withdrawal it is null and quote.amount_out is in the destination chain's asset, so compare amount with quote.amount_out yourself. NEAR to chain near arrives as native NEAR unless wrapped is true. Each preview runs under an idempotencyKey: pass the same key to repeat an identical preview within 60 seconds; omitted, a fresh key is used. Previews are limited to 20 per account per rolling 24 hours, failed ones included, so do not repeat them needlessly.",
     inputSchema: z.object({
       token: text,
       amount,
@@ -251,9 +251,19 @@ export function toolResult(payload: unknown) {
   };
 }
 
-/** `available_at` is the earliest time to submit again, when the API names one. */
-export function toolError(code: string, availableAt?: string) {
-  const error = availableAt ? { code, available_at: availableAt } : { code };
+/** The non-secret facts a refusal may carry; each is written only when the API named it. */
+export type ToolErrorFacts = {
+  /** The earliest time to submit again. */
+  available_at?: string;
+  /** Route minimum in atomic units of the asset sent, on amount_too_low. */
+  min_amount?: string;
+};
+
+/** MCP tool error: `{ error: { code, available_at?, min_amount? } }` as one JSON text block. */
+export function toolError(code: string, facts: ToolErrorFacts = {}) {
+  const error: { code: string } & ToolErrorFacts = { code };
+  if (facts.available_at) error.available_at = facts.available_at;
+  if (facts.min_amount) error.min_amount = facts.min_amount;
   return {
     isError: true as const,
     content: [{ type: "text" as const, text: JSON.stringify({ error }) }],

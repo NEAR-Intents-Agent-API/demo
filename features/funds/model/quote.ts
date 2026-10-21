@@ -70,44 +70,60 @@ export function labelFor(key: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
-/** Fee keys in the order the Agent API itself records them; the provider's own name comes last. */
-const FEE_KEYS = [
-  "fee_amount",
-  "fee",
-  "provider_fee_amount",
-  "provider_fee",
-  "solver_fee_amount",
-  "solver_fee",
-  "protocol_fee_amount",
-  "protocol_fee",
-  "network_fee",
-  "withdrawal_fee",
-] as const;
-const FEE_TOKEN_KEYS = [
-  "fee_token",
-  "provider_fee_token",
-  "solver_fee_token",
-  "protocol_fee_token",
-];
+/** The API's own valuation of a quoted fee, in USD and as a percentage of the amount sent. */
+export type QuoteFee = { amount_usd: string; percent: string };
+
+/**
+ * A withdraw dry-run as the review needs it: the provider's quote plus the API's top-level `fee`.
+ * The API values the fee only on chain near; on every bridged withdrawal it is null, because the
+ * quote's `amount_out` is in the destination chain's asset.
+ */
+export type WithdrawPreview = {
+  quote: Json | null;
+  fee: QuoteFee | null;
+};
+
+const decimalPattern = /^-?\d{1,30}(\.\d{1,30})?$/;
+
+/** Reads `{ data: { quote, fee } }` (tool result) or `{ quote, fee }` into a `WithdrawPreview`. */
+export function extractWithdrawPreview(result: unknown): WithdrawPreview {
+  let node: unknown = result;
+  for (let depth = 0; depth < 3 && isRecord(node); depth += 1) {
+    if (isRecord(node.quote)) return { quote: node.quote, fee: quoteFee(node.fee) };
+    node = node.data;
+  }
+  return { quote: isRecord(node) ? node : null, fee: null };
+}
+
+function quoteFee(value: unknown): QuoteFee | null {
+  if (!isRecord(value)) return null;
+  const { amount_usd, percent } = value;
+  if (typeof amount_usd !== "string" || !decimalPattern.test(amount_usd)) return null;
+  if (typeof percent !== "string" || !decimalPattern.test(percent)) return null;
+  return { amount_usd, percent };
+}
 
 export type WithdrawFacts = {
-  /** What lands at the destination, atomic units of the withdrawn token. */
+  /**
+   * What lands at the destination, atomic units: of the withdrawn token on chain near, of the
+   * destination chain's asset on a bridged withdrawal.
+   */
   received: string | null;
-  /** The least the provider guarantees to deliver, atomic units. */
+  /** The least the provider guarantees to deliver, atomic units like `received`. */
   minimumReceived: string | null;
   /** The smallest amount the route accepts, atomic units of the withdrawn token. */
   minimumAmount: string | null;
-  /** The fee as the provider stated it, with the asset it is charged in when it names one. */
-  fee: { value: string; token: string | null } | null;
+  /** The API's valuation of the fee; null where it is not valued (every bridged withdrawal). */
+  fee: QuoteFee | null;
 };
 
 /** The headline facts of a withdraw preview, by the field names the Agent API documents. */
-export function withdrawFacts(quote: Json | null): WithdrawFacts {
-  const feeValue = pick(quote, FEE_KEYS);
+export function withdrawFacts(preview: WithdrawPreview | null): WithdrawFacts {
+  const quote = preview?.quote ?? null;
   return {
     received: pick(quote, ["amount_out", "amount_received", "receive_amount"]),
     minimumReceived: pick(quote, ["min_amount_out"]),
     minimumAmount: pick(quote, ["min_amount"]),
-    fee: feeValue ? { value: feeValue, token: pick(quote, FEE_TOKEN_KEYS) } : null,
+    fee: preview?.fee ?? null,
   };
 }

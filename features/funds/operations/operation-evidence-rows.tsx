@@ -1,14 +1,7 @@
 import { MonoId } from "@/components/shared/identifiers";
-import { formatDisplay } from "@/lib/format/amount";
-import type { OperationEvidence } from "./operation-evidence";
+import { evidenceAmount, type OperationEvidence } from "./operation-evidence";
 
 export type EvidenceRow = { label: string; value: React.ReactNode };
-
-/** Atomic units shown in the token's own units when the screen knows them, raw otherwise. */
-export function evidenceAmount(raw: string, token?: { symbol: string; decimals: number } | null) {
-  if (!/^[0-9]{1,78}$/.test(raw)) return raw;
-  return token ? `${formatDisplay(raw, token.decimals)} ${token.symbol}` : `${raw} base units`;
-}
 
 /**
  * The transaction and refund facts the Agent API recorded, in reading order. Every hash and

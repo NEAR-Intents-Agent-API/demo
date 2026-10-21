@@ -44,6 +44,8 @@ export function OperationTracker({
     executeAfter: evidence.executeAfter,
     failureCode: operation.data?.failure_code,
     hasTransaction: Boolean(evidence.txHash || evidence.destinationTxHash),
+    minAmount: evidence.minAmount,
+    token,
   });
   const settled = TERMINAL_STATUSES.has(status);
 

@@ -13,9 +13,12 @@ export type ErrorDetails = {
   budget_remaining_usd?: string;
   /** JSON pointer to the signed field a mismatch refusal is about (the API's `source.pointer`). */
   pointer?: string;
+  /** Route minimum in atomic units of the asset sent, on amount_too_low when the provider states it. */
+  min_amount?: string;
 };
 
 const usdPattern = /^\d{1,12}(\.\d{1,18})?$/;
+const atomicPattern = /^[0-9]{1,78}$/;
 
 /**
  * The pointers the API names on owner, signer and policy-delegate mismatches. Only these shapes
@@ -42,13 +45,21 @@ export function errorDetails(input: unknown): ErrorDetails {
     details.budget_remaining_usd = remaining;
   const pointer = source.pointer;
   if (typeof pointer === "string" && pointerPattern.test(pointer)) details.pointer = pointer;
+  const minAmount = source.min_amount;
+  if (typeof minAmount === "string" && atomicPattern.test(minAmount))
+    details.min_amount = minAmount;
   return details;
 }
 
-/** The facts an Agent API refusal carries: its retry time and the field its first error names. */
+/**
+ * The facts an Agent API refusal carries: its retry time, the field its first error names and the
+ * route minimum on amount_too_low. SDK 0.6 does not type `meta.min_amount` yet, so it is read raw.
+ */
 export function agentApiErrorDetails(error: AgentApiError): ErrorDetails {
+  const first = error.errors[0];
   return errorDetails({
     available_at: error.availableAt,
-    pointer: error.errors[0]?.source?.pointer,
+    pointer: first?.source?.pointer,
+    min_amount: (first?.meta as { min_amount?: unknown } | undefined)?.min_amount,
   });
 }

@@ -11,7 +11,7 @@ import {
   statusTone,
 } from "../../features/funds/operations/operation-display-utils";
 import { operationEvidence } from "../../features/funds/operations/operation-evidence";
-import { describeOperation } from "../../features/funds/operations/operation-status";
+import { describeOperation, failureReason } from "../../features/funds/operations/operation-status";
 import { OperationTrackerFacts } from "../../features/funds/operations/operation-tracker-facts";
 import { combineTotals, portfolioTotal } from "../../features/funds/portfolio/portfolio-total";
 import { type Holding, toHolding } from "../../features/funds/use-funds";
@@ -197,17 +197,56 @@ test("totals leave unpriced holdings out and say how many", () => {
   assert.equal(both.unpriced, 1);
 });
 
-test("withdraw facts read the documented fee and minimum fields", () => {
+test("withdraw facts read the quote's amounts and the API's top-level fee, not a provider fee key", () => {
   const facts = withdrawFacts({
-    amount_out: "990000",
-    min_amount_out: "980000",
-    min_amount: "100000",
-    fee_amount: "10000",
-    fee_token: "nep141:usdc.near",
+    quote: {
+      amount_out: "990000",
+      min_amount_out: "980000",
+      min_amount: "100000",
+      fee_amount: "10000",
+      fee_token: "nep141:usdc.near",
+    },
+    fee: { amount_usd: "0.01", percent: "1" },
   });
   assert.equal(facts.received, "990000");
   assert.equal(facts.minimumReceived, "980000");
   assert.equal(facts.minimumAmount, "100000");
-  assert.deepEqual(facts.fee, { value: "10000", token: "nep141:usdc.near" });
-  assert.equal(withdrawFacts({ amount_out: "1" }).fee, null);
+  assert.deepEqual(facts.fee, { amount_usd: "0.01", percent: "1" });
+  // A bridged withdrawal: the provider still states a fee, the API does not value it.
+  assert.equal(
+    withdrawFacts({ quote: { amount_out: "1", fee_amount: "10" }, fee: null }).fee,
+    null,
+  );
+  assert.equal(withdrawFacts(null).received, null);
+});
+
+test("an amount_too_low failure names the route minimum in the token's units", () => {
+  const facts = { minAmount: "1500000", token: { symbol: "USDC", decimals: 6 } };
+  const line = describeOperation("FAILED", { failureCode: "amount_too_low", ...facts }).line;
+  assert.ok(line.startsWith("This move did not go through: "));
+  assert.ok(line.includes("1.5 USDC"), line);
+  assert.equal(
+    describeOperation("FAILED", { failureCode: "amount_too_low", minAmount: "1500000" }).line,
+    "This move did not go through: This amount is below the minimum for this route, 1500000 base units. Send at least that.",
+  );
+  // Without a recorded minimum, or with a malformed one, the shared message is the fallback.
+  for (const minAmount of [null, undefined, "", "1.5", "abc"])
+    assert.ok(
+      describeOperation("FAILED", { failureCode: "amount_too_low", minAmount }).line.includes(
+        errorMessage("amount_too_low"),
+      ),
+      String(minAmount),
+    );
+  assert.equal(failureReason("route_unavailable", facts), errorMessage("route_unavailable"));
+  assert.equal(operationEvidence({ details: { min_amount: "1500000" } }).minAmount, "1500000");
+  const markup = renderToStaticMarkup(
+    createElement(OperationTrackerFacts, {
+      status: "FAILED",
+      operationId: "op_2",
+      failureCode: "amount_too_low",
+      token: facts.token,
+      details: { min_amount: facts.minAmount },
+    }),
+  );
+  assert.ok(markup.includes("1.5 USDC"), "the facts row reads the minimum in token units");
 });

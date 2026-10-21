@@ -9,7 +9,7 @@ import { destinationName } from "../access/destination-utils";
 import { fundsApi } from "../api";
 import type { BalanceLane } from "../flows/flow-parts";
 import { useFunds } from "../funds-context";
-import { extractQuote } from "../model/quote";
+import { extractWithdrawPreview } from "../model/quote";
 import { useIdempotencyKey } from "../model/use-idempotency-key";
 import { amountReason, useSourceAmount, useTracking } from "../model/use-move";
 import { type TokenOption, useFundsAction } from "../use-funds";
@@ -23,12 +23,15 @@ export type WithdrawArgs = {
   memo?: string;
 };
 
-/** Fee preview for the exact withdrawal on screen; it only runs once every field is valid. */
+/**
+ * Preview for the exact withdrawal on screen; it only runs once every field is valid. It keeps
+ * the API's top-level `fee` next to the provider quote: the quote alone does not value the fee.
+ */
 function useWithdrawPreview(agentId: string, args: WithdrawArgs | null, enabled: boolean) {
   return useQuery({
     queryKey: queryKeys.withdrawPreview(agentId, args),
     queryFn: async () =>
-      extractQuote(
+      extractWithdrawPreview(
         (
           await fundsApi.funds(
             agentId,
