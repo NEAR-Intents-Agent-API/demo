@@ -2,7 +2,7 @@ import { type ErrorDetails, errorDetails } from "@/lib/http/error-details";
 import { DemoApiError } from "@/lib/http/request";
 
 const budgetAdvice =
-  "Raise the limit with Edit on the Rules tab (one signature), or wait until earlier spending ages out of the rolling window. You and all connected clients share this limit.";
+  "Raise the limit with Edit on the Rules tab (one signature), or wait until the period resets (shown on the Rules tab). You and all connected clients share this limit.";
 
 /**
  * Plain-language text for every error code the Agent API, the BFF or a wallet ceremony can hand

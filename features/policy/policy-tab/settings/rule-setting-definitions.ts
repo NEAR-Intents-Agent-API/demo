@@ -47,18 +47,21 @@ export const RULE_SETTING_GROUPS: readonly {
       },
       {
         id: "dailyUsd",
-        title: "24-hour budget",
-        description: "USD cap over a rolling 24-hour window. Changes preserve counted usage.",
+        title: "Daily budget",
+        description:
+          "USD cap per day, counted from when it was turned on. Resets in full every 24 hours from that moment.",
       },
       {
         id: "weeklyUsd",
-        title: "7-day budget",
-        description: "USD cap over a rolling 7-day window. Changes preserve counted usage.",
+        title: "Weekly budget",
+        description:
+          "USD cap per week, counted from when it was turned on. Resets in full every 7 days from that moment.",
       },
       {
         id: "monthlyUsd",
-        title: "30-day budget",
-        description: "USD cap over a rolling 30-day window. Changes preserve counted usage.",
+        title: "Monthly budget",
+        description:
+          "USD cap per month, counted from when it was turned on. Resets in full on the same date and time each month (UTC), or the last day of a shorter month.",
       },
       {
         id: "delay",

@@ -203,9 +203,9 @@ function collectBudget(details: SummaryRow[], budget: unknown): void {
   const value = asRecord(budget);
   if (!value) return;
   for (const [key, period] of [
-    ["daily_usd", "rolling 24 hours"],
-    ["weekly_usd", "rolling 7 days"],
-    ["monthly_usd", "rolling 30 days"],
+    ["daily_usd", "per day"],
+    ["weekly_usd", "per week"],
+    ["monthly_usd", "per month"],
   ] as const) {
     const usd = value[key];
     if (typeof usd === "string")

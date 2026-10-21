@@ -15,9 +15,9 @@ export function BudgetFields({
     <div className={field ? "space-y-4" : "grid gap-4 @xl/rules:grid-cols-3"}>
       {(
         [
-          ["dailyUsd", "Per 24 hours"],
-          ["weeklyUsd", "Per 7 days"],
-          ["monthlyUsd", "Per 30 days"],
+          ["dailyUsd", "Per day"],
+          ["weeklyUsd", "Per week"],
+          ["monthlyUsd", "Per month"],
         ] as const
       )
         .filter(([key]) => !field || key === field)

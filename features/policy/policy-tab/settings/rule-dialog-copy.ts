@@ -3,7 +3,7 @@ import type { RuleSettingId } from "./rule-setting-definitions";
 
 export function ruleDialogDescription(id: RuleSettingId): string {
   if (isBudgetSetting(id))
-    return `Limit USD spending across the last ${BUDGET_SETTINGS[id].label}.`;
+    return `Limit USD spending per ${BUDGET_SETTINGS[id].label}, counted from when the limit is turned on.`;
   switch (id) {
     case "limits":
       return "Limit each token per move and the number of moves per hour.";
