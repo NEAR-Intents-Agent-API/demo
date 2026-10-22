@@ -195,7 +195,7 @@ test("MCP passes destinations unchanged; the account's destination rule decides"
   assert.match(JSON.stringify(sent[0]), /"recipient":"CaseSensitive"/);
 });
 
-test("MCP NEAR withdrawals send `wrapped` only when the caller asks for wNEAR", async () => {
+test("MCP NEAR withdrawals arrive as native NEAR and take no `wrapped`", async () => {
   const sent: Array<Record<string, unknown>> = [];
   const client = {
     withdraw: async (_agentId: string, request: Record<string, unknown>) => {
@@ -211,14 +211,14 @@ test("MCP NEAR withdrawals send `wrapped` only when the caller asks for wNEAR", 
     idempotencyKey: "native-near",
   };
   await runWriteTool("withdraw", args, { agentId, client });
-  await runWriteTool(
-    "withdraw",
-    { ...args, wrapped: true, idempotencyKey: "wrapped-near" },
-    { agentId, client },
-  );
-  assert.equal("wrapped" in (sent[0] ?? {}), false, "native NEAR is the API default");
-  assert.equal(sent[1]?.wrapped, true);
+  assert.equal("wrapped" in (sent[0] ?? {}), false);
+  // The API has no wNEAR option, so neither tool takes one.
   assert.equal(toolDefinitions.withdraw.inputSchema.safeParse(args).success, true);
+  assert.equal(
+    toolDefinitions.withdraw.inputSchema.safeParse({ ...args, wrapped: true }).success,
+    false,
+  );
+  assert.equal("wrapped" in toolDefinitions.withdraw_preview.inputSchema.shape, false);
 });
 
 test("MCP deposits require an exact source asset id, never a chain or symbol", async () => {
