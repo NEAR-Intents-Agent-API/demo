@@ -51,6 +51,7 @@ const apiCodes = [
   "invalid_request",
   "native_contract_forbidden",
   "native_method_denied",
+  "near_rpc_unavailable",
   "onboarding_conflict",
   "onboarding_expired",
   "onboarding_not_found",

@@ -141,6 +141,8 @@ export const errorMessages: Record<string, string> = {
   sponsor_balance_insufficient: "The service cannot pay network fees right now. Try again later.",
   wallet_sponsor_disabled: "This deployment cannot submit owner actions right now.",
   wallet_resolver_unavailable: "The owner wallet could not be checked right now. Try again.",
+  near_rpc_unavailable:
+    "The NEAR network did not answer, so the recipient could not be checked. Nothing was sent; try again in a moment.",
   wallet_rpc_unavailable: "The NEAR network did not answer. Try again in a moment.",
   transaction_unconfirmed:
     "The transaction was sent, but its confirmation has not been seen yet. Check Activity before trying again.",
@@ -172,7 +174,8 @@ export const errorMessages: Record<string, string> = {
     "The account's rules do not list this service for NEAR sign-in. Add it under Native accounts in Rules first.",
   insufficient_balance: "This account does not hold enough of this token.",
   amount_too_low: "This amount is below the minimum for this route. Try a larger amount.",
-  invalid_address: "The provider rejected this address for the chosen network. Check it and retry.",
+  invalid_address:
+    "The recipient is not a valid address for this network, a named NEAR account that does not exist, or the provider refused it. Nothing was sent. Check it and retry.",
   unsupported_token: "This token is not supported for this route right now. Try another token.",
   unsupported_chain: "This network is not supported for this move. Try another network.",
   refund_address_required:

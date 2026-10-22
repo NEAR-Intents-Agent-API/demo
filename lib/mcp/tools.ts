@@ -68,10 +68,6 @@ export type WriteToolName = (typeof WRITE_TOOLS)[number];
 
 const text = z.string().min(1).max(256);
 const amount = z.string().regex(/^[0-9]{1,78}$/);
-const wrapped = z
-  .boolean()
-  .default(false)
-  .describe("Deliver wNEAR instead of native NEAR; only for NEAR withdrawn to chain near.");
 const idempotencyKey = z.string().min(8).max(128);
 const operationId = correlationIdSchema;
 const approvalId = z.string().min(1).max(64);
@@ -123,7 +119,7 @@ export const toolDefinitions = {
   },
   withdraw_preview: {
     description:
-      "Preview a withdrawal without executing it: the received amount is quote.amount_out. `fee` ({ amount_usd, percent }) is valued only on chain near; for a bridged withdrawal it is null and quote.amount_out is in the destination chain's asset, so compare amount with quote.amount_out yourself. NEAR to chain near arrives as native NEAR unless wrapped is true. Each preview runs under an idempotencyKey: pass the same key to repeat an identical preview within 60 seconds; omitted, a fresh key is used. Previews are limited to 20 per account per rolling 24 hours, failed ones included, so do not repeat them needlessly.",
+      "Preview a withdrawal without executing it: the received amount is quote.amount_out. `fee` ({ amount_usd, percent }) is valued only on chain near; for a bridged withdrawal it is null and quote.amount_out is in the destination chain's asset, so compare amount with quote.amount_out yourself. NEAR (nep141:wrap.near) withdrawn to chain near always arrives as native NEAR; there is no wNEAR option. Each preview runs under an idempotencyKey: pass the same key to repeat an identical preview within 60 seconds; omitted, a fresh key is used. Previews are limited to 20 per account per rolling 24 hours, failed ones included, so do not repeat them needlessly.",
     inputSchema: z.object({
       token: text,
       amount,
@@ -131,7 +127,6 @@ export const toolDefinitions = {
       to: text,
       memo: z.string().max(256).optional(),
       confidential: z.boolean().default(false),
-      wrapped,
       idempotencyKey: idempotencyKey.optional(),
     }),
   },
@@ -193,7 +188,7 @@ export const toolDefinitions = {
   },
   withdraw: {
     description:
-      "Withdraw to an address on another chain, or to a NEAR account with chain near. NEAR (nep141:wrap.near) to chain near arrives as native NEAR unless wrapped is true. Cross-chain settles asynchronously. A near.com `nearcom:` address is not on any chain: send to it with a transfer instead.",
+      "Withdraw to an address on another chain, or to a NEAR account with chain near. NEAR (nep141:wrap.near) withdrawn to chain near always arrives as native NEAR; there is no wNEAR option. Cross-chain settles asynchronously. A near.com `nearcom:` address is not on any chain: send to it with a transfer instead.",
     inputSchema: z
       .object({
         token: text,
@@ -202,7 +197,6 @@ export const toolDefinitions = {
         to: text,
         memo: z.string().max(256).optional(),
         confidential: z.boolean().default(false),
-        wrapped,
         async: z.boolean().default(false),
         ...writeArgs,
       })
@@ -471,8 +465,6 @@ function withdrawRequest(args: Record<string, unknown>) {
     recipient: String(args.to),
     memo: optionalString(args.memo),
     confidential: Boolean(args.confidential),
-    // Sent only when set, so the field never reaches an API that predates it.
-    ...(args.wrapped === true ? { wrapped: true } : {}),
     async: Boolean(args.async),
   };
 }
