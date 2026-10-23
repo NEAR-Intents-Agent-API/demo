@@ -43,7 +43,7 @@ export function AmountField({
   const held = token ? balances?.get(token.assetId) : undefined;
   const fill = (basisPoints: number) => {
     if (!held || !token) return;
-    onAmount?.(formatUnits(fractionOf(held.raw, basisPoints).toString(), token.decimals));
+    onAmount?.(formatUnits(fractionOf(held.available, basisPoints).toString(), token.decimals));
   };
   return (
     <div
@@ -56,7 +56,7 @@ export function AmountField({
     >
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="console-eyebrow">{label}</span>
-        {showQuickFill && held && held.raw > 0n ? (
+        {showQuickFill && held && held.available > 0n ? (
           <span className="flex items-center gap-1">
             {[
               ["25%", 2_500],
@@ -104,7 +104,7 @@ export function AmountField({
           <span>{hint}</span>
           {held && token ? (
             <span className="tabular-nums">
-              Balance {formatDisplay(held.raw.toString(), held.decimals)} {token.symbol}
+              Available {formatDisplay(held.available.toString(), held.decimals)} {token.symbol}
             </span>
           ) : null}
         </div>

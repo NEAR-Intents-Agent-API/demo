@@ -262,7 +262,7 @@ async function providerReadFlow(
     headers: { cookie: login.cookie },
   });
   assert.equal(invalid.status, 400);
-  assert.deepEqual(await invalid.json(), { error: { code: "invalid_request" } });
+  assert.deepEqual(await invalid.json(), { error: { code: "validation_failed" } });
 
   const approvals = await getJson<{ data: unknown[] }>(`/api/agents/${agentId}/approvals`, {
     cookie: login.cookie,

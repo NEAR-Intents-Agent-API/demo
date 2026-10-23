@@ -44,7 +44,7 @@ export async function POST(request: Request, context: AgentRouteContext) {
   return withAgentMutation(request, "POST funds", agentId, async ({ session, log }) => {
     const parsed = requestSchema.safeParse(await readGuardedJson(request));
     if (!parsed.success || !isFundsTool(parsed.data.tool))
-      return bffError("invalid_request", 400, log);
+      return bffError("validation_failed", 400, log);
 
     const authority = await fundsContext(parsed.data.tool, session.userId, agentId);
     if (!authority) return bffError("access_required", 409, log);
@@ -63,7 +63,7 @@ export async function POST(request: Request, context: AgentRouteContext) {
         error,
       });
       if (error instanceof ToolDeniedError) return bffError(error.code, 403, log);
-      if (error instanceof z.ZodError) return bffError("invalid_request", 400, log);
+      if (error instanceof z.ZodError) return bffError("validation_failed", 400, log);
       throw error;
     }
   });

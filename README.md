@@ -22,7 +22,10 @@ OpenClaw, all under rules the owner signed.
   tokens, the most one move may spend, where funds can go, owner approval, and the agent's own
   NEAR, EVM and Solana keys outside NEAR Intents, all off by default).
 - **Wallet tab**: holdings with USD values (public and private), swap, transfer, deposit,
-  withdraw and make private/make public, each against the public or private balance.
+  withdraw and make private/make public, each against the public or private balance. Amount
+  fields use the API's `available` balance (the balance minus queued or timelocked work), and a
+  swap or withdrawal preview lists every rule or balance check the live request would fail as a
+  warning.
 - **Activity and Rules tabs**: operations and pending owner approvals; live rules, emergency
   stop, USD budget and execution delay, all editable in place.
 - **MCP/OAuth server**: one endpoint per account, one owner-signed grant per client, instant revocation.

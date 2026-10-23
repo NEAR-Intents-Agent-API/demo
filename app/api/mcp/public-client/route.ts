@@ -12,7 +12,7 @@ import { bffError, withSession } from "@/lib/http/handler";
 export async function GET(request: Request) {
   return withSession(async (_session, log) => {
     const clientId = new URL(request.url).searchParams.get("client_id") ?? "";
-    if (!clientId) return bffError("invalid_request", 400, log);
+    if (!clientId) return bffError("validation_failed", 400, log);
     const url = new URL(request.url);
     const forwarded = new Request(
       `${url.origin}/api/auth/oauth2/public-client?client_id=${encodeURIComponent(clientId)}`,

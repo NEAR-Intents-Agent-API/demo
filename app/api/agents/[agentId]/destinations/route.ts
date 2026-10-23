@@ -37,7 +37,7 @@ export async function POST(request: Request, context: AgentRouteContext) {
   const { agentId } = await context.params;
   return withAgentMutation(request, "POST destinations", agentId, async ({ session, log }) => {
     const input = updateSchema.safeParse(await readGuardedJson(request));
-    if (!input.success) return bffError("invalid_request", 400, log);
+    if (!input.success) return bffError("validation_failed", 400, log);
     const current = await agentApi().getPolicy(agentId);
     if (!current.policy || current.status !== "APPLIED")
       return bffError("policy_not_ready", 409, log);

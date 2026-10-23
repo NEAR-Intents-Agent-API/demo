@@ -48,7 +48,6 @@ const apiCodes = [
   "intent_type_mismatch",
   "internal_error",
   "invalid_address",
-  "invalid_request",
   "native_contract_forbidden",
   "native_method_denied",
   "near_rpc_unavailable",
@@ -71,9 +70,11 @@ const apiCodes = [
   "owner_proof_invalid",
   "owner_type_unsupported",
   "policy_action_denied",
+  "policy_asset_denied",
   "policy_blocks_delete",
   "policy_change_throttled",
   "policy_delegate_action_mismatch",
+  "policy_delegate_invalid",
   "policy_delegate_owner_mismatch",
   "policy_delegate_signature_invalid",
   "policy_denied",
@@ -91,7 +92,6 @@ const apiCodes = [
   "provider_refused",
   "provider_response_invalid",
   "provider_unavailable",
-  "quote_unavailable",
   "rate_limited",
   "refund_address_required",
   "route_unavailable",
@@ -104,7 +104,6 @@ const apiCodes = [
   "spend_price_unavailable",
   "sponsor_balance_insufficient",
   "sponsor_busy",
-  "status_not_found",
   "transaction_unconfirmed",
   "unsupported_chain",
   "unsupported_token",
@@ -261,4 +260,34 @@ test("a wallet that changed the transaction may retry; a wrong signer may not", 
   assert.equal(isRetryable("policy_delegate_action_mismatch"), true);
   assert.equal(isRetryable("policy_delegate_owner_mismatch"), false);
   assert.equal(isRetryable("owner_mismatch"), false);
+});
+
+test("a code with no text of its own gets guidance from the layer that refused", () => {
+  const refused = (layer: string, retryable = false) =>
+    errorMessage(
+      new DemoApiError("brand_new_code", 409, {
+        layer: layer as never,
+        ...(retryable ? { retryable: true } : {}),
+      }),
+    );
+  assert.match(refused("policy"), /owner changes them on the Rules tab/);
+  assert.match(refused("budget"), /owner changes them on the Rules tab/);
+  assert.match(refused("balance"), /Add funds or send less/);
+  assert.match(refused("request"), /fix it/);
+  assert.match(refused("grant"), /Authorize it again/);
+  assert.match(refused("auth"), /Sign in or sign again/);
+  assert.match(refused("provider", true), /repeating the same request is safe/);
+  assert.match(refused("api", true), /repeating the same request is safe/);
+  assert.match(refused("provider"), /repeating it will not help/);
+  assert.match(refused("policy"), /\(brand_new_code\)$/);
+  // A code with its own text keeps it, whatever the layer.
+  assert.equal(
+    errorMessage(new DemoApiError("wallet_busy", 409, { layer: "provider", retryable: true })),
+    errorMessages.wallet_busy,
+  );
+});
+
+test("the codes the API removed have no message and no alias", () => {
+  for (const code of ["quote_unavailable", "invalid_request", "status_not_found"])
+    assert.equal(Object.hasOwn(errorMessages, code), false, code);
 });

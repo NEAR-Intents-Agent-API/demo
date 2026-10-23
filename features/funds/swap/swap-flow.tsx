@@ -5,6 +5,7 @@ import { formatUnits } from "@/lib/format/amount";
 import { AmountField } from "../flows/amount-field";
 import { BalanceContext } from "../flows/balance-context";
 import { FlowButton, FlowDivider, FlowError, FlowShell } from "../flows/flow-parts";
+import { QuoteWarnings } from "../flows/quote-warnings";
 import { isAtomic } from "../model/quote";
 import { SwapReview } from "./swap-review";
 import type { useSwapFlow } from "./use-swap-flow";
@@ -50,6 +51,7 @@ export function SwapFlow({ view }: { view: ReturnType<typeof useSwapFlow> }) {
         </div>
 
         <FlowError error={quote.error} />
+        <QuoteWarnings warnings={quote.data?.warnings ?? []} token={token} />
         {outAtomic && token && view.to && source.atomic ? (
           <SwapReview
             lane={view.lane}
@@ -57,7 +59,7 @@ export function SwapFlow({ view }: { view: ReturnType<typeof useSwapFlow> }) {
             to={view.to}
             atomic={source.atomic}
             outAtomic={outAtomic}
-            quote={quote.data ?? null}
+            quote={quote.data?.quote ?? null}
           />
         ) : null}
 

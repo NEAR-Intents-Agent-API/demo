@@ -41,12 +41,14 @@ export function useFunds(): FundsContextValue {
 }
 
 export function balanceLookup(holdings: readonly Holding[]): BalanceLookup {
-  return new Map(holdings.map((h) => [h.assetId, { raw: h.raw, decimals: h.decimals }]));
+  return new Map(
+    holdings.map((h) => [h.assetId, { available: h.available, decimals: h.decimals }]),
+  );
 }
 
-/** Tokens the wallet holds, resolved to the token list so a picker can show their art and chain. */
+/** Tokens the wallet can spend, resolved to the token list so a picker can show their art and chain. */
 export function heldTokens(holdings: readonly Holding[]): TokenOption[] {
   return holdings
-    .filter((holding) => holding.raw > 0n && holding.token)
+    .filter((holding) => holding.available > 0n && holding.token)
     .map((holding) => holding.token as TokenOption);
 }

@@ -160,6 +160,10 @@ export const errorMessages: Record<string, string> = {
     "This account has used its 20 withdrawal previews for the last 24 hours. Previews resume as earlier ones age out.",
   policy_not_ready:
     "The latest rules change is still applying. Moves on this account resume once the provider confirms it.",
+  policy_asset_denied:
+    "The account's rules do not allow this token. Change the token rule on the Rules tab; raising the USD budget will not help.",
+  policy_delegate_invalid:
+    "The signed transaction could not be read. Prepare the rules change again and sign it again.",
   policy_action_denied:
     "The account's rules turn this action off. Turn it on in Rules; the dashboard and every connected client can then use it, with no new grant.",
   policy_deposit_limit: "The rules change is too large to store. Simplify the rules and try again.",
@@ -184,8 +188,6 @@ export const errorMessages: Record<string, string> = {
     "This move needs a small balance of the network's own coin in the account, and it has none. Nothing was sent.",
   route_unavailable:
     "This route is not available from the provider right now. Nothing was sent; try another token or try again later.",
-  quote_unavailable:
-    "The swap quote got no answer at the provider. Nothing was sent; try again in a moment.",
   wallet_busy:
     "Another move on this account is still running. Wait for it to finish, then try again.",
   wallet_frozen: "This account is frozen. Money moves are refused until you unfreeze it.",
@@ -201,7 +203,6 @@ export const errorMessages: Record<string, string> = {
   operation_not_pending: "This operation already finished.",
   operation_not_recoverable: "This operation cannot be recovered.",
   operation_retired: "This operation is no longer available.",
-  status_not_found: "This request is not available. Reload the page.",
   deletion_unavailable: "Deleting accounts is not available right now. Try again later.",
   delete_submission_uncertain:
     "The deletion may or may not have gone through. Reload and check the account before trying again.",
@@ -210,7 +211,6 @@ export const errorMessages: Record<string, string> = {
     "The account's schedule does not allow money moves at the time this would run. Nothing was sent. Try again once the schedule opens, or change the schedule on the Rules tab.",
   spend_price_unavailable:
     "No current USD price for this asset, so the account's USD budget cannot count it. Try again later.",
-  invalid_request: "The request was rejected as invalid.",
   validation_failed: "The request was rejected as invalid.",
   invalid_response: "The server returned an unreadable response. Try loading it again.",
   request_failed: "The request failed. Try again.",
@@ -297,10 +297,41 @@ function parseErrorSource(source: unknown): { code: string; details: ErrorDetail
   return { code: "request_failed", details: {} };
 }
 
-function baseMessage(code: string): string {
+/**
+ * Guidance for a code this app has no text for, from the layer that refused. The layer says who
+ * can fix it: the owner changes rules, the account needs funds, the caller fixes the input, or
+ * the same request can simply be repeated.
+ */
+function layerGuidance(layer: ErrorDetails["layer"], retryable: boolean): string | undefined {
+  switch (layer) {
+    case "policy":
+    case "budget":
+      return "The account's rules or USD budget do not allow this. Trying again will not help; the owner changes them on the Rules tab.";
+    case "balance":
+      return "The account does not hold enough for this. Add funds or send less.";
+    case "request":
+      return "The request was rejected. Check what you entered and fix it.";
+    case "grant":
+      return "This connection's access is missing, expired or at its limit. Authorize it again.";
+    case "auth":
+      return "The signature or sign-in could not be verified. Sign in or sign again.";
+    case "provider":
+    case "api":
+      return retryable
+        ? "The service could not finish this. Try again; repeating the same request is safe."
+        : "The service refused this, and repeating it will not help. Change the request.";
+    default:
+      return undefined;
+  }
+}
+
+function baseMessage(code: string, details: ErrorDetails): string {
   const known = Object.hasOwn(errorMessages, code) ? errorMessages[code] : undefined;
   if (known) return known;
-  return /^[a-z0-9_]{1,64}$/.test(code)
+  const safeCode = /^[a-z0-9_]{1,64}$/.test(code);
+  const guidance = layerGuidance(details.layer, details.retryable === true);
+  if (guidance) return safeCode ? `${guidance} (${code})` : guidance;
+  return safeCode
     ? `Something went wrong (${code}). Try again.`
     : "Something went wrong. Try again.";
 }
@@ -312,9 +343,10 @@ function usdLeft(usd: number): string {
 
 /**
  * Human-readable text for an API error code, or for the error carrying one. Pass the error itself
- * whenever you have it: its details add a local retry time, the USD left in a budget, and the
- * signed field a mismatch is about. Unknown codes get a plain sentence that names the code, never
- * advice about server logs.
+ * whenever you have it: its details add a local retry time, the USD left in a budget, the signed
+ * field a mismatch is about and the layer that refused. A code with no text of its own gets
+ * guidance from that layer, or a plain sentence that names the code, never advice about server
+ * logs.
  */
 export function errorMessage(source: unknown): string {
   const { code, details } = parseErrorSource(source);
@@ -322,7 +354,7 @@ export function errorMessage(source: unknown): string {
     return `The account has ${usdLeft(Number(details.budget_remaining_usd))} left in its USD budget, which is not enough for this. ${budgetAdvice}`;
   const pointed = details.pointer ? pointerMessage(code, details.pointer) : undefined;
   if (pointed) return pointed;
-  const message = baseMessage(code);
+  const message = baseMessage(code, details);
   const retryAt = details.available_at;
   if (!retryAt || Date.parse(retryAt) <= Date.now()) return message;
   const time = formatRetryTime(retryAt);
@@ -394,7 +426,6 @@ const PERMANENT_CODES = new Set([
   "agent_deleted",
   "agent_deletion_pending",
   "policy_blocks_delete",
-  "invalid_request",
   "validation_failed",
 ]);
 

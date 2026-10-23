@@ -34,6 +34,12 @@ export function HoldingRow({ holding }: { holding: Holding }) {
           {formatDisplay(holding.raw.toString(), holding.decimals)}
         </p>
         <p className="text-[11px] text-muted-foreground tabular-nums">{valueLine(holding)}</p>
+        {holding.available < holding.raw ? (
+          <p className="text-[11px] text-muted-foreground tabular-nums">
+            {formatDisplay(holding.available.toString(), holding.decimals)} available, the rest is
+            held by queued requests
+          </p>
+        ) : null}
       </div>
     </li>
   );

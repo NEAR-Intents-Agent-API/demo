@@ -19,7 +19,10 @@ export type Holding = {
   symbol: string;
   decimals: number | null;
   chain: string;
+  /** What the account holds. */
   raw: bigint;
+  /** What it can spend now: the API's `available_raw`, which leaves out queued or timelocked work. */
+  available: bigint;
   token: TokenOption | null;
   /** USD per whole token while the price is usable; null is unknown, never zero. */
   priceUsd: number | null;
@@ -65,6 +68,7 @@ export function toHolding(
     decimals: entry.decimals ?? token?.decimals ?? null,
     chain: entry.blockchain ?? token?.chain ?? chainOfAsset(entry.asset_id),
     raw: BigInt(entry.balance_raw),
+    available: BigInt(entry.available_raw),
     token,
     ...usablePrice(entry, now),
   };

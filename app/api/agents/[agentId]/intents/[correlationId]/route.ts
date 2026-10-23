@@ -11,7 +11,7 @@ export async function POST(
     const parsed = z
       .strictObject({ signedData: signedDataSchema })
       .safeParse(await readGuardedJson(request));
-    if (!parsed.success) return bffError("invalid_request", 400);
+    if (!parsed.success) return bffError("validation_failed", 400);
     return ownerIntents().submit(session.userId, agentId, correlationId, parsed.data.signedData);
   });
 }

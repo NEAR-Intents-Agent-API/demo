@@ -95,7 +95,7 @@ export const toolDefinitions = {
   },
   get_balances: {
     description:
-      "Read multi-asset balances. `intents` is the execution lane; `confidential` is the provider's private shard.",
+      "Read multi-asset balances. `intents` is the execution lane; `confidential` is the provider's private shard. Each entry has `balance` (what the account holds) and `available` (what it can spend now: the balance minus queued or timelocked work not yet dispatched). Plan with `available_raw`/`available`.",
     inputSchema: z.object({ source: z.enum(["public", "confidential"]) }),
   },
   get_tokens: {
@@ -108,7 +108,8 @@ export const toolDefinitions = {
     inputSchema: z.object({}),
   },
   swap_quote: {
-    description: "Preview a swap without executing it.",
+    description:
+      "Preview a swap without executing it. Rules and balance never refuse a preview: each one the live swap would fail comes back in `warnings` (policy_action_denied, policy_destination_denied, policy_asset_denied, policy_schedule_denied, a budget or limit code, unsupported_token, insufficient_balance with available_amount). Fix or report every warning before the live swap.",
     inputSchema: z.object({
       token_in: text,
       token_out: text,
@@ -119,7 +120,7 @@ export const toolDefinitions = {
   },
   withdraw_preview: {
     description:
-      "Preview a withdrawal without executing it: the received amount is quote.amount_out. `fee` ({ amount_usd, percent }) is valued only on chain near; for a bridged withdrawal it is null and quote.amount_out is in the destination chain's asset, so compare amount with quote.amount_out yourself. NEAR (nep141:wrap.near) withdrawn to chain near always arrives as native NEAR; there is no wNEAR option. Each preview runs under an idempotencyKey: pass the same key to repeat an identical preview within 60 seconds; omitted, a fresh key is used. Previews are limited to 20 per account per rolling 24 hours, failed ones included, so do not repeat them needlessly.",
+      "Preview a withdrawal without executing it: the received amount is quote.amount_out. A rule the live withdrawal would fail (policy_action_denied, policy_destination_denied, a budget or limit code), an unsupported_token, an invalid_address or an insufficient_balance (with available_amount) does not refuse the preview; it comes back in `warnings`, so read them before withdrawing. `fee` ({ amount_usd, percent }) is valued only on chain near; for a bridged withdrawal it is null and quote.amount_out is in the destination chain's asset, so compare amount with quote.amount_out yourself. NEAR (nep141:wrap.near) withdrawn to chain near always arrives as native NEAR; there is no wNEAR option. Each preview runs under an idempotencyKey: pass the same key to repeat an identical preview within 60 seconds; omitted, a fresh key is used. Previews are limited to 20 per account per rolling 24 hours, failed ones included, so do not repeat them needlessly.",
     inputSchema: z.object({
       token: text,
       amount,
@@ -137,7 +138,7 @@ export const toolDefinitions = {
   },
   get_operation: {
     description:
-      "Read one operation by id. Poll this after an owner-gated write: provider approvals must be decided in the dashboard.",
+      "Read one operation by id. Poll this after an owner-gated write: provider approvals must be decided in the dashboard. `details.amount_out` is final and appears only on SUCCESS (or REFUNDED after a partial fill); before that, `details.expected_amount_out` is an estimate.",
     inputSchema: z.object({ operationId }),
   },
   refresh_operation: {
@@ -251,13 +252,25 @@ export type ToolErrorFacts = {
   available_at?: string;
   /** Route minimum in atomic units of the asset sent, on amount_too_low. */
   min_amount?: string;
+  /** Which layer refused: request, auth, grant, policy, budget, balance, provider or api. */
+  layer?: string;
+  /** True when the same request under the same idempotencyKey can succeed. */
+  retryable?: true;
+  /** Atomic units the account can spend now, on insufficient_balance. */
+  available_amount?: string;
 };
 
-/** MCP tool error: `{ error: { code, available_at?, min_amount? } }` as one JSON text block. */
+/**
+ * MCP tool error: `{ error: { code, layer?, retryable?, available_at?, min_amount?,
+ * available_amount? } }` as one JSON text block.
+ */
 export function toolError(code: string, facts: ToolErrorFacts = {}) {
   const error: { code: string } & ToolErrorFacts = { code };
+  if (facts.layer) error.layer = facts.layer;
+  if (facts.retryable) error.retryable = true;
   if (facts.available_at) error.available_at = facts.available_at;
   if (facts.min_amount) error.min_amount = facts.min_amount;
+  if (facts.available_amount) error.available_amount = facts.available_amount;
   return {
     isError: true as const,
     content: [{ type: "text" as const, text: JSON.stringify({ error }) }],

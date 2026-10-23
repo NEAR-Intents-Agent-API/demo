@@ -272,6 +272,21 @@ test("MCP tool errors carry only the code and the facts the API named", () => {
     error: { code: "amount_too_low", min_amount: "1000000" },
   });
   assert.deepEqual(
+    body(
+      toolError("insufficient_balance", {
+        layer: "balance",
+        available_amount: "250000",
+      }),
+    ),
+    { error: { code: "insufficient_balance", layer: "balance", available_amount: "250000" } },
+  );
+  assert.deepEqual(
+    body(toolError("provider_unavailable", { layer: "provider", retryable: true })),
+    {
+      error: { code: "provider_unavailable", layer: "provider", retryable: true },
+    },
+  );
+  assert.deepEqual(
     body(toolError("amount_too_low", { min_amount: "1000000", pointer: "/x" } as never)),
     { error: { code: "amount_too_low", min_amount: "1000000" } },
     "unlisted facts never reach the harness",
