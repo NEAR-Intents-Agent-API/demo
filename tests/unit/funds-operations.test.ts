@@ -3,6 +3,7 @@ import { test } from "node:test";
 import type { BalanceEntry } from "@near-intents-agent-api/sdk";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { balanceLookup, heldTokens } from "../../features/funds/funds-context";
 import { withdrawFacts } from "../../features/funds/model/quote";
 import {
   operationActionLabel,
@@ -137,6 +138,8 @@ function entry(overrides: Partial<BalanceEntry>): BalanceEntry {
     price_expires_at: "2026-10-13T10:05:00.000Z",
     balance_raw: "2000000",
     balance: "2",
+    available_raw: "2000000",
+    available: "2",
     ...overrides,
   };
 }
@@ -169,6 +172,18 @@ test("holdings keep unknown prices unknown and fall back to catalogue decimals",
     now,
   );
   assert.equal(unknownDecimals.decimals, 6);
+});
+
+test("a holding spends from the API's available figure, not from what the account holds", () => {
+  const queued = toHolding(entry({ available_raw: "500000", available: "0.5" }), none, now);
+  assert.equal(queued.raw, 2_000_000n);
+  assert.equal(queued.available, 500_000n);
+  const lookup = balanceLookup([queued]);
+  assert.equal(lookup.get("nep141:usdc.near")?.available, 500_000n);
+  assert.equal(
+    heldTokens([toHolding(entry({ available_raw: "0", available: "0" }), none, now)]).length,
+    0,
+  );
 });
 
 test("totals leave unpriced holdings out and say how many", () => {
@@ -207,6 +222,7 @@ test("withdraw facts read the quote's amounts and the API's top-level fee, not a
       fee_token: "nep141:usdc.near",
     },
     fee: { amount_usd: "0.01", percent: "1" },
+    warnings: [],
   });
   assert.equal(facts.received, "990000");
   assert.equal(facts.minimumReceived, "980000");
@@ -214,7 +230,7 @@ test("withdraw facts read the quote's amounts and the API's top-level fee, not a
   assert.deepEqual(facts.fee, { amount_usd: "0.01", percent: "1" });
   // A bridged withdrawal: the provider still states a fee, the API does not value it.
   assert.equal(
-    withdrawFacts({ quote: { amount_out: "1", fee_amount: "10" }, fee: null }).fee,
+    withdrawFacts({ quote: { amount_out: "1", fee_amount: "10" }, fee: null, warnings: [] }).fee,
     null,
   );
   assert.equal(withdrawFacts(null).received, null);

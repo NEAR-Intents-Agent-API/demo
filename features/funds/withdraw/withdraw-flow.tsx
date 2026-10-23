@@ -6,6 +6,7 @@ import { AmountField } from "../flows/amount-field";
 import { BalanceContext } from "../flows/balance-context";
 import { DestinationPicker } from "../flows/destination-picker";
 import { FlowButton, FlowError, FlowShell } from "../flows/flow-parts";
+import { QuoteWarnings } from "../flows/quote-warnings";
 import { NetworkChoice } from "./network-choice";
 import type { useWithdrawFlow } from "./use-withdraw-flow";
 import { WithdrawReview } from "./withdraw-review";
@@ -73,6 +74,7 @@ export function WithdrawFlow({ view }: { view: ReturnType<typeof useWithdrawFlow
           />
         ) : null}
 
+        <QuoteWarnings warnings={preview.data?.warnings ?? []} token={token} />
         <FlowError error={preview.error ?? action.error} />
         <FlowButton
           busy={action.isPending}

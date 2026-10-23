@@ -11,7 +11,7 @@ export async function POST(
   const { agentId, clientAccessId } = await context.params;
   return withAgentMutation(request, "POST MCP revoke client", agentId, async ({ session }) => {
     const parsed = schema.safeParse(await readGuardedJson(request));
-    if (!parsed.success) return bffError("invalid_request", 400);
+    if (!parsed.success) return bffError("validation_failed", 400);
     return revokeClient(session.userId, agentId, clientAccessId, parsed.data.signedData);
   });
 }

@@ -23,7 +23,7 @@ export async function POST(request: Request, context: AgentRouteContext) {
   const { agentId } = await context.params;
   return withAgentMutation(request, "POST policy/workflows", agentId, async ({ session, log }) => {
     const input = inputSchema.safeParse(await readJson(request));
-    if (!input.success) return bffError("invalid_request", 400, log);
+    if (!input.success) return bffError("validation_failed", 400, log);
     return "frozen" in input.data
       ? beginFreezeWorkflow(session.userId, agentId, input.data.frozen)
       : beginPolicyWorkflow(

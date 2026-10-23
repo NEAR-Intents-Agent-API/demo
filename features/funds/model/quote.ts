@@ -22,6 +22,48 @@ export function extractQuote(result: unknown): Json | null {
   return isRecord(node) ? node : null;
 }
 
+/**
+ * One thing a dry run says the live request would be refused for, or a note about the route. The
+ * `code` is the one the live request would fail under (policy_action_denied, insufficient_balance,
+ * high_fee, ...). The API's own `detail` text is never kept: the screen words each code itself.
+ */
+export type QuoteWarning = {
+  code: string;
+  /** Atomic units the account can spend now; set by the API on insufficient_balance only. */
+  availableAmount?: string;
+};
+
+const warningCodePattern = /^[a-z0-9_]{1,64}$/;
+
+/**
+ * The `warnings` of a dry run, from `{ data: { quote, warnings } }` (tool result) or
+ * `{ quote, warnings }`. Malformed entries are dropped, never half-read.
+ */
+export function extractWarnings(result: unknown): QuoteWarning[] {
+  let node: unknown = result;
+  for (let depth = 0; depth < 3 && isRecord(node); depth += 1) {
+    if (Array.isArray(node.warnings)) return node.warnings.flatMap(readWarning);
+    node = node.data;
+  }
+  return [];
+}
+
+function readWarning(value: unknown): QuoteWarning[] {
+  if (!isRecord(value)) return [];
+  const { code, available_amount } = value;
+  if (typeof code !== "string" || !warningCodePattern.test(code)) return [];
+  return typeof available_amount === "string" && /^[0-9]{1,78}$/.test(available_amount)
+    ? [{ code, availableAmount: available_amount }]
+    : [{ code }];
+}
+
+/** A swap dry run: the provider's quote and the warnings beside it. */
+export type SwapPreview = { quote: Json | null; warnings: QuoteWarning[] };
+
+export function extractSwapPreview(result: unknown): SwapPreview {
+  return { quote: extractQuote(result), warnings: extractWarnings(result) };
+}
+
 /** Finds the first string/number under any of `keys`, looking one object level down too. */
 export function pick(quote: Json | null, keys: readonly string[]): string | null {
   if (!quote) return null;
@@ -81,18 +123,23 @@ export type QuoteFee = { amount_usd: string; percent: string };
 export type WithdrawPreview = {
   quote: Json | null;
   fee: QuoteFee | null;
+  warnings: QuoteWarning[];
 };
 
 const decimalPattern = /^-?\d{1,30}(\.\d{1,30})?$/;
 
-/** Reads `{ data: { quote, fee } }` (tool result) or `{ quote, fee }` into a `WithdrawPreview`. */
+/**
+ * Reads `{ data: { quote, fee, warnings } }` (tool result) or `{ quote, fee, warnings }` into a
+ * `WithdrawPreview`.
+ */
 export function extractWithdrawPreview(result: unknown): WithdrawPreview {
   let node: unknown = result;
   for (let depth = 0; depth < 3 && isRecord(node); depth += 1) {
-    if (isRecord(node.quote)) return { quote: node.quote, fee: quoteFee(node.fee) };
+    if (isRecord(node.quote))
+      return { quote: node.quote, fee: quoteFee(node.fee), warnings: extractWarnings(node) };
     node = node.data;
   }
-  return { quote: isRecord(node) ? node : null, fee: null };
+  return { quote: isRecord(node) ? node : null, fee: null, warnings: [] };
 }
 
 function quoteFee(value: unknown): QuoteFee | null {

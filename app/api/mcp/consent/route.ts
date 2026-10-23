@@ -13,7 +13,7 @@ export function POST(request: Request) {
     request,
     async () => {
       const parsed = schema.safeParse(await readGuardedJson(request));
-      if (!parsed.success) return bffError("invalid_request", 400);
+      if (!parsed.success) return bffError("validation_failed", 400);
       return withAgent("POST MCP deny consent", parsed.data.agentId, async () => {
         await validateOAuthQuery(request, parsed.data.oauthQuery, parsed.data.agentId);
         return { redirect_uri: await forwardOAuthConsent(request, parsed.data.oauthQuery, false) };

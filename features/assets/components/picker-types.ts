@@ -1,1 +1,1 @@
-export type BalanceLookup = ReadonlyMap<string, { raw: bigint; decimals: number | null }>;
+export type BalanceLookup = ReadonlyMap<string, { available: bigint; decimals: number | null }>;

@@ -38,9 +38,9 @@ export async function prepareClientGrant(
     );
   } else if (input.clientAccessId) {
     access = await ownedClient(userId, agentId, input.clientAccessId);
-    if (access.authKind !== "api_key") throw new Error("invalid_request");
+    if (access.authKind !== "api_key") throw new Error("validation_failed");
   } else {
-    if (!input.name || mcpClientNameProblem(input.name)) throw new Error("invalid_request");
+    if (!input.name || mcpClientNameProblem(input.name)) throw new Error("validation_failed");
     access = await createClientAccess({ userId, agentId, name: input.name, authKind: "api_key" });
   }
   if (access.status === "revoked") throw new Error("client_revoked");

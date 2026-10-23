@@ -78,6 +78,7 @@ test("an Agent API refusal hands over its pointer and retry time, never its deta
         {
           status: "409",
           code: "owner_mismatch",
+          layer: "auth",
           title: "Owner mismatch",
           detail: "The message was signed for testnet; this agent is on mainnet.",
           ...(source ? { source } : {}),
@@ -89,14 +90,19 @@ test("an Agent API refusal hands over its pointer and retry time, never its deta
   assert.deepEqual(
     agentApiErrorDetails(refusal({ pointer: "/signed_data/payload/message/network" })),
     {
+      layer: "auth",
       available_at: "2026-10-13T14:32:00.000Z",
       pointer: "/signed_data/payload/message/network",
     },
   );
   assert.deepEqual(agentApiErrorDetails(refusal({ pointer: "/label" })), {
+    layer: "auth",
     available_at: "2026-10-13T14:32:00.000Z",
   });
-  assert.deepEqual(agentApiErrorDetails(refusal()), { available_at: "2026-10-13T14:32:00.000Z" });
+  assert.deepEqual(agentApiErrorDetails(refusal()), {
+    layer: "auth",
+    available_at: "2026-10-13T14:32:00.000Z",
+  });
 });
 
 test("an amount_too_low refusal hands over the route minimum when it is well-formed", () => {
@@ -106,6 +112,7 @@ test("an amount_too_low refusal hands over the route minimum when it is well-for
         {
           status: "422",
           code: "amount_too_low",
+          layer: "request",
           title: "Amount too low",
           detail: "Below the route minimum.",
           meta: { retryable: false, min_amount } as never,
@@ -113,11 +120,42 @@ test("an amount_too_low refusal hands over the route minimum when it is well-for
       ],
       meta: { request_id: "r" },
     });
-  assert.deepEqual(agentApiErrorDetails(refusal("1000000")), { min_amount: "1000000" });
-  assert.deepEqual(agentApiErrorDetails(refusal("1.5")), {});
-  assert.deepEqual(agentApiErrorDetails(refusal("")), {});
-  assert.deepEqual(agentApiErrorDetails(refusal(1000000)), {});
-  assert.deepEqual(agentApiErrorDetails(refusal(undefined)), {});
+  assert.deepEqual(agentApiErrorDetails(refusal("1000000")), {
+    layer: "request",
+    min_amount: "1000000",
+  });
+  assert.deepEqual(agentApiErrorDetails(refusal("1.5")), { layer: "request" });
+  assert.deepEqual(agentApiErrorDetails(refusal("")), { layer: "request" });
+  assert.deepEqual(agentApiErrorDetails(refusal(1000000)), { layer: "request" });
+  assert.deepEqual(agentApiErrorDetails(refusal(undefined)), { layer: "request" });
+});
+
+test("a refusal hands over its layer, a true retryable flag and the spendable balance", () => {
+  const refusal = (layer: string, meta: Record<string, unknown>) =>
+    new AgentApiError(409, {
+      errors: [
+        {
+          status: "409",
+          code: "insufficient_balance",
+          layer: layer as never,
+          title: "Insufficient balance",
+          detail: "Not enough.",
+          meta: meta as never,
+        },
+      ],
+      meta: { request_id: "r" },
+    });
+  assert.deepEqual(agentApiErrorDetails(refusal("balance", { available_amount: "250000" })), {
+    layer: "balance",
+    available_amount: "250000",
+  });
+  assert.deepEqual(agentApiErrorDetails(refusal("provider", { retryable: true })), {
+    layer: "provider",
+    retryable: true,
+  });
+  // An absent or false flag proves nothing, so neither is forwarded.
+  assert.deepEqual(agentApiErrorDetails(refusal("api", { retryable: false })), { layer: "api" });
+  assert.deepEqual(errorDetails({ layer: "elsewhere", available_amount: "1.5" }), {});
 });
 
 test("the BFF error body carries the allowlisted details and nothing else", async () => {

@@ -7,8 +7,8 @@ import type { Holding, TokenOption } from "../use-funds";
 
 /**
  * State every "spend from a balance" flow shares: which token, how much, and whether the wallet
- * holds it. The token defaults to the first one the wallet actually has, so the form never opens
- * on something the agent cannot spend.
+ * can spend it (the API's `available` figure, not what it merely holds). The token defaults to the
+ * first one the wallet can actually spend, so the form never opens on something it cannot.
  */
 export function useSourceAmount(holdings: readonly Holding[]) {
   const balances = useMemo(() => balanceLookup(holdings), [holdings]);
@@ -21,7 +21,7 @@ export function useSourceAmount(holdings: readonly Holding[]) {
       ? picked
       : (sources[0] ?? null);
   const atomic = token ? parseUnits(amount, token.decimals) : null;
-  const held = token ? (balances.get(token.assetId)?.raw ?? 0n) : 0n;
+  const held = token ? (balances.get(token.assetId)?.available ?? 0n) : 0n;
   const over = atomic !== null && atomic > held;
 
   return {
@@ -39,8 +39,8 @@ export function useSourceAmount(holdings: readonly Holding[]) {
   };
 }
 
-export function overMessage(token: TokenOption, held: bigint): string {
-  return `You only hold ${formatDisplay(held.toString(), token.decimals)} ${token.symbol}.`;
+export function overMessage(token: TokenOption, available: bigint): string {
+  return `Only ${formatDisplay(available.toString(), token.decimals)} ${token.symbol} is available.`;
 }
 
 /** Why the primary button is disabled, in the words it should show; null means go. */

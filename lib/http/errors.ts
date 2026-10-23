@@ -5,7 +5,7 @@ import { type ErrorDetails, errorDetails } from "@/lib/http/error-details";
 import { logger } from "@/lib/http/logger";
 
 const errorStatus: Record<string, number> = {
-  invalid_request: 400,
+  validation_failed: 400,
   login_required: 401,
   owner_proof_invalid: 401,
   owner_key_not_full_access: 403,

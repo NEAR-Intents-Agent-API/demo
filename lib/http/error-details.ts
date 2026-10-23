@@ -1,4 +1,4 @@
-import type { AgentApiError } from "@near-intents-agent-api/sdk";
+import type { AgentApiError, ApiErrorLayer } from "@near-intents-agent-api/sdk";
 
 /**
  * Non-secret facts that explain an API refusal, forwarded from the BFF to the browser.
@@ -7,6 +7,10 @@ import type { AgentApiError } from "@near-intents-agent-api/sdk";
  * are never forwarded. Snake_case matches the Agent API and the MCP tool errors.
  */
 export type ErrorDetails = {
+  /** Which layer refused: the API's `layer`, which picks the guidance for a code the app has no text for. */
+  layer?: ApiErrorLayer;
+  /** True when the same request under the same idempotency key can succeed. Absent proves nothing. */
+  retryable?: true;
   /** ISO time the same request can be sent again (throttles, quotas, schedule windows). */
   available_at?: string;
   /** USD left in the tightest budget window, as a plain decimal string. */
@@ -15,7 +19,20 @@ export type ErrorDetails = {
   pointer?: string;
   /** Route minimum in atomic units of the asset sent, on amount_too_low when the provider states it. */
   min_amount?: string;
+  /** Atomic units the account can spend now, on insufficient_balance. */
+  available_amount?: string;
 };
+
+const layers: readonly string[] = [
+  "request",
+  "auth",
+  "grant",
+  "policy",
+  "budget",
+  "balance",
+  "provider",
+  "api",
+] satisfies ApiErrorLayer[];
 
 const usdPattern = /^\d{1,12}(\.\d{1,18})?$/;
 const atomicPattern = /^[0-9]{1,78}$/;
@@ -33,6 +50,9 @@ export function errorDetails(input: unknown): ErrorDetails {
   if (typeof input !== "object" || input === null) return {};
   const source = input as Record<string, unknown>;
   const details: ErrorDetails = {};
+  const layer = source.layer;
+  if (typeof layer === "string" && layers.includes(layer)) details.layer = layer as ApiErrorLayer;
+  if (source.retryable === true) details.retryable = true;
   const availableAt = source.available_at;
   if (
     typeof availableAt === "string" &&
@@ -48,18 +68,24 @@ export function errorDetails(input: unknown): ErrorDetails {
   const minAmount = source.min_amount;
   if (typeof minAmount === "string" && atomicPattern.test(minAmount))
     details.min_amount = minAmount;
+  const availableAmount = source.available_amount;
+  if (typeof availableAmount === "string" && atomicPattern.test(availableAmount))
+    details.available_amount = availableAmount;
   return details;
 }
 
 /**
- * The facts an Agent API refusal carries: its retry time, the field its first error names and the
- * route minimum on amount_too_low. SDK 0.6 does not type `meta.min_amount` yet, so it is read raw.
+ * The facts an Agent API refusal carries: the layer that refused, whether the same key can retry,
+ * its retry time, the field its first error names, the route minimum on amount_too_low and the
+ * spendable balance on insufficient_balance.
  */
 export function agentApiErrorDetails(error: AgentApiError): ErrorDetails {
-  const first = error.errors[0];
   return errorDetails({
+    layer: error.layer,
+    retryable: error.retryable,
     available_at: error.availableAt,
-    pointer: first?.source?.pointer,
-    min_amount: (first?.meta as { min_amount?: unknown } | undefined)?.min_amount,
+    pointer: error.errors[0]?.source?.pointer,
+    min_amount: error.minAmount,
+    available_amount: error.availableAmount,
   });
 }

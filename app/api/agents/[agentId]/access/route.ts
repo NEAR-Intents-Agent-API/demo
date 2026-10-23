@@ -38,11 +38,11 @@ export async function POST(request: Request, context: AgentRouteContext) {
   const { agentId } = await context.params;
   return withAgentMutation(request, "POST access", agentId, async ({ session, log }) => {
     const parsed = enableSchema.safeParse(await readGuardedJson(request));
-    if (!parsed.success) return bffError("invalid_request", 400, log);
+    if (!parsed.success) return bffError("validation_failed", 400, log);
     const label = parsed.data.label.trim();
     const expiresAt = Date.parse(parsed.data.expiresAt);
     if (grantLabelProblem(label) || grantExpiryProblem(expiresAt, Date.now()))
-      return bffError("invalid_request", 400, log);
+      return bffError("validation_failed", 400, log);
     const credential = await prepareGrantCredential({
       userId: session.userId,
       agentId,

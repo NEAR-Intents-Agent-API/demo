@@ -25,8 +25,8 @@ export function useTokenList(tokens: readonly TokenOption[], balances?: BalanceL
       )
       .sort((a, b) => {
         const held =
-          Number((balances?.get(b.assetId)?.raw ?? 0n) > 0n) -
-          Number((balances?.get(a.assetId)?.raw ?? 0n) > 0n);
+          Number((balances?.get(b.assetId)?.available ?? 0n) > 0n) -
+          Number((balances?.get(a.assetId)?.available ?? 0n) > 0n);
         return held || a.symbol.localeCompare(b.symbol);
       });
   }, [tokens, deferred, chain, balances]);

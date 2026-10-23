@@ -70,9 +70,9 @@ export function TokenList({
                     {token.chains.length > 1 ? ` · +${token.chains.length - 1} more` : ""}
                   </span>
                 </span>
-                {held && held.raw > 0n ? (
+                {held && held.available > 0n ? (
                   <span className="text-sm tabular-nums">
-                    {formatDisplay(held.raw.toString(), held.decimals)}
+                    {formatDisplay(held.available.toString(), held.decimals)}
                   </span>
                 ) : null}
               </button>

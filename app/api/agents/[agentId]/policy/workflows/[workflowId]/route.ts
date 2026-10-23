@@ -11,7 +11,7 @@ export async function POST(
   const { agentId, workflowId } = await context.params;
   return withAgentMutation(request, "POST policy/workflow", agentId, async ({ session, log }) => {
     const input = inputSchema.safeParse(await readJson(request));
-    if (!input.success) return bffError("invalid_request", 400, log);
+    if (!input.success) return bffError("validation_failed", 400, log);
     return ownerIntents().submit(session.userId, agentId, workflowId, input.data.signedData);
   });
 }

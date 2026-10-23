@@ -18,7 +18,7 @@ export async function POST(request: Request, context: AgentRouteContext) {
   const { agentId } = await context.params;
   return withAgentMutation(request, "POST MCP authorize", agentId, async ({ session, agent }) => {
     const parsed = schema.safeParse(await readGuardedJson(request));
-    if (!parsed.success) return bffError("invalid_request", 400);
+    if (!parsed.success) return bffError("validation_failed", 400);
     if (!agent.owner || !agent.wallet || agent.archived) return bffError("agent_not_bound", 409);
     return authorizeClient(request, session.userId, agentId, parsed.data);
   });

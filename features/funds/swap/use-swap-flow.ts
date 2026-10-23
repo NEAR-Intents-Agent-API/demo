@@ -7,7 +7,7 @@ import { queryKeys } from "@/lib/query/keys";
 import { fundsApi } from "../api";
 import type { BalanceLane } from "../flows/flow-parts";
 import { useFunds } from "../funds-context";
-import { extractQuote, isAtomic, pick } from "../model/quote";
+import { extractSwapPreview, isAtomic, pick } from "../model/quote";
 import { useIdempotencyKey } from "../model/use-idempotency-key";
 import { amountReason, useDebouncedValue, useSourceAmount, useTracking } from "../model/use-move";
 import { type TokenOption, useFundsAction } from "../use-funds";
@@ -22,13 +22,16 @@ export type SwapRequest = {
   confidential: boolean;
 };
 
-/** Live quote for the current inputs; nothing is asked until the form is a valid swap. */
+/**
+ * Live quote for the current inputs; nothing is asked until the form is a valid swap. Its
+ * warnings list every rule or balance check the live swap would fail: a dry swap never refuses.
+ */
 function useSwapQuote(agentId: string, request: SwapRequest | null, enabled: boolean) {
   const debounced = useDebouncedValue(request);
   return useQuery({
     queryKey: queryKeys.swapQuote(agentId, debounced),
     queryFn: async () =>
-      extractQuote(
+      extractSwapPreview(
         (
           await fundsApi.funds(
             agentId,
@@ -87,7 +90,7 @@ export function useSwapFlow(initialLane: BalanceLane = "public") {
   const { token, atomic } = source;
   const request = buildSwapRequest({ token, to, atomic, over: source.over, confidential });
   const quote = useSwapQuote(funds.agent.id, request, Boolean(funds.access));
-  const amountOut = pick(quote.data ?? null, ["amount_out", "amount_out_formatted"]);
+  const amountOut = pick(quote.data?.quote ?? null, ["amount_out", "amount_out_formatted"]);
   const key = useIdempotencyKey(JSON.stringify(request));
   const reason = swapReason(source, to);
 

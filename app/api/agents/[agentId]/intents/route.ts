@@ -20,7 +20,7 @@ export async function POST(request: Request, context: AgentRouteContext) {
       parsed.data.type === "grant_issue" ||
       parsed.data.agent_id !== agentId
     )
-      return bffError("invalid_request", 400);
+      return bffError("validation_failed", 400);
     return ownerIntents().generate(session.userId, parsed.data);
   });
 }

@@ -51,7 +51,7 @@ export function POST(request: Request) {
       const gate = await requireConfiguredNetwork();
       if (!gate.ok) return networkGateError(gate, { route: "POST /api/agents" });
       const parsed = createInputSchema.safeParse(await readGuardedJson(request));
-      if (!parsed.success) return bffError("invalid_request", 400);
+      if (!parsed.success) return bffError("validation_failed", 400);
       const owner = await demoOwnerForSession(session);
       if (!owner) return bffError("owner_identity_missing", 409);
       return ownerIntents().generate(session.userId, {
