@@ -109,7 +109,7 @@ export const toolDefinitions = {
   },
   swap_quote: {
     description:
-      "Preview a swap without executing it. Rules and balance never refuse a preview: each one the live swap would fail comes back in `warnings` (policy_action_denied, policy_destination_denied, policy_asset_denied, policy_schedule_denied, a budget or limit code, unsupported_token, insufficient_balance with available_amount). Fix or report every warning before the live swap.",
+      "Preview a swap without executing it. Rules and balance never refuse a preview: each one the live swap would fail comes back in `warnings` (policy_action_denied, policy_destination_denied, policy_asset_denied, policy_schedule_denied, a budget or limit code, unsupported_token, insufficient_balance with available_amount). Fix or report every warning before the live swap. `owner_approval` true means the live swap would wait in PENDING_APPROVAL for the owner.",
     inputSchema: z.object({
       token_in: text,
       token_out: text,
@@ -120,7 +120,7 @@ export const toolDefinitions = {
   },
   withdraw_preview: {
     description:
-      "Preview a withdrawal without executing it: the received amount is quote.amount_out. A rule the live withdrawal would fail (policy_action_denied, policy_destination_denied, a budget or limit code), an unsupported_token, an invalid_address or an insufficient_balance (with available_amount) does not refuse the preview; it comes back in `warnings`, so read them before withdrawing. `fee` ({ amount_usd, percent }) is valued only on chain near; for a bridged withdrawal it is null and quote.amount_out is in the destination chain's asset, so compare amount with quote.amount_out yourself. NEAR (nep141:wrap.near) withdrawn to chain near always arrives as native NEAR; there is no wNEAR option. Each preview runs under an idempotencyKey: pass the same key to repeat an identical preview within 60 seconds; omitted, a fresh key is used. Previews are limited to 20 per account per rolling 24 hours, failed ones included, so do not repeat them needlessly.",
+      "Preview a withdrawal without executing it: the received amount is quote.amount_out. A rule the live withdrawal would fail (policy_action_denied, policy_destination_denied, a budget or limit code), an unsupported_token, an invalid_address or an insufficient_balance (with available_amount) does not refuse the preview; it comes back in `warnings`, so read them before withdrawing. `owner_approval` true means the live withdrawal would wait in PENDING_APPROVAL for the owner. `fee` ({ amount_usd, percent }) is valued only on chain near; for a bridged withdrawal it is null and quote.amount_out is in the destination chain's asset, so compare amount with quote.amount_out yourself. NEAR (nep141:wrap.near) withdrawn to chain near always arrives as native NEAR; there is no wNEAR option. Each preview runs under an idempotencyKey: pass the same key to repeat an identical preview within 60 seconds; omitted, a fresh key is used. Previews are limited to 20 per account per rolling 24 hours, failed ones included, so do not repeat them needlessly.",
     inputSchema: z.object({
       token: text,
       amount,

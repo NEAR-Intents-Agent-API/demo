@@ -157,7 +157,7 @@ export const errorMessages: Record<string, string> = {
   withdraw_preview_pending: "A preview of this withdrawal is still running. Try again in a moment.",
   withdraw_preview_expired: "This withdrawal preview has expired. Preview it again.",
   withdraw_preview_limit_reached:
-    "This account has used its 20 withdrawal previews for the last 24 hours. Previews resume as earlier ones age out.",
+    "This account has used its 20 withdrawal previews for the last 24 hours. The next one opens when the oldest ages out.",
   policy_not_ready:
     "The latest rules change is still applying. Moves on this account resume once the provider confirms it.",
   policy_asset_denied:
@@ -226,6 +226,8 @@ const timedMessages: Record<string, string> = {
     "The demo has reached its limit for new agent accounts in a rolling 24 hours. Try again after {time}.",
   policy_schedule_denied:
     "The account's schedule does not allow money moves at the time this would run. Nothing was sent. Try again after {time}, or change the schedule on the Rules tab.",
+  withdraw_preview_limit_reached:
+    "This account has used its 20 withdrawal previews for the last 24 hours. The next one opens after {time}.",
 };
 
 const ownerKeyMessage =
