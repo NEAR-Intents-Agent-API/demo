@@ -1,25 +1,21 @@
 "use client";
 
-import type { AgentView } from "@near-intents-agent-api/sdk";
-import { useState } from "react";
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { Callout } from "@/components/shared/callout";
 import { MonoId } from "@/components/shared/identifiers";
 import { Pending } from "@/components/shared/states";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { type ConsentChallenge, type ConsentStage, SigningSummary } from "@/features/wallet/index";
 import { cn } from "@/lib/utils";
-import { type DeletionSummary, deleteConfirmed, STEP_CONFIRM } from "./lifecycle-state";
+import { type DeletionSummary, STEP_CONFIRM } from "./lifecycle-state";
 
 /**
- * The one irreversible action, so it shows what it destroys before it asks for a signature.
- * The server prepares the preview (`generated.preview.deletion`); an account that still holds
- * funds also needs its exact name typed, so a stray click cannot lose them.
+ * The one irreversible action, so it shows what the account holds before it asks for a signature.
+ * Deletion has no sweep: the API refuses it while the account holds any public or private balance,
+ * so the server's preview (`generated.preview.deletion`) blocks signing until the funds are moved
+ * out. Native NEAR is the exception; it goes to the beneficiary.
  */
 export function DeleteAccountDialog({
-  agent,
   open,
   onOpenChange,
   summary,
@@ -29,7 +25,6 @@ export function DeleteAccountDialog({
   onSign,
   onRetry,
 }: {
-  agent: AgentView;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   summary: DeletionSummary | null;
@@ -39,10 +34,8 @@ export function DeleteAccountDialog({
   onSign: () => void;
   onRetry: () => void;
 }) {
-  const [typed, setTyped] = useState("");
   const busy = stage === "signing" || stage === "submitting";
-  const ready =
-    Boolean(challenge && summary) && deleteConfirmed(typed, agent.name, summary?.lost ?? true);
+  const ready = Boolean(challenge && summary && !summary.holdsFunds);
 
   return (
     <ResponsiveDialog
@@ -65,17 +58,7 @@ export function DeleteAccountDialog({
     >
       <div className="flex min-w-0 flex-col gap-5">
         {summary ? (
-          <>
-            <Holdings summary={summary} />
-            {summary.lost ? (
-              <NameConfirmation
-                name={agent.name}
-                typed={typed}
-                onTyped={setTyped}
-                disabled={busy}
-              />
-            ) : null}
-          </>
+          <Holdings summary={summary} />
         ) : (
           <p className="text-sm text-muted-foreground">
             {error ? "Could not prepare the deletion." : "Checking what the account holds…"}
@@ -100,14 +83,14 @@ export function DeleteAccountDialog({
 function Holdings({ summary }: { summary: DeletionSummary }) {
   return (
     <div className="flex flex-col gap-4">
-      {summary.lost ? (
-        <Callout tone="danger" title="These balances are destroyed">
-          Deleting does not send them anywhere. Move them out first with a swap, transfer or
-          withdrawal if you want to keep them.
+      {summary.holdsFunds ? (
+        <Callout tone="danger" title="Move these balances out first">
+          Deleting sends nothing anywhere, and the API refuses it while the account holds any public
+          or private balance. Withdraw or transfer everything out, then delete the account.
         </Callout>
       ) : (
-        <Callout tone="info" title="Nothing is lost">
-          The account holds no tokens, so deleting it destroys no funds.
+        <Callout tone="info" title="Ready to delete">
+          The account holds no tokens, so nothing needs to be moved out first.
         </Callout>
       )}
       {summary.rows.length > 0 ? (
@@ -139,34 +122,6 @@ function Holdings({ summary }: { summary: DeletionSummary }) {
           <MonoId value={summary.beneficiary} className="text-xs" head={12} tail={6} />.
         </p>
       ) : null}
-    </div>
-  );
-}
-
-function NameConfirmation({
-  name,
-  typed,
-  onTyped,
-  disabled,
-}: {
-  name: string;
-  typed: string;
-  onTyped: (value: string) => void;
-  disabled: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <Label htmlFor="delete-account-name">
-        Type <span className="font-mono">{name}</span> to confirm
-      </Label>
-      <Input
-        id="delete-account-name"
-        value={typed}
-        onChange={(event) => onTyped(event.target.value)}
-        autoComplete="off"
-        spellCheck={false}
-        disabled={disabled}
-      />
     </div>
   );
 }

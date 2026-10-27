@@ -273,7 +273,7 @@ async function providerReadFlow(
     cookie: login.cookie,
   });
   assert.equal(policy.revision, null);
-  assert.equal(policy.usage.budget.daily.spent_usd, "0.000000");
+  assert.equal(policy.usage.budget.daily.spent_usd, null);
   assert.deepEqual(policy.usage.timelock, { delay_ms: 0, scheduled_count: 0 });
   for (const resource of ["budget", "timelock", "limits"]) {
     const response = await fetch(`${origin}/api/agents/${agentId}/${resource}`, {
@@ -1360,19 +1360,19 @@ async function startStubAgentApi(): Promise<{
             budget: {
               daily: {
                 limit_usd: null,
-                spent_usd: "0.000000",
+                spent_usd: null,
                 remaining_usd: null,
                 resets_at: null,
               },
               weekly: {
                 limit_usd: null,
-                spent_usd: "0.000000",
+                spent_usd: null,
                 remaining_usd: null,
                 resets_at: null,
               },
               monthly: {
                 limit_usd: null,
-                spent_usd: "0.000000",
+                spent_usd: null,
                 remaining_usd: null,
                 resets_at: null,
               },

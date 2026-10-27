@@ -12,6 +12,7 @@ import type {
 } from "@near-intents-agent-api/sdk";
 import { z } from "zod";
 import {
+  canonicalAddressOn,
   evmChains,
   intentsAccount,
   transferRecipientProblem,
@@ -127,15 +128,18 @@ const typedDestinationSchema = destinationUnion.superRefine((value, ctx) => {
 });
 
 /**
- * Exact identity for a destination the owner typed: canonical chain id, lowercase EVM hex; a memo
- * is never altered. Throws a `ZodError` naming the first problem, malformed addresses included.
+ * Exact identity for a destination the owner typed: canonical chain id and the address spelling
+ * the API compares (see `canonicalAddressOn`); a memo is never altered. Throws a `ZodError` naming the first problem, malformed addresses included.
  */
 export function canonicalDestination(input: Destination): Destination {
   if (input.action === "transfer")
     return typedDestinationSchema.parse({ ...input, address: intentsAccount(input.address) });
   const chain = canonicalChain(input.chain);
-  const address = evmChains.has(chain) ? input.address.toLowerCase() : input.address;
-  return typedDestinationSchema.parse({ ...input, chain, address });
+  return typedDestinationSchema.parse({
+    ...input,
+    chain,
+    address: canonicalAddressOn(chain, input.address),
+  });
 }
 
 export function destinationLabel(value: Destination): string {
@@ -196,7 +200,11 @@ export const defaultDestinationRule: DestinationRule = { mode: "only", list: [] 
 export const maxTimelockMs = 30 * 24 * 60 * 60 * 1000;
 
 const amountRaw = z.string().regex(/^[0-9]{1,78}$/);
-const assetId = z.string().min(1).max(256);
+const assetId = z
+  .string()
+  .min(1)
+  .max(256)
+  .refine((id) => id !== "*", 'Use "any" to allow every asset; "*" is not an asset id');
 const limitBucket = z.record(assetId, amountRaw);
 const usdAmount = z.string().regex(/^(0|[1-9][0-9]{0,8})(\.[0-9]{1,2})?$/);
 const policyActionSchema = z.enum(["swap", "transfer", "withdraw"]);

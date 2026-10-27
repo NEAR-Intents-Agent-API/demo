@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { destinationFromDraft } from "../../features/funds/access/destination-utils";
 import {
+  canonicalAddressOn,
   isNearAccountId,
   transferRecipientProblem,
   withdrawalAddressProblem,
@@ -142,6 +143,43 @@ test("destinations canonicalise EVM addresses to lowercase and refuse bad ones",
   );
   assert.throws(() =>
     canonicalDestination({ action: "transfer", address: "Not Valid", confidential: false }),
+  );
+});
+
+test("destinations take the spelling the API compares", () => {
+  const spelled = (chain: string, address: string) =>
+    canonicalDestination({ action: "withdraw", chain, address, memo: null }).address;
+  const segwit = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq";
+  assert.equal(spelled("btc", segwit.toUpperCase()), segwit);
+  assert.equal(
+    spelled("hyperevm", "0xABCDEFabcdefABCDEFabcdefABCDEFabcdefABCD"),
+    "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+  );
+  // Base58 keeps its case, so a mixed-case legacy address is never altered.
+  assert.equal(
+    spelled("btc", "1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2"),
+    "1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2",
+  );
+  assert.equal(
+    canonicalAddressOn("bch", "bitcoincash:QPM2QSZNHKS23Z7629MMS6S4CWEF74VCWVY22GDX6A"),
+    "qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a",
+  );
+  assert.equal(
+    canonicalAddressOn("bch", "1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2"),
+    "1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2",
+  );
+  assert.equal(canonicalAddressOn("cardano", "ADDR1Q9"), "addr1q9");
+  assert.equal(canonicalAddressOn("zec", "ZS1abc"), "zs1abc");
+  assert.equal(canonicalAddressOn("zec", "t1AbC"), "t1AbC");
+  assert.equal(canonicalAddressOn("aleo", "ALEO1abc"), "aleo1abc");
+  assert.equal(canonicalAddressOn("sui", "0xAB"), `0x${"0".repeat(62)}ab`);
+  assert.equal(
+    canonicalAddressOn("starknet", `0x${"0".repeat(10)}${"A".repeat(54)}`),
+    `0x${"0".repeat(10)}${"a".repeat(54)}`,
+  );
+  assert.equal(
+    canonicalAddressOn("sol", "So11111111111111111111111111111111111111112"),
+    "So11111111111111111111111111111111111111112",
   );
 });
 

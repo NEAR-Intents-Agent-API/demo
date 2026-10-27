@@ -39,6 +39,13 @@ test("a new agent can do everything NEAR Intents offers and send anywhere", () =
   assert.deepEqual(rulesFromPolicy(policy), defaultRules);
 });
 
+test('"*" is not an asset id: the API refuses it in assets and as a limits key', () => {
+  const base = policyFromRules(null, rules());
+  assert.equal(policySchema.safeParse({ ...base, assets: ["*"] }).success, false);
+  assert.equal(policySchema.safeParse({ ...base, limits: { daily: { "*": "1" } } }).success, false);
+  assert.equal(policySchema.safeParse({ ...base, assets: [USDC] }).success, true);
+});
+
 test("each ability maps to one policy switch", () => {
   const off = rules({
     abilities: { swap: false, transfer: false, withdraw: false, confidential: false },

@@ -19,7 +19,7 @@ export function BudgetSettingValue({
         {rules.budget[field].trim() ? `$${rules.budget[field]} cap` : "No cap"}
       </p>
       <p className="text-xs text-muted-foreground">
-        ${cents(window.spent_usd)} counted
+        {window.spent_usd === null ? "Not counted" : `$${cents(window.spent_usd)} counted`}
         {window.limit_usd !== null ? ` · $${cents(window.remaining_usd ?? "0", "down")} left` : ""}
       </p>
       {window.resets_at ? (

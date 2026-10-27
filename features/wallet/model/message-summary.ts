@@ -120,7 +120,7 @@ export function summarizeSignedMessage(message: string): MessageSummary | null {
       if (envelope.confirm_asset_loss === true)
         details.push({
           label: "Balances",
-          value: "Public and confidential balances still in the account are destroyed",
+          value: "Refused while the account holds any public or confidential balance",
           emphasis: true,
         });
       break;
