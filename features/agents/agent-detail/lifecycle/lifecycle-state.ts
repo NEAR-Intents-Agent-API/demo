@@ -143,8 +143,8 @@ export type DeletionSummary = {
   /** NEAR the custody account holds; it is sent to the beneficiary, not destroyed. */
   native: string | null;
   rows: DeletionRow[];
-  /** True when deleting destroys balances, which is what makes the owner type the name. */
-  lost: boolean;
+  /** True while the account holds public or private balances; deletion is refused until they are moved out. */
+  holdsFunds: boolean;
 };
 
 function rowsOf(entries: DeletionPreview["public"], scope: DeletionRow["scope"]): DeletionRow[] {
@@ -164,11 +164,6 @@ export function deletionSummary(preview: DeletionPreview): DeletionSummary {
     beneficiary: preview.beneficiary,
     native: native ? formatDisplay(native, 24) : null,
     rows,
-    lost: preview.assets_lost || rows.length > 0,
+    holdsFunds: preview.assets_lost || rows.length > 0,
   };
-}
-
-/** Deleting an account that still holds funds needs its exact name typed; an empty one does not. */
-export function deleteConfirmed(typed: string, name: string, lost: boolean): boolean {
-  return !lost || typed.trim() === name;
 }

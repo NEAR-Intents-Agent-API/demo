@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  deleteConfirmed,
   deletionSummary,
   lifecycleActions,
   lifecyclePlan,
@@ -181,30 +180,21 @@ describe("deletion summary", () => {
         ["wNEAR", "1", "private"],
       ],
     );
-    assert.equal(summary.lost, true);
+    assert.equal(summary.holdsFunds, true);
   });
 
-  it("is lossless for an empty account and still shows native NEAR", () => {
+  it("holds nothing for an empty account and still shows native NEAR", () => {
     const summary = deletionSummary(preview({ native_balance: "2500000000000000000000000" }));
-    assert.equal(summary.lost, false);
+    assert.equal(summary.holdsFunds, false);
     assert.equal(summary.native, "2.5");
     assert.equal(summary.beneficiary, "owner.near");
   });
 
-  it("treats listed balances as lost even if the flag is false", () => {
+  it("treats listed balances as held even if the flag is false", () => {
     const summary = deletionSummary(
       preview({ public: [entry("nep141:usdc", null, 6, "1")], assets_lost: false }),
     );
-    assert.equal(summary.lost, true);
+    assert.equal(summary.holdsFunds, true);
     assert.equal(summary.rows[0]?.label, "nep141:usdc");
-  });
-});
-
-describe("delete confirmation", () => {
-  it("needs the exact name only when funds are lost", () => {
-    assert.equal(deleteConfirmed("", "Trader", false), true);
-    assert.equal(deleteConfirmed("", "Trader", true), false);
-    assert.equal(deleteConfirmed("trader", "Trader", true), false);
-    assert.equal(deleteConfirmed(" Trader ", "Trader", true), true);
   });
 });

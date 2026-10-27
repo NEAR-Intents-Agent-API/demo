@@ -203,6 +203,8 @@ export const errorMessages: Record<string, string> = {
   operation_not_pending: "This operation already finished.",
   operation_not_recoverable: "This operation cannot be recovered.",
   operation_retired: "This operation is no longer available.",
+  deletion_assets_remaining:
+    "The account still holds funds, so it was not deleted. Move them out with a swap, transfer or withdrawal, then delete it again.",
   deletion_unavailable: "Deleting accounts is not available right now. Try again later.",
   delete_submission_uncertain:
     "The deletion may or may not have gone through. Reload and check the account before trying again.",
@@ -428,6 +430,7 @@ const PERMANENT_CODES = new Set([
   "agent_deleted",
   "agent_deletion_pending",
   "policy_blocks_delete",
+  "deletion_assets_remaining",
   "validation_failed",
 ]);
 

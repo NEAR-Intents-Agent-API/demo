@@ -32,6 +32,7 @@ const apiCodes = [
   "custody_native_balance_required",
   "database_busy",
   "delete_submission_uncertain",
+  "deletion_assets_remaining",
   "deletion_unavailable",
   "deposit_quota_exceeded",
   "execution_not_cancellable",

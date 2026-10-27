@@ -112,7 +112,7 @@ test("owner-admin revoke and cancel name their exact target", () => {
   assert.equal(cancel?.rows.find((row) => row.label === "Operation")?.value, "op_x");
 });
 
-test("deletion states asset loss only when the signed message confirms it", () => {
+test("deletion states the balance refusal only when the signed message confirms it", () => {
   const message = {
     ...control,
     domain: "near-intents-agent-api.agent-delete.v3",
@@ -123,7 +123,9 @@ test("deletion states asset loss only when the signed message confirms it", () =
   const deletion = summarizeSignedMessage(JSON.stringify(message));
   assert.equal(deletion?.kind, "agent deletion");
   assert.equal(
-    deletion?.details.some((row) => row.label === "Balances"),
+    deletion?.details.some(
+      (row) => row.label === "Balances" && /^Refused while the account holds/.test(row.value),
+    ),
     true,
   );
   const unconfirmed = summarizeSignedMessage(

@@ -151,7 +151,38 @@ export const evmChains: ReadonlySet<string> = new Set([
   "xlayer",
   "scroll",
   "abs",
+  "adi",
+  "hyperevm",
 ]);
+
+/**
+ * Bech32, bech32m and CashAddr are case-insensitive, so one spelling is canonical. Base58 never
+ * is: Byron, transparent Zcash and legacy BCH addresses keep their case.
+ */
+const caseInsensitivePrefixes: Record<string, RegExp> = {
+  btc: /^bc1/i,
+  ltc: /^ltc1/i,
+  cardano: /^addr1/i,
+  zec: /^(zs1|u1)/i,
+  aleo: /^aleo1/i,
+  bch: /^(bitcoincash:)?[qp]/i,
+};
+/** Starknet, Sui, Aptos and Movement addresses are 32-byte hex values, written with or without leading zeros. */
+const paddedHexChains = new Set(["starknet", "sui", "aptos", "movement"]);
+
+/**
+ * The spelling of an address the API compares in `except` and `only` rules: lowercase EVM hex,
+ * lowercase bech32 and CashAddr (without `bitcoincash:`), lowercase 0x hex padded to 64 digits on
+ * Starknet, Sui, Aptos and Movement. Mirrors the API's `canonicalAddressOn`; never alters base58.
+ */
+export function canonicalAddressOn(chain: string, address: string): string {
+  if (evmChains.has(chain)) return address.toLowerCase();
+  if (caseInsensitivePrefixes[chain]?.test(address))
+    return address.replace(/^bitcoincash:/i, "").toLowerCase();
+  if (paddedHexChains.has(chain) && /^0x[0-9a-f]{1,64}$/i.test(address))
+    return `0x${address.slice(2).toLowerCase().padStart(64, "0")}`;
+  return address;
+}
 
 /** Why `address` cannot be a withdrawal target on `chain` (canonical id), or null when it can. */
 export function withdrawalAddressProblem(chain: string, address: string): string | null {

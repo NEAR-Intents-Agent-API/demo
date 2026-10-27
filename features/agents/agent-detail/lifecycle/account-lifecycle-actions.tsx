@@ -94,7 +94,6 @@ function LifecycleMenu({ agent, actions }: { agent: AgentView; actions: Lifecycl
       </DropdownMenu>
       {run?.action === "delete" ? (
         <DeleteAccountDialog
-          agent={agent}
           open
           onOpenChange={(open) => {
             if (!open) lifecycle.close();

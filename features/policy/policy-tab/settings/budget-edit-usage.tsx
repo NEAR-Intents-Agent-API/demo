@@ -16,7 +16,9 @@ export function BudgetEditUsage({
       <dl className="flex flex-wrap justify-between gap-x-4 gap-y-1 tabular-nums">
         <div className="flex gap-2">
           <dt>Counted</dt>
-          <dd className="text-foreground">${cents(window.spent_usd)}</dd>
+          <dd className="text-foreground">
+            {window.spent_usd === null ? "Not counted" : `$${cents(window.spent_usd)}`}
+          </dd>
         </div>
         <div className="flex gap-2">
           <dt>Current allowance</dt>
