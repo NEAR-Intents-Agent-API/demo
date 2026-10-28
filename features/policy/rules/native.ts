@@ -14,7 +14,7 @@ export const nativeOff: NativePolicy = {
 
 /** One sentence for the editor, the summary and the activation overview alike. */
 export const NATIVE_WARNING =
-  "Native methods skip destinations, budget, execution delay, schedule and owner approval. A signed EVM or Solana transaction, or typed data such as a permit, can move everything at that address.";
+  "Native methods are for advanced users and are not protected by the account policy: destinations, budget, execution delay, schedule and owner approval do not apply. A NEAR transfer can go to any account, and a signed EVM or Solana transaction, or typed data such as a permit, can move everything at that address.";
 
 /** The typed message types: one per line or comma separated, trimmed and listed once each. */
 export function parsePrimaryTypes(text: string): string[] {
