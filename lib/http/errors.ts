@@ -67,7 +67,6 @@ const errorStatus: Record<string, number> = {
   policy_usage_unavailable: 409,
   withdraw_preview_pending: 409,
   withdraw_preview_expired: 409,
-  withdraw_preview_limit_reached: 429,
   policy_schedule_denied: 403,
   spend_price_unavailable: 503,
   idle: 409,

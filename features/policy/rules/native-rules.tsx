@@ -88,7 +88,7 @@ export function NativeRules({
           checked={near.transfer}
           onChange={(transfer) => set({ ...rules.native, near: { ...near, transfer } })}
           label="Send NEAR"
-          description="Send native NEAR from the agent's NEAR account to any account. Destinations do not apply."
+          description="Send native NEAR from the agent's NEAR account to the NEAR accounts your destinations allow."
         />
         {nearUnlisted ? (
           <p className="text-xs leading-5 text-warning">

@@ -130,7 +130,7 @@ export const errorMessages: Record<string, string> = {
   provider_refused: "The provider refused the request.",
   provider_rate_limited: "The provider rate limit was reached. Retry shortly.",
   provider_limit_reached:
-    "This account has used its 100 wallet operations for the day at the provider, previews included. Nothing was sent.",
+    "This account has used its 1,000 wallet operations for the day at the provider, previews included. Nothing was sent.",
   provider_unavailable: "The provider is temporarily unavailable.",
   provider_response_invalid: "The provider sent an answer this app could not read. Try again.",
   provider_credential_invalid: "The service could not reach the provider. Try again later.",
@@ -150,6 +150,8 @@ export const errorMessages: Record<string, string> = {
     "This account's rules do not allow this: the token, action, destination, per-token limit or moves-per-hour cap. Raising the USD budget will not change that; change the blocking rule on the Rules tab.",
   policy_limit_exceeded:
     "This would go over the account's per-token limit for this hour, day or month. Moving funds between the public and private balance counts too. Raise the limit on the Rules tab, or wait until earlier moves age out.",
+  policy_transaction_limit_exceeded:
+    "This amount is above the account's per-transaction limit for the token it spends. Nothing was sent. Send a smaller amount, or raise the per-transaction limit on the Rules tab.",
   policy_action_limit_exceeded:
     "The account has used its moves for this hour. Wait until earlier moves age out of the hour, or raise the moves-per-hour cap on the Rules tab.",
   policy_usage_unavailable:
@@ -172,6 +174,12 @@ export const errorMessages: Record<string, string> = {
   signing_recipient_forbidden: "Agent accounts never sign for the NEAR Intents contracts.",
   native_method_denied:
     "The account's rules do not switch this native method on, or do not list this contract or domain. Change it under Native accounts in Rules.",
+  native_transaction_failed:
+    "NEAR finalized this native transaction and it failed. Check Activity for the chain's reason.",
+  native_transaction_mismatch:
+    "The finalized NEAR transaction is not the one this request asked for. It needs a review; do not send it again.",
+  native_transaction_unconfirmed:
+    "NEAR still does not know this native transaction 30 minutes after it was sent. It needs a review; do not send it again.",
   native_contract_forbidden:
     "Agent accounts never send to or call the NEAR Intents contracts from their NEAR account.",
   sign_recipient_denied:

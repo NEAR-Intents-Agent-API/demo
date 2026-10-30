@@ -96,7 +96,7 @@ export const RULE_SETTING_GROUPS: readonly {
   {
     title: "Native accounts",
     description:
-      "The agent's own NEAR, EVM and Solana keys outside NEAR Intents. None of the rules above applies to them.",
+      "The agent's own NEAR, EVM and Solana keys outside NEAR Intents. Of the rules above, only destinations apply, and only to NEAR sent by a transfer or call.",
     rows: [
       {
         id: "native",

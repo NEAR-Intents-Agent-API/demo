@@ -279,7 +279,7 @@ test("the native summary names every switch that is on", () => {
     }),
     [
       "NEAR message signing for app.near",
-      "Send NEAR to any account",
+      "Send NEAR to allowed destinations",
       "NEAR calls to c.near",
       "EVM typed data for Exchange (chain 1337): any message type",
       "EVM typed data for Orders: only Order, Cancel",

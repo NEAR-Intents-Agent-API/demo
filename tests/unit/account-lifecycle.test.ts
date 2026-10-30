@@ -156,7 +156,6 @@ const preview = (over: Record<string, unknown>) =>
   ({
     near_account_id: "a.near",
     beneficiary: "owner.near",
-    native_balance: "0",
     public: [],
     confidential: [],
     assets_lost: false,
@@ -183,11 +182,9 @@ describe("deletion summary", () => {
     assert.equal(summary.holdsFunds, true);
   });
 
-  it("holds nothing for an empty account and still shows native NEAR", () => {
-    const summary = deletionSummary(preview({ native_balance: "2500000000000000000000000" }));
+  it("holds nothing for an empty account", () => {
+    const summary = deletionSummary(preview({}));
     assert.equal(summary.holdsFunds, false);
-    assert.equal(summary.native, "2.5");
-    assert.equal(summary.beneficiary, "owner.near");
   });
 
   it("treats listed balances as held even if the flag is false", () => {
