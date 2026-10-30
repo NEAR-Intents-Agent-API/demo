@@ -14,7 +14,7 @@ export const nativeOff: NativePolicy = {
 
 /** One sentence for the editor, the summary and the activation overview alike. */
 export const NATIVE_WARNING =
-  "Native methods are for advanced users and are not protected by the account policy: destinations, budget, execution delay, schedule and owner approval do not apply. A NEAR transfer can go to any account, and a signed EVM or Solana transaction, or typed data such as a permit, can move everything at that address.";
+  "Native methods are for advanced users and are not protected by most of this account's policy: budget, timelock, schedule and owner approval don't apply. A NEAR transfer goes only to the NEAR accounts your destinations allow, but a NEAR call can move anything the listed contract holds for the agent, and a signed EVM or Solana transaction, or EVM typed data such as a permit, can move everything at that address. Only switch on what the agent needs, for services you trust; a service may treat a signed message as you logging in.";
 
 /** The typed message types: one per line or comma separated, trimmed and listed once each. */
 export function parsePrimaryTypes(text: string): string[] {
@@ -52,7 +52,7 @@ export function describeNative(native: NativePolicy): string[] {
     native.near.sign_message.length
       ? `NEAR message signing for ${native.near.sign_message.join(", ")}`
       : null,
-    native.near.transfer ? "Send NEAR to any account" : null,
+    native.near.transfer ? "Send NEAR to allowed destinations" : null,
     native.near.call.length ? `NEAR calls to ${native.near.call.join(", ")}` : null,
     ...native.evm.sign_typed_data.map((domain) => `EVM typed data for ${domainLabel(domain)}`),
     native.evm.sign_message ? "EVM messages" : null,

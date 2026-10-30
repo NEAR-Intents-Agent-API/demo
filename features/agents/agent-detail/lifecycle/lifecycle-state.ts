@@ -139,9 +139,6 @@ export type DeletionRow = {
   scope: "public" | "private";
 };
 export type DeletionSummary = {
-  beneficiary: string;
-  /** NEAR the custody account holds; it is sent to the beneficiary, not destroyed. */
-  native: string | null;
   rows: DeletionRow[];
   /** True while the account holds public or private balances; deletion is refused until they are moved out. */
   holdsFunds: boolean;
@@ -159,10 +156,7 @@ function rowsOf(entries: DeletionPreview["public"], scope: DeletionRow["scope"])
 /** The deletion preview as rows to read. The API's `assets_lost` is authoritative; rows can only add. */
 export function deletionSummary(preview: DeletionPreview): DeletionSummary {
   const rows = [...rowsOf(preview.public, "public"), ...rowsOf(preview.confidential, "private")];
-  const native = BigInt(preview.native_balance) > 0n ? preview.native_balance : null;
   return {
-    beneficiary: preview.beneficiary,
-    native: native ? formatDisplay(native, 24) : null,
     rows,
     holdsFunds: preview.assets_lost || rows.length > 0,
   };

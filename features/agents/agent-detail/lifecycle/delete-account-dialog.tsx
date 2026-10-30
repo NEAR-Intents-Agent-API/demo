@@ -2,7 +2,6 @@
 
 import { ResponsiveDialog } from "@/components/responsive-dialog";
 import { Callout } from "@/components/shared/callout";
-import { MonoId } from "@/components/shared/identifiers";
 import { Pending } from "@/components/shared/states";
 import { Button } from "@/components/ui/button";
 import { type ConsentChallenge, type ConsentStage, SigningSummary } from "@/features/wallet/index";
@@ -13,7 +12,8 @@ import { type DeletionSummary, STEP_CONFIRM } from "./lifecycle-state";
  * The one irreversible action, so it shows what the account holds before it asks for a signature.
  * Deletion has no sweep: the API refuses it while the account holds any public or private balance,
  * so the server's preview (`generated.preview.deletion`) blocks signing until the funds are moved
- * out. Native NEAR is the exception; it goes to the beneficiary.
+ * out. Native funds at the agent's own addresses are not inventoried, so the dialog tells the
+ * owner to move them first.
  */
 export function DeleteAccountDialog({
   open,
@@ -116,12 +116,11 @@ function Holdings({ summary }: { summary: DeletionSummary }) {
           ))}
         </ul>
       ) : null}
-      {summary.native ? (
-        <p className="text-sm text-muted-foreground">
-          {summary.native} NEAR held by the custody account is sent to{" "}
-          <MonoId value={summary.beneficiary} className="text-xs" head={12} tail={6} />.
-        </p>
-      ) : null}
+      <p className="text-sm text-muted-foreground">
+        Only the account's public and private balances are listed. Native NEAR, EVM and Solana funds
+        at the agent's own addresses are not, and deletion loses them (native NEAR goes to the
+        sponsor); move them out before you delete.
+      </p>
     </div>
   );
 }
