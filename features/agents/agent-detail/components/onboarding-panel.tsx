@@ -5,6 +5,7 @@ import { Pending, Unavailable } from "@/components/shared/states";
 import { Button } from "@/components/ui/button";
 import type { IntentStep } from "@/features/intents";
 import { rulesFromPolicy } from "@/features/policy/model";
+import { OwnerRiskNotice } from "@/features/wallet";
 import { errorMessage } from "@/lib/http/messages";
 import { RulesOverview } from "../../agent-list/components/create-agent/rules-overview";
 import type { useOnboarding } from "../hooks/use-onboarding";
@@ -70,6 +71,7 @@ function OnboardingBody({
       {rules && (state === "sign" || expired) ? (
         <RequestRules policy={rules} expired={expired} />
       ) : null}
+      {state === "sign" ? <OwnerRiskNotice /> : null}
       <p className="text-sm text-muted-foreground">{stateMessage(state, generated.expires_at)}</p>
       {state === "done" ? null : (
         <Button disabled={working} onClick={() => mutation.mutate()}>
