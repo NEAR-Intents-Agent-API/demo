@@ -149,7 +149,7 @@ export const errorMessages: Record<string, string> = {
   policy_denied:
     "This account's rules do not allow this: the token, action, destination, per-token limit or moves-per-hour cap. Raising the USD budget will not change that; change the blocking rule on the Rules tab.",
   policy_limit_exceeded:
-    "This would go over the account's per-token limit for this hour, day or month. Moving funds between the public and private balance counts too. Raise the limit on the Rules tab, or wait until earlier moves age out.",
+    "This would go over the account's per-token limit for this hour, day or month. Moving funds between the public and confidential balance counts too. Raise the limit on the Rules tab, or wait until earlier moves age out.",
   policy_transaction_limit_exceeded:
     "This amount is above the account's per-transaction limit for the token it spends. Nothing was sent. Send a smaller amount, or raise the per-transaction limit on the Rules tab.",
   policy_action_limit_exceeded:

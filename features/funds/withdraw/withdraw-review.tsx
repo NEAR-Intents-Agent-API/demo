@@ -37,7 +37,10 @@ export function WithdrawReview({
     <>
       <ReviewCard
         rows={[
-          { label: "Balance", value: lane === "private" ? "Private balance" : "Public balance" },
+          {
+            label: "Balance",
+            value: lane === "private" ? "Confidential balance" : "Public balance",
+          },
           { label: "You withdraw", value: show(atomic.toString()), emphasis: true },
           {
             label: "You receive",

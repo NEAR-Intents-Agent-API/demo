@@ -103,7 +103,7 @@ export function PolicyRules({ agent, view }: { agent: AgentView; view: PolicyVie
           blockedReason={blockedReason}
           warning={
             holdsPrivateFunds
-              ? "This account holds a private balance. While Private balance is off, those funds cannot be moved back to the public balance; turn it back on first."
+              ? "This account holds a confidential balance. While Confidential balance is off, those funds cannot be moved back to the public balance; turn it back on first."
               : undefined
           }
           onCancel={cancelEditing}

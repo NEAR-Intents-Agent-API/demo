@@ -21,8 +21,8 @@ OpenClaw, all under rules the owner signed.
 - **One-signature agent creation** with a plain-language rules editor (what it can do, which
   tokens, the most one move may spend, where funds can go, owner approval, and the agent's own
   NEAR, EVM and Solana keys outside NEAR Intents, all off by default).
-- **Wallet tab**: holdings with USD values (public and private), swap, transfer, deposit,
-  withdraw and make private/make public, each against the public or private balance. Amount
+- **Wallet tab**: holdings with USD values (public and confidential), swap, transfer, deposit,
+  withdraw and make confidential/make public, each against the public or confidential balance. Amount
   fields use the API's `available` balance (the balance minus queued or timelocked work), and a
   swap or withdrawal preview lists every rule or balance check the live request would fail as a
   warning.
@@ -73,14 +73,14 @@ Production: `pnpm build`, `pnpm start`, and run `pnpm db:migrate` before each de
 
 1. **Sign in** with an EVM wallet, NEAR wallet or passkey.
 2. **Create an agent**: a name, rules, one signature. New agents can do everything NEAR Intents
-   offers (swap, send, withdraw to any network, private balance); native methods stay off until
+   offers (swap, send, withdraw to any network, confidential balance); native methods stay off until
    switched on. Rules map to the account policy
    in `features/policy/rules/rules.ts`. The dialog waits until the account is live; an
    interrupted activation resumes.
 3. **Fund it.** Deposits need only the signed-in owner's session: a one-time 1Click address for a
    chosen network and token (optionally an amount), or a transfer from any NEAR Intents account.
    No grant signature is needed, and a failed or late deposit refunds into the agent's own balance.
-4. **Authorize the dashboard** to spend. Swaps, sends, withdrawals and private-balance moves need one
+4. **Authorize the dashboard** to spend. Swaps, sends, withdrawals and confidential-balance moves need one
    owner signature on a `grant_issue` for the dashboard's own grant token, valid for 1, 7 or 30
    days. The dialog shows the live account rules: exactly what the dashboard, and every other
    grant, may do.

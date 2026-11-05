@@ -21,7 +21,7 @@ export function PortfolioLaneSwitch({
       className={className}
       options={[
         { value: "public", label: "Public" },
-        { value: "confidential", label: "Private" },
+        { value: "confidential", label: "Confidential" },
       ]}
     />
   );

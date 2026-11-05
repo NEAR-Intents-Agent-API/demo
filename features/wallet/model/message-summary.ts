@@ -174,7 +174,7 @@ function collectPolicy(details: SummaryRow[], policy: unknown): void {
   details.push({ label: "Frozen", value: String(value.frozen ?? "—"), emphasis: true });
   pushList(details, "Allowed actions", value.actions, false);
   details.push({
-    label: "Private balance",
+    label: "Confidential balance",
     value: value.confidential === true ? "allowed" : "denied",
   });
   details.push({

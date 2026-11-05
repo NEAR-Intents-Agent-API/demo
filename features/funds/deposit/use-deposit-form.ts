@@ -31,7 +31,7 @@ export function useDepositForm(onCreated: (ticket: DepositTracking) => void) {
 
   const reason =
     !privateOn && confidential
-      ? "Private deposits are off in this account's rules"
+      ? "Confidential deposits are off in this account's rules"
       : depositReason(token, amount, atomic);
 
   const create = () => {

@@ -33,7 +33,7 @@ export function DestinationAddressField({
       <FieldDescription id={`${id}-address-help`}>
         {draft.action === "withdraw"
           ? "The rule covers this address, network and memo combination."
-          : "Enter an Intents account, not an external wallet address. Public and private transfers are listed separately."}
+          : "Enter an Intents account, not an external wallet address. Public and confidential transfers are listed separately."}
       </FieldDescription>
       <FieldError>{draft.error}</FieldError>
     </Field>

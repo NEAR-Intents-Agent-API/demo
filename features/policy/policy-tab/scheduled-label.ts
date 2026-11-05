@@ -4,9 +4,9 @@ import type { ScheduledExecutionView } from "@near-intents-agent-api/sdk";
 const ACTION_LABELS: Readonly<Record<string, string>> = {
   swap: "Swap",
   intents_transfer: "Transfer",
-  confidential_transfer: "Private transfer",
+  confidential_transfer: "Confidential transfer",
   withdraw: "Withdrawal",
-  shield: "Move to private balance",
+  shield: "Move to confidential balance",
   unshield: "Move to public balance",
 };
 

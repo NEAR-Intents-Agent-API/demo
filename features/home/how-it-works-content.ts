@@ -34,10 +34,10 @@ export const MOVES: { verb: string; asset: string; what: string; who: Who; guard
       "Uses approved destinations, counts toward your USD budget, and waits out any execution delay, which gives you time to cancel.",
   },
   {
-    verb: "Private balance",
-    asset: "Private",
+    verb: "Confidential balance",
+    asset: "Confidential",
     who: "Agent alone",
-    what: "Make funds private or public by moving them between the account’s public and private balances.",
+    what: "Move funds between the public and confidential balances of the account.",
     guard: "Funds stay inside the agent account, under your rules.",
   },
 ];

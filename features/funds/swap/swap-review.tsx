@@ -24,7 +24,10 @@ export function SwapReview({
     <>
       <ReviewCard
         rows={[
-          { label: "Balance", value: lane === "private" ? "Private balance" : "Public balance" },
+          {
+            label: "Balance",
+            value: lane === "private" ? "Confidential balance" : "Public balance",
+          },
           {
             label: "Rate",
             value: `1 ${token.symbol} ≈ ${formatDisplay(perUnit.toString(), to.decimals)} ${to.symbol}`,

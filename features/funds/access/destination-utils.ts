@@ -7,8 +7,8 @@ export const MEMO_MAX_LENGTH = 256;
 
 /**
  * The route an owner picks for a destination, in the words the dashboard uses: a withdrawal, a
- * public transfer or a private transfer. A policy destination is `withdraw` or `transfer`, with
- * `confidential` marking the private transfer; `destinationRoute` and `destinationFromDraft`
+ * public transfer or a confidential transfer. A policy destination is `withdraw` or `transfer`, with
+ * `confidential` marking the confidential transfer; `destinationRoute` and `destinationFromDraft`
  * convert between the two.
  */
 export type DestinationAction = "withdraw" | "intents_transfer" | "confidential_transfer";
@@ -79,8 +79,9 @@ export const DESTINATION_ACTIONS = [
   },
   {
     value: "confidential_transfer",
-    label: "Transfer to a private Intents account",
-    description: "Send funds to another confidential account using the private transfer route.",
+    label: "Transfer to a confidential Intents account",
+    description:
+      "Send funds to another confidential account using the confidential transfer route.",
   },
 ] as const;
 
@@ -89,7 +90,7 @@ export function destinationName(destination: Destination): string {
     destination.action === "withdraw"
       ? `Withdraw · ${chainInfo(destination.chain).name}`
       : destination.confidential
-        ? "Private Intents transfer"
+        ? "Confidential Intents transfer"
         : "Public Intents transfer";
   const memo =
     destination.action === "withdraw" && destination.memo !== null
