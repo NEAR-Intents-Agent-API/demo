@@ -2,9 +2,15 @@
 
 import { Callout } from "@/components/shared/callout";
 import { Switch } from "@/components/ui/switch";
-import { intentsContracts, nativeSchema, nearSignRecipient } from "@/lib/agent-api/schemas";
-import { NATIVE_WARNING, nativeEnabled } from "./native";
+import {
+  intentsContracts,
+  nativeSchema,
+  nearSignRecipient,
+  signInDomainSchema,
+} from "@/lib/agent-api/schemas";
+import { NATIVE_WARNING, nativeEnabled, without } from "./native";
 import { NativeDomains } from "./native-domains";
+import { NativeSignIntent } from "./native-intents";
 import { NativeAccountList } from "./native-list";
 import type { Rules } from "./rules";
 import { RulesSection } from "./rules-section";
@@ -29,6 +35,13 @@ function recipientProblem(list: readonly string[], recipient: string): string | 
   return nearSignRecipient.safeParse(recipient).success
     ? null
     : "Enter a NEAR account or domain, such as app.example.com.";
+}
+
+/** Why a Sign-In-With-Solana domain cannot be listed; null when it can. */
+function domainProblem(list: readonly string[], domain: string): string | null {
+  if (list.includes(domain)) return "Already listed.";
+  const parsed = signInDomainSchema.safeParse(domain);
+  return parsed.success ? null : `${parsed.error.issues[0]?.message ?? "Invalid domain"}.`;
 }
 
 function ChainHeading({ title, address }: { title: string; address: string }) {
@@ -69,7 +82,7 @@ export function NativeRules({
       }
     >
       <Callout tone="warning" compact>
-        {NATIVE_WARNING} Freezing the account stops them all.
+        {NATIVE_WARNING} Freezing the account refuses every native request from then on.
       </Callout>
       <div className="flex flex-col gap-4">
         <ChainHeading title="NEAR" address="The agent's NEAR account." />
@@ -117,7 +130,17 @@ export function NativeRules({
           checked={evm.sign_message}
           onChange={(sign_message) => set({ ...rules.native, evm: { ...evm, sign_message } })}
           label="Sign messages"
-          description="Any EIP-191 message from the agent's EVM address."
+          description="Any EIP-191 message from the agent's EVM address. It never signs a NEAR Intents payload; use the switch below."
+        />
+        <NativeSignIntent
+          chain="EVM"
+          value={evm.sign_intent}
+          onChange={(sign_intent) =>
+            set({
+              ...rules.native,
+              evm: sign_intent ? { ...evm, sign_intent } : without(evm, "sign_intent"),
+            })
+          }
         />
         <Switch
           className="py-0"
@@ -131,12 +154,50 @@ export function NativeRules({
       </div>
       <div className="flex flex-col gap-4 border-t pt-4">
         <ChainHeading title="Solana" address="The agent's Solana address." />
+        <NativeAccountList
+          label="Sign in to these domains"
+          description="The API writes a Sign-In-With-Solana message for a listed domain and the agent signs it, so a service can log the agent in. Nothing else is signed. Use the lowercase host, with its port if it has one."
+          placeholder="app.example.com"
+          empty="No domains: Solana sign-in is off."
+          value={solana.sign_in ?? []}
+          problem={(domain) => domainProblem(solana.sign_in ?? [], domain)}
+          onChange={(sign_in) =>
+            set({
+              ...rules.native,
+              solana: sign_in.length ? { ...solana, sign_in } : without(solana, "sign_in"),
+            })
+          }
+        />
         <Switch
           className="py-0"
           checked={solana.sign_message}
           onChange={(sign_message) => set({ ...rules.native, solana: { ...solana, sign_message } })}
           label="Sign messages"
-          description="Any off-chain message from the agent's Solana address."
+          description="Any bytes from the agent's Solana address, including a 32-byte digest. That amounts to full control of the agent's Solana account in NEAR Intents; prefer sign-in or the NEAR Intents switch below."
+        />
+        <NativeSignIntent
+          chain="Solana"
+          value={solana.sign_intent}
+          onChange={(sign_intent) =>
+            set({
+              ...rules.native,
+              solana: sign_intent ? { ...solana, sign_intent } : without(solana, "sign_intent"),
+            })
+          }
+        />
+        <Switch
+          className="py-0"
+          checked={solana.sign_transfer === true}
+          onChange={(sign_transfer) =>
+            set({
+              ...rules.native,
+              solana: sign_transfer
+                ? { ...solana, sign_transfer }
+                : without(solana, "sign_transfer"),
+            })
+          }
+          label="Sign transfers"
+          description="One SOL or token transfer from the agent's Solana address, only to an address your destinations allow for withdrawals on Solana. Signed, never sent. The amount is not limited: budget and limits don't apply."
         />
         <Switch
           className="py-0"

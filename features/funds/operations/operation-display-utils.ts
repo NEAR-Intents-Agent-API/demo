@@ -51,8 +51,12 @@ const ACTION_LABELS: Readonly<Record<string, string>> = {
   near_call: "NEAR contract call",
   evm_sign_typed_data: "EVM typed data",
   evm_sign_message: "EVM message",
+  evm_sign_intent: "EVM NEAR Intents payload",
   evm_sign_transaction: "EVM transaction",
+  solana_sign_in: "Solana sign-in",
   solana_sign_message: "Solana message",
+  solana_sign_intent: "Solana NEAR Intents payload",
+  solana_sign_transfer: "Solana transfer",
   solana_sign_transaction: "Solana transaction",
 };
 
