@@ -266,3 +266,14 @@ test("an amount_too_low failure names the route minimum in the token's units", (
   );
   assert.ok(markup.includes("1.5 USDC"), "the facts row reads the minimum in token units");
 });
+
+test("native signing methods read in plain words", () => {
+  const label = (method: string) =>
+    operationActionLabel({ type: "native", details: { method } } as unknown as Parameters<
+      typeof operationActionLabel
+    >[0]);
+  assert.equal(label("evm_sign_intent"), "EVM NEAR Intents payload");
+  assert.equal(label("solana_sign_in"), "Solana sign-in");
+  assert.equal(label("solana_sign_intent"), "Solana NEAR Intents payload");
+  assert.equal(label("solana_sign_transfer"), "Solana transfer");
+});

@@ -369,3 +369,62 @@ test("a domain reads with the message types it admits", () => {
     "Unnamed domain (chain 1): only A, B",
   );
 });
+
+test("sign_intent, sign_in and sign_transfer round-trip and are omitted when off", () => {
+  const intent = {
+    receivers: ["alice.near"],
+    one_click_deposits: true,
+    withdrawals: [{ chain: "base", address: `0x${"ab".repeat(20)}` }],
+    max_slippage_bps: 150,
+  };
+  const native = {
+    ...nativeOff,
+    evm: { ...nativeOff.evm, sign_intent: intent },
+    solana: {
+      ...nativeOff.solana,
+      sign_in: ["app.example.com:8443"],
+      sign_intent: { receivers: [], one_click_deposits: false },
+      sign_transfer: true,
+    },
+  };
+  const policy = policySchema.parse(policyFromRules(null, rules({ native })));
+  assert.deepEqual(policy.native, native);
+  assert.deepEqual(rulesFromPolicy(policy).native, native);
+  assert.deepEqual(describeNative(native), [
+    `EVM NEAR Intents payloads (pay alice.near; fund 1Click deposits that pay the agent or a receiver; fund 1Click withdrawals to base 0x${"ab".repeat(20)}; slippage and fee up to 150 bps)`,
+    "Solana sign-in for app.example.com:8443",
+    "Solana NEAR Intents payloads (pay no listed account; slippage and fee up to 100 bps)",
+    "Solana transfers to allowed destinations",
+  ]);
+});
+
+test("sign_intent rules follow the API's limits", () => {
+  const solana = (patch: object) => ({
+    ...nativeOff,
+    solana: { ...nativeOff.solana, ...patch },
+  });
+  const intent = (patch: object) => ({
+    sign_intent: { receivers: [], one_click_deposits: false, ...patch },
+  });
+  assert.equal(rulesProblem(rules({ native: solana(intent({ max_slippage_bps: 300 })) })), null);
+  for (const patch of [
+    { max_slippage_bps: 301 },
+    { max_slippage_bps: 1.5 },
+    { receivers: ["intents.near"] },
+    { receivers: ["a.near", "a.near"] },
+    { withdrawals: [{ chain: "ethereum", address: `0x${"ab".repeat(20)}` }] },
+    { withdrawals: [{ chain: "base", address: `0x${"AB".repeat(20)}` }] },
+    {
+      withdrawals: Array(2).fill({ chain: "base", address: `0x${"ab".repeat(20)}` }),
+    },
+  ])
+    assert.notEqual(
+      rulesProblem(rules({ native: solana(intent(patch)) })),
+      null,
+      JSON.stringify(patch),
+    );
+  assert.notEqual(rulesProblem(rules({ native: solana({ sign_in: ["App.Example.com"] }) })), null);
+  assert.notEqual(rulesProblem(rules({ native: solana({ sign_in: ["localhost"] }) })), null);
+  assert.notEqual(rulesProblem(rules({ native: solana({ sign_in: ["a.com:70000"] }) })), null);
+  assert.notEqual(rulesProblem(rules({ native: solana({ sign_in: ["a.com", "a.com"] }) })), null);
+});

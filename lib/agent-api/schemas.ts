@@ -7,6 +7,7 @@ import type {
   OwnerWallet,
   Policy,
   Schedule,
+  SignIntentRules as SdkSignIntentRules,
   SignedData,
   Status,
 } from "@near-intents-agent-api/sdk";
@@ -274,6 +275,66 @@ export const typedDataDomainSchema = z
   );
 export type TypedDataDomain = z.infer<typeof typedDataDomainSchema>;
 
+const hostLabel = "[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?";
+
+/**
+ * A Sign-In-With-Solana domain: the host the relying party serves, lowercase, with its port when
+ * it has one, as a browser's `location.host` spells it.
+ */
+export const signInDomainSchema = z
+  .string()
+  .max(253)
+  .regex(
+    new RegExp(`^(?:${hostLabel}\\.)+${hostLabel}(?::[1-9][0-9]{0,4})?$`),
+    "Use the lowercase host, with its port if it has one",
+  )
+  .refine((host) => Number(host.split(":")[1] ?? 1) <= 65_535, "A port is at most 65535");
+
+/** The widest `sign_intent.max_slippage_bps` an owner may sign, and what applies when it is left out. */
+export const signIntentSlippageCapBps = 300;
+export const signIntentDefaultSlippageBps = 100;
+
+/**
+ * An address on another chain a checked 1Click deposit may pay out to, spelled as `destinations`
+ * spells a `withdraw` (canonical chain id, canonical address) and without a memo.
+ */
+export const signIntentWithdrawalSchema = z
+  .strictObject({
+    chain: z.string().regex(/^[a-z][a-z0-9_-]{0,63}$/),
+    address: z
+      .string()
+      .min(1)
+      .max(256)
+      .refine((value) => value === value.trim(), "Address whitespace is not allowed"),
+  })
+  .refine(
+    (entry) =>
+      canonicalChain(entry.chain) === entry.chain &&
+      canonicalAddressOn(entry.chain, entry.address) === entry.address,
+    "Withdrawals must use the canonical chain id and address spelling",
+  );
+export type SignIntentWithdrawal = z.infer<typeof signIntentWithdrawalSchema>;
+
+/**
+ * NEAR Intents payloads (transfers only) an EVM or Solana key signs. These rules are the method's
+ * own: `destinations`, assets, limits and budget do not apply to it.
+ */
+export const signIntentSchema = z.strictObject({
+  receivers: nativeTargets("Receivers"),
+  one_click_deposits: z.boolean(),
+  withdrawals: z
+    .array(signIntentWithdrawalSchema)
+    .max(256)
+    .refine(
+      (list) =>
+        new Set(list.map((entry) => `${entry.chain}:${entry.address}`)).size === list.length,
+      "Withdrawals must be unique",
+    )
+    .optional(),
+  max_slippage_bps: z.number().int().min(0).max(signIntentSlippageCapBps).optional(),
+});
+export type SignIntentRules = z.infer<typeof signIntentSchema>;
+
 /**
  * The agent's own NEAR, EVM and Solana keys outside NEAR Intents, one switch per method. A list
  * switches a method on for exactly those targets; an empty list is off.
@@ -293,10 +354,14 @@ export const nativeSchema = z.strictObject({
         "Domains must be unique",
       ),
     sign_message: z.boolean(),
+    sign_intent: signIntentSchema.optional(),
     sign_transaction: z.boolean(),
   }),
   solana: z.strictObject({
+    sign_in: nativeTargets("Domains", signInDomainSchema).optional(),
     sign_message: z.boolean(),
+    sign_intent: signIntentSchema.optional(),
+    sign_transfer: z.boolean().optional(),
     sign_transaction: z.boolean(),
   }),
 });
@@ -304,6 +369,7 @@ export type NativePolicy = z.infer<typeof nativeSchema>;
 assertType<Equal<NativePolicy, NonNullable<Policy["native"]>>>();
 type SdkTypedDataDomain = NonNullable<Policy["native"]>["evm"]["sign_typed_data"][number];
 assertType<Equal<TypedDataDomain, SdkTypedDataDomain>>();
+assertType<Equal<SignIntentRules, SdkSignIntentRules>>();
 
 /**
  * One domain's identity, independent of the order its fields were written in. The message types
