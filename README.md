@@ -10,6 +10,8 @@
 
 </div>
 
+> The Agent API is an experimental, mainnet-only beta. You and your users may lose all assets used with it, or lose access to them. It is operated by NEAR Technologies Limited.
+
 A Next.js app that shows what you can build on [`@near-intents-agent-api/sdk`](https://www.npmjs.com/package/@near-intents-agent-api/sdk).
 It is an ordinary API client: the API knows nothing about it. Sign in, create an agent account
 with plain-language rules, fund it, move money, and connect an MCP client such as Codex or

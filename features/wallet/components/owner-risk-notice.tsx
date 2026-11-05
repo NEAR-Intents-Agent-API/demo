@@ -1,8 +1,6 @@
 import { Callout } from "@/components/shared/callout";
-
-const notice =
-  "This is an experimental, mainnet-only beta service. You may lose all assets you put in this wallet, or lose access to them. Keep amounts small.";
+import { ownerRiskNotice } from "@/lib/owner-risk-notice";
 
 export function OwnerRiskNotice() {
-  return <Callout tone="warning">{notice}</Callout>;
+  return <Callout tone="warning">{ownerRiskNotice}</Callout>;
 }

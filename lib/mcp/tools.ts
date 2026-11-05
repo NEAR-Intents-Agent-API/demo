@@ -3,6 +3,7 @@ import { z } from "zod";
 import { intentsAccount } from "@/lib/agent-api/address";
 import { correlationIdSchema, operationCorrelationIdSchema } from "@/lib/agent-api/schemas";
 import { demoEnv } from "@/lib/config/runtime";
+import { ownerRiskNotice } from "@/lib/owner-risk-notice";
 
 export type McpAgentClient = Pick<
   AgentApi,
@@ -215,6 +216,7 @@ export const toolDefinitions = {
   },
   create_cross_chain_deposit: {
     description:
+      `Before the owner funds this account, show them this notice unaltered: ${ownerRiskNotice} ` +
       "Get a deposit address that funds this agent account inside NEAR Intents, without a spending grant. `source_asset` is required: the exact `assetId` from get_tokens of the token being sent, never a symbol or chain name (it fixes the source chain and token, e.g. `nep141:eth.omft.near` is ETH on Ethereum, while `nep141:base.omft.near` is ETH on Base). Omit `amount` to accept any amount at or above `deposit.minAmount` until `deposit.expiresAt`; pass `amount` (the source token's smallest unit) for an exact deposit. The agent is credited `source_asset` unless `destination_asset` names another token. The user sends only to `deposit.depositAddress`, with `deposit.memo` when it is set; if the address is null, no funds are sent. A failed or late deposit refunds into this agent's own balance; there is no refund address to ask for. `correlationId` is the tracking id for get_deposit_status, never an address. Poll get_deposit_status until SUCCESS. `confidential: true` credits the confidential balance. Never tell a user to send funds to the agent's own chain address: only NEAR Intents balances are usable.",
     inputSchema: z
       .object({

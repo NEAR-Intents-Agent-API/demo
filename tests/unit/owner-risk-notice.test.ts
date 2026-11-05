@@ -32,6 +32,16 @@ test("an owner sees the notice while the request can be signed, and not once it 
   assert.ok(!onboardingMarkup("SUCCESS").includes(notice));
 });
 
+test("the create dialog shows the notice on the step that signs", () => {
+  const step = "features/agents/agent-list/components/create-agent/rules-step.tsx";
+  assert.ok(readFileSync(step, "utf8").includes("<OwnerRiskNotice />"));
+});
+
+test("the deposit tool tells an agent to show the owner the notice", () => {
+  assert.ok(readFileSync("lib/mcp/tools.ts", "utf8").includes("{ownerRiskNotice}"));
+  assert.ok(readFileSync("lib/owner-risk-notice.ts", "utf8").includes(notice));
+});
+
 test("the deposit flow shows the notice before any funding route", () => {
   const flow = readFileSync("features/funds/deposit/deposit-flow.tsx", "utf8");
   const shown = flow.indexOf("<OwnerRiskNotice />");
