@@ -34,7 +34,7 @@ test("intent correlation survives restart and lost submission; other users canno
   const statusQueries: string[] = [];
   const api = new AgentApi({
     baseUrl: "https://api.test",
-    apiKey: `naa_${"a".repeat(43)}`,
+    apiKey: "example-partner-api-key",
     fetch: async (input, init) => {
       const path = new URL(String(input)).pathname;
       if (path.endsWith("generate-intent")) return Response.json(generated);

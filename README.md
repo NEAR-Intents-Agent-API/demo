@@ -46,7 +46,7 @@ pnpm dev                 # applies migrations, then serves on http://localhost:3
 
 ```dotenv
 NEAR_INTENTS_AGENT_API_URL=http://localhost:3000
-NEAR_INTENTS_AGENT_API_KEY=naa___
+NEAR_INTENTS_AGENT_API_KEY=
 DATABASE_URL=postgresql://near_intents_agent_demo:YOUR_PASSWORD@localhost:5435/near_intents_agent_demo
 SECRET_ENCRYPTION_KEY=YOUR_SECRET_ENCRYPTION_KEY
 BETTER_AUTH_SECRET=YOUR_BETTER_AUTH_SECRET
@@ -55,7 +55,7 @@ BETTER_AUTH_SECRET=YOUR_BETTER_AUTH_SECRET
 | Variable | Value |
 |---|---|
 | `NEAR_INTENTS_AGENT_API_URL` | A running [Agent API](https://github.com/NEAR-Intents-Agent-API/api); hosted: `https://api.agentsonintents.com` |
-| `NEAR_INTENTS_AGENT_API_KEY` | A real, server-only partner API key (`naa_…`) from the [partner dashboard](https://partners.near-intents.org/) |
+| `NEAR_INTENTS_AGENT_API_KEY` | A server-only partner API key, created in the partner portal for the API you point at: [partners.near-intents.org](https://partners.near-intents.org) for `https://api.agentsonintents.com`, [partners.demo.agentsonintents.com](https://partners.demo.agentsonintents.com) for the staging API at `https://api.demo.agentsonintents.com`. The portal shows a key once and it expires after 365 days; keys created before the partner portal are retired and the API answers `401 api_key_retired` |
 | `DATABASE_URL` | `pnpm docker:up` creates `near_intents_agent_demo` as database, user and password; use that password |
 | `SECRET_ENCRYPTION_KEY`, `BETTER_AUTH_SECRET` | Two separate 32–64 character secrets, each from `openssl rand -hex 32` |
 

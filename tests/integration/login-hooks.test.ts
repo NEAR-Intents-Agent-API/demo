@@ -11,7 +11,7 @@ const origin = "https://demo.example.test";
 const config = demoConfig(
   parseDemoEnv({
     NEAR_INTENTS_AGENT_API_URL: "https://api.example.test",
-    NEAR_INTENTS_AGENT_API_KEY: "naa_example_key",
+    NEAR_INTENTS_AGENT_API_KEY: "example-partner-api-key",
     BETTER_AUTH_SECRET: "test-only-demo-auth-secret-32-chars",
     SECRET_ENCRYPTION_KEY: "test-only-demo-encryption-key-32-chars",
   }),
