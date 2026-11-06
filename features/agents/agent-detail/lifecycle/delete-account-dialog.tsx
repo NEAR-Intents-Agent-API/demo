@@ -10,7 +10,7 @@ import { type DeletionSummary, STEP_CONFIRM } from "./lifecycle-state";
 
 /**
  * The one irreversible action, so it shows what the account holds before it asks for a signature.
- * Deletion has no sweep: the API refuses it while the account holds any public or private balance,
+ * Deletion has no sweep: the API refuses it while the account holds any public or confidential balance,
  * so the server's preview (`generated.preview.deletion`) blocks signing until the funds are moved
  * out. Native funds at the agent's own addresses are not inventoried, so the dialog tells the
  * owner to move them first.
@@ -86,7 +86,7 @@ function Holdings({ summary }: { summary: DeletionSummary }) {
       {summary.holdsFunds ? (
         <Callout tone="danger" title="Move these balances out first">
           Deleting sends nothing anywhere, and the API refuses it while the account holds any public
-          or private balance. Withdraw or transfer everything out, then delete the account.
+          or confidential balance. Withdraw or transfer everything out, then delete the account.
         </Callout>
       ) : (
         <Callout tone="info" title="Ready to delete">
@@ -108,7 +108,7 @@ function Holdings({ summary }: { summary: DeletionSummary }) {
                     row.scope === "private" && "italic",
                   )}
                 >
-                  {row.scope === "private" ? "Private balance" : "Public balance"}
+                  {row.scope === "private" ? "Confidential balance" : "Public balance"}
                 </span>
               </span>
               <span className="font-mono">{row.amount}</span>
@@ -117,8 +117,8 @@ function Holdings({ summary }: { summary: DeletionSummary }) {
         </ul>
       ) : null}
       <p className="text-sm text-muted-foreground">
-        Only the account's public and private balances are listed. Native NEAR, EVM and Solana funds
-        at the agent's own addresses are not, and deletion loses them (native NEAR goes to the
+        Only the account's public and confidential balances are listed. Native NEAR, EVM and Solana
+        funds at the agent's own addresses are not, and deletion loses them (native NEAR goes to the
         sponsor); move them out before you delete.
       </p>
     </div>

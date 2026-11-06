@@ -35,10 +35,10 @@ export function RulesOverview({ rules }: { rules: Rules }) {
           "None"
         )}
       </RulesOverviewRow>
-      <RulesOverviewRow label="Private balance">
+      <RulesOverviewRow label="Confidential balance">
         {rules.abilities.confidential
-          ? "On: funds can be held and moved in the private balance"
-          : "Off: the private balance cannot be used"}
+          ? "On: funds can be held and moved in the confidential balance"
+          : "Off: the confidential balance cannot be used"}
       </RulesOverviewRow>
       <RulesOverviewRow label="Tokens">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">

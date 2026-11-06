@@ -33,9 +33,10 @@ export const ABILITY_INFO: Record<
     off: "Withdrawals are off for this account.",
   },
   confidential: {
-    title: "Private balance",
-    description: "Hold and move funds in the confidential balance, hidden from public view.",
+    title: "Confidential balance",
+    description:
+      "Hold and move funds in the confidential balance, off the public NEAR chain. Operators and solvers can still see them.",
     icon: ViewOffSlashIcon,
-    off: "The private balance is off for this account.",
+    off: "The confidential balance is off for this account.",
   },
 };

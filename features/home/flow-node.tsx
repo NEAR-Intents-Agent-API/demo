@@ -45,7 +45,7 @@ export function FlowNode({ node }: { node: FlowDiagramNode }) {
               ["Swap", ArrowDataTransferHorizontalIcon],
               ["Transfer", SentIcon],
               ["Withdraw", ArrowUp02Icon],
-              ["Make private", ViewOffSlashIcon],
+              ["Make confidential", ViewOffSlashIcon],
             ] as const
           ).map(([label, verbIcon]) => (
             <span

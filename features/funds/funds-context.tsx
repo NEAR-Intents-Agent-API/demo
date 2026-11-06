@@ -17,7 +17,7 @@ export type FundsContextValue = {
   tokens: readonly TokenOption[];
   chains: readonly string[];
   holdings: readonly Holding[];
-  /** Private-balance holdings; empty until the Private lane asks for them. */
+  /** Confidential-balance holdings; empty until that lane asks for them. */
   privateHoldings: readonly Holding[];
   publicBalances: BalanceLookup;
   privateBalances: BalanceLookup;

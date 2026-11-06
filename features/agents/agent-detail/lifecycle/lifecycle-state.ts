@@ -140,7 +140,7 @@ export type DeletionRow = {
 };
 export type DeletionSummary = {
   rows: DeletionRow[];
-  /** True while the account holds public or private balances; deletion is refused until they are moved out. */
+  /** True while the account holds public or confidential balances; deletion is refused until they are moved out. */
   holdsFunds: boolean;
 };
 

@@ -17,13 +17,13 @@ export const FLOWS = [
   {
     id: "swap",
     label: "Swap",
-    hint: "Trade one token for another, in the public or private balance.",
+    hint: "Trade one token for another, in the public or confidential balance.",
     icon: ArrowDataTransferHorizontalIcon,
   },
   {
     id: "send",
     label: "Transfer",
-    hint: "Pay another NEAR Intents account, publicly or privately.",
+    hint: "Pay another NEAR Intents account from the public or confidential balance.",
     icon: SentIcon,
   },
   {
@@ -34,8 +34,8 @@ export const FLOWS = [
   },
   {
     id: "private",
-    label: "Private balance",
-    hint: "Make a token private, or public again, inside this account.",
+    label: "Confidential balance",
+    hint: "Move a token to the confidential balance, or back to public, inside this account.",
     icon: ViewOffSlashIcon,
   },
 ] as const;

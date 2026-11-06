@@ -4,7 +4,7 @@ import { destinationRoute } from "./destination-utils";
 const DESTINATION_ACTION_LABELS: Record<ReturnType<typeof destinationRoute>, string> = {
   withdraw: "Withdrawal",
   intents_transfer: "Public transfer",
-  confidential_transfer: "Private transfer",
+  confidential_transfer: "Confidential transfer",
 };
 
 export function destinationActionLabel(destination: Destination): string {

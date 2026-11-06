@@ -41,7 +41,7 @@ export const NODES: FlowDiagramNode[] = [
     title: "Custody wallet",
     icon: Robot02Icon,
     lines: [
-      "Holds a public and a private balance",
+      "Holds a public and a confidential balance",
       "Acts through MCP or API",
       "Cannot exceed the rules",
     ],

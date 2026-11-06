@@ -38,7 +38,7 @@ export function BudgetEditUsage({
           <p>
             Swaps, transfers and withdrawals count at their USD value when they dispatch, and stay
             counted unless the provider provably refused them. Deposits and moves between public and
-            private balances do not count. With a cap on, assets without a current price are
+            confidential balances do not count. With a cap on, assets without a current price are
             refused.
           </p>
           <p>

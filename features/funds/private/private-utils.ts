@@ -5,18 +5,18 @@ export const COPY: Record<
   { label: string; from: string; to: string; blurb: string; empty: string }
 > = {
   shield: {
-    label: "Make private",
+    label: "Make confidential",
     from: "Public balance",
-    to: "Private balance",
+    to: "Confidential balance",
     blurb:
-      "Moves funds into the private balance, where amounts and transfers are not publicly visible.",
+      "Moves funds into the confidential balance, off the public NEAR chain. The move itself is public, and operators and solvers can still see the funds.",
     empty: "Nothing in the public balance to move",
   },
   unshield: {
     label: "Make public",
-    from: "Private balance",
+    from: "Confidential balance",
     to: "Public balance",
     blurb: "Moves funds back to the public NEAR Intents balance, where swaps and withdrawals run.",
-    empty: "Nothing in the private balance to move",
+    empty: "Nothing in the confidential balance to move",
   },
 };

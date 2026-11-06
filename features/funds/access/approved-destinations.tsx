@@ -40,7 +40,7 @@ export function ApprovedDestinations({
       ) : (
         <p className="text-xs leading-5 text-muted-foreground">
           {mode === "only"
-            ? "Nowhere yet; funds stay in this account. Swaps and private balance moves stay available; withdrawals and transfers are blocked."
+            ? "Nowhere yet; funds stay in this account. Swaps and confidential balance moves stay available; withdrawals and transfers are blocked."
             : "Nothing blocked: withdrawals and transfers may go anywhere."}
         </p>
       )}

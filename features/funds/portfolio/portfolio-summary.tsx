@@ -36,7 +36,7 @@ export function PortfolioSummary({
   assetsOpen,
 }: {
   total: PortfolioTotal;
-  /** Public plus private, once both balances have loaded. */
+  /** Public plus confidential, once both balances have loaded. */
   combined: PortfolioTotal | null;
   count: number;
   lane: Lane;
@@ -50,7 +50,7 @@ export function PortfolioSummary({
   onViewAssets: () => void;
   assetsOpen: boolean;
 }) {
-  let detail = `${count} ${count === 1 ? "asset" : "assets"} in ${lane === "public" ? "public" : "private"} balance`;
+  let detail = `${count} ${count === 1 ? "asset" : "assets"} in ${lane === "public" ? "public" : "confidential"} balance`;
   if (error) detail = "Balance unavailable";
   if (loading) detail = "Reading the wallet…";
   return (
@@ -112,7 +112,7 @@ function TotalNotes({
       {total.asOf ? <p>Prices as of {accountTime(total.asOf)}</p> : null}
       {combined ? (
         <p className="tabular-nums">
-          Public + private: <span className="text-foreground">{totalText(combined)}</span>
+          Public + confidential: <span className="text-foreground">{totalText(combined)}</span>
           {combined.unpriced > 0 ? " (unpriced assets excluded)" : ""}
         </p>
       ) : null}

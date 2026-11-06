@@ -1,5 +1,6 @@
 "use client";
 
+import { OwnerRiskNotice } from "@/features/wallet";
 import { BalanceContext } from "../flows/balance-context";
 import { DepositSourceDropdown } from "./deposit-source-dropdown";
 import { IntentsDeposit } from "./intents-deposit";
@@ -16,6 +17,7 @@ export function DepositFlow({ view }: { view: ReturnType<typeof useDepositFlow> 
   const { source, form } = view;
   return (
     <div className="flex flex-col gap-5">
+      <OwnerRiskNotice />
       <BalanceContext label="Deposit into" lane={source === "network" ? form.lane : "public"} />
       <DepositSourceDropdown
         value={source}

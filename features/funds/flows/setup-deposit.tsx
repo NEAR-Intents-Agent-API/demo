@@ -29,7 +29,7 @@ export function SetupDeposit({
           onChange={(lane) => onLane(lane === "private" ? "confidential" : "public")}
           options={[
             { value: "public", label: "Public" },
-            { value: "private", label: "Private" },
+            { value: "private", label: "Confidential" },
           ]}
         />
       ) : null}

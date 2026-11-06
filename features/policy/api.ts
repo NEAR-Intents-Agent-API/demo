@@ -28,7 +28,7 @@ function requireIntentStep(value: unknown): IntentStep {
 
 export const policyApi = {
   policy: (agentId: string) => request<PolicyView>(`/api/agents/${agentId}/policy`),
-  /** The private balance, read under the same cache key as the Funds screen's. */
+  /** The confidential balance, read under the same cache key as the Funds screen's. */
   privateBalances: (agentId: string) =>
     request<BalancesView>(`/api/agents/${agentId}/balances?source=confidential`),
   controls: (agentId: string) => request<AccountControls>(`/api/agents/${agentId}/controls`),

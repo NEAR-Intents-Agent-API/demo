@@ -63,15 +63,15 @@ export function SendFlow({ view }: { view: ReturnType<typeof useSendFlow> }) {
         {nearcom ? (
           <p className="text-xs leading-5 text-muted-foreground">
             {confidential
-              ? "near.com address: it arrives in the private balance near.com shows."
-              : "near.com address: a public transfer arrives in their legacy public balance, not the private balance near.com shows. Transfer from the private balance to reach it."}
+              ? "near.com address: it arrives in the confidential balance near.com shows."
+              : "near.com address: a public transfer arrives in their legacy public balance, not the confidential balance near.com shows. Transfer from the confidential balance to reach it."}
           </p>
         ) : null}
 
         {token && atomic && recipient ? (
           <ReviewCard
             rows={[
-              { label: "Balance", value: confidential ? "Private balance" : "Public balance" },
+              { label: "Balance", value: confidential ? "Confidential balance" : "Public balance" },
               {
                 label: "Amount",
                 value: `${formatDisplay(atomic.toString(), token.decimals)} ${token.symbol}`,
@@ -79,7 +79,9 @@ export function SendFlow({ view }: { view: ReturnType<typeof useSendFlow> }) {
               },
               {
                 label: "Route",
-                value: confidential ? "Private NEAR Intents transfer" : "NEAR Intents · no fee",
+                value: confidential
+                  ? "Confidential NEAR Intents transfer"
+                  : "NEAR Intents · no fee",
               },
               { label: "Recipient", value: <span className="console-id">{recipient}</span> },
             ]}
