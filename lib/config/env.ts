@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const demoEnvSchema = z.object({
   NEAR_INTENTS_AGENT_API_URL: z.url(),
-  NEAR_INTENTS_AGENT_API_KEY: z.string().min(8),
+  NEAR_INTENTS_AGENT_API_KEY: z.string().min(1),
   BETTER_AUTH_SECRET: z.string().min(32).max(64),
   SECRET_ENCRYPTION_KEY: z.string().min(32).max(64),
 });

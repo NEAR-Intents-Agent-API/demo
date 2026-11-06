@@ -23,6 +23,7 @@ import { evmIntentSigner } from "../support/intent-signers.js";
 import { syntheticPasskey } from "../support/passkey-registration-fixture.js";
 
 const port = 3101;
+const partnerApiKey = "example-partner-api-key";
 const origin = `http://localhost:${port}`;
 const app = fileURLToPath(new URL("../../", import.meta.url));
 /**
@@ -198,7 +199,7 @@ async function evmSessionFlow(): Promise<void> {
     owner.publicKey,
     "API expects the 64-byte key without the SEC1 prefix",
   );
-  assert.equal(JSON.stringify(sessionBody).includes("naa_"), false, "no API key in session");
+  assert.equal(JSON.stringify(sessionBody).includes(partnerApiKey), false, "no API key in session");
 
   // The stub tenant holds two users' agents; the BFF must return only this user's and must
   // filter in-process even though the API key could see both.
@@ -211,7 +212,7 @@ async function evmSessionFlow(): Promise<void> {
     true,
     "no other user's agents are listed",
   );
-  assert.equal(JSON.stringify(agents).includes("naa_"), false, "no API key in agent list");
+  assert.equal(JSON.stringify(agents).includes(partnerApiKey), false, "no API key in agent list");
 
   // The other user's agent is not readable through the detail route either.
   const foreign = await fetch(`${origin}/api/agents/${"e".repeat(64)}`, {
@@ -1042,7 +1043,7 @@ async function passkeyFlow(restart: () => Promise<void>): Promise<void> {
   assert.equal(sessionBody.session.owner.credential_id, authenticator.credentialId);
   assert.equal(sessionBody.session.owner.rp_id, "localhost");
   assert.equal(sessionBody.session.owner.origin, origin);
-  assert.equal(JSON.stringify(sessionBody).includes("naa_"), false, "no API key in session");
+  assert.equal(JSON.stringify(sessionBody).includes(partnerApiKey), false, "no API key in session");
 
   // 4. Sign out deletes the session row, so the cookie cannot be replayed.
   const signOut = await fetch(`${origin}/api/auth/sign-out`, {
@@ -1199,7 +1200,7 @@ async function startDemoServer(
         BETTER_AUTH_SECRET: "test-only-demo-auth-secret-32-chars",
         SECRET_ENCRYPTION_KEY: "test-only-demo-encryption-key-32-chars",
         NEAR_INTENTS_AGENT_API_URL: agentApiUrl,
-        NEAR_INTENTS_AGENT_API_KEY: `naa_${"x".repeat(43)}`,
+        NEAR_INTENTS_AGENT_API_KEY: partnerApiKey,
       },
     },
   );

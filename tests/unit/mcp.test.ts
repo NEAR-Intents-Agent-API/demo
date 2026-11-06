@@ -11,7 +11,7 @@ import {
 } from "../../lib/mcp/tools";
 
 process.env.NEAR_INTENTS_AGENT_API_URL = "https://api.example.test";
-process.env.NEAR_INTENTS_AGENT_API_KEY = `naa_${"a".repeat(43)}`;
+process.env.NEAR_INTENTS_AGENT_API_KEY = "example-partner-api-key";
 process.env.BETTER_AUTH_SECRET = "test-only-demo-auth-secret-32-chars";
 process.env.SECRET_ENCRYPTION_KEY = "test-only-demo-encryption-key-32-chars";
 configureDemoRuntime(demoConfig(parseDemoEnv(), "https://demo.example.test"));
