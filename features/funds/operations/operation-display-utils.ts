@@ -45,6 +45,7 @@ const ACTION_LABELS: Readonly<Record<string, string>> = {
   shield: "Make confidential",
   unshield: "Make public",
   swap: "Swap tokens",
+  limit_order: "Limit order",
   withdraw: "Withdraw funds",
   near_sign_message: "NEAR message signing",
   near_transfer: "Send NEAR",

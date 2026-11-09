@@ -2,7 +2,14 @@
 
 import { useCatalog } from "@/features/assets";
 import { DestinationsLine, LimitsLine, NativeLine, TokensLine } from "@/features/policy";
-import { ABILITIES, ABILITY_INFO, describeSchedule, type Rules } from "@/features/policy/model";
+import {
+  ABILITIES,
+  ABILITY_INFO,
+  describeSchedule,
+  deviationPercent,
+  type Rules,
+} from "@/features/policy/model";
+import { limitOrderDefaultDeviationBps } from "@/lib/agent-api/schemas";
 import { formatDelayMs } from "@/lib/format/delay";
 import { RulesOverviewRow } from "./rules-overview-row";
 
@@ -40,6 +47,11 @@ export function RulesOverview({ rules }: { rules: Rules }) {
           ? "On: funds can be held and moved in the confidential balance"
           : "Off: the confidential balance cannot be used"}
       </RulesOverviewRow>
+      {rules.abilities.limit_order ? (
+        <RulesOverviewRow label="Limit order price">
+          {`At most ${deviationPercent(rules.limitOrderDeviationBps.trim() || String(limitOrderDefaultDeviationBps))} away from the market; switching limit orders off cancels resting ones`}
+        </RulesOverviewRow>
+      ) : null}
       <RulesOverviewRow label="Tokens">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           {rules.tokens === "any" ? "Any token NEAR Intents supports" : null}

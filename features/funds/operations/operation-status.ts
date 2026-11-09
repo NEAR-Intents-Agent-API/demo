@@ -49,10 +49,18 @@ export function describeOperation(
     failureCode?: string | null;
     /** A transaction hash is recorded, so something was submitted before it failed. */
     hasTransaction?: boolean;
+    /** The operation's type: a limit order succeeds when it is placed, not when it fills. */
+    type?: string | null;
   } & FailureFacts = {},
 ): OperationView {
   switch (status) {
     case "SUCCESS":
+      if (options.type === "limit_order")
+        return {
+          reached: 3,
+          tone: "ok",
+          line: "Placed and resting. The order is funded and waits for the market to reach its price; it has not filled yet. Follow it in Orders.",
+        };
       return { reached: 3, tone: "ok", line: "Done. The move settled." };
     case "REFUNDED":
       return {

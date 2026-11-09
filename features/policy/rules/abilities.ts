@@ -1,6 +1,7 @@
 import {
   ArrowDataTransferHorizontalIcon,
   ArrowUp02Icon,
+  ChartBreakoutSquareIcon,
   SentIcon,
   ViewOffSlashIcon,
 } from "@hugeicons/core-free-icons";
@@ -19,6 +20,13 @@ export const ABILITY_INFO: Record<
     description: "Trade one token for another at the best NEAR Intents route.",
     icon: ArrowDataTransferHorizontalIcon,
     off: "Swaps are off for this account.",
+  },
+  limit_order: {
+    title: "Limit orders",
+    description:
+      "Place orders that rest at a price you set and fill when the market reaches it. Switching this off cancels the orders still resting.",
+    icon: ChartBreakoutSquareIcon,
+    off: "Limit orders are off for this account.",
   },
   transfer: {
     title: "Transfer",

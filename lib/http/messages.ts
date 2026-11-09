@@ -221,6 +221,14 @@ export const errorMessages: Record<string, string> = {
     "The account's schedule does not allow money moves at the time this would run. Nothing was sent. Try again once the schedule opens, or change the schedule on the Rules tab.",
   spend_price_unavailable:
     "No current USD price for this asset, so the account's USD budget cannot count it. Try again later.",
+  policy_price_deviation_exceeded:
+    "This order's price is further from the market than the account's rules allow. Set a price closer to the market, or raise the price bound under Limit orders on the Rules tab. Nothing was placed.",
+  market_price_unavailable:
+    "There is no current market price for one of these tokens, so the order's price cannot be checked. Nothing was placed. Try again later.",
+  limit_order_not_found:
+    "This limit order is not available. It may have been cancelled or closed. Reload the list.",
+  limit_orders_open:
+    "The account still has open limit orders, so it was not deleted. Cancel them on the Orders tab and let them settle, then delete it again.",
   validation_failed: "The request was rejected as invalid.",
   invalid_response: "The server returned an unreadable response. Try loading it again.",
   request_failed: "The request failed. Try again.",
@@ -424,6 +432,9 @@ const PERMANENT_CODES = new Set([
   "policy_action_limit_exceeded",
   "policy_usage_unavailable",
   "withdraw_preview_limit_reached",
+  "policy_price_deviation_exceeded",
+  "limit_order_not_found",
+  "limit_orders_open",
   "amount_too_low",
   "invalid_address",
   "unsupported_token",

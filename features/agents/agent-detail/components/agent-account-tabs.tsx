@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PolicyTab } from "@/features/policy/index";
 import type { useAgentTab } from "../hooks/use-agent-tab";
 import { ActivityTab } from "../tabs/activity-tab";
+import { OrdersTab } from "../tabs/orders-tab";
 
 export function AgentAccountTabs({
   agent,
@@ -30,6 +31,9 @@ export function AgentAccountTabs({
           <TabsTrigger value="rules" disabled={disabled} className="px-2 sm:flex-none sm:px-3">
             Rules
           </TabsTrigger>
+          <TabsTrigger value="orders" disabled={disabled} className="px-2 sm:flex-none sm:px-3">
+            Orders
+          </TabsTrigger>
           <TabsTrigger value="activity" disabled={disabled} className="px-2 sm:flex-none sm:px-3">
             Activity
           </TabsTrigger>
@@ -37,6 +41,9 @@ export function AgentAccountTabs({
       </div>
       <TabsContent value="activity">
         <ActivityTab agent={agent} />
+      </TabsContent>
+      <TabsContent value="orders">
+        <OrdersTab />
       </TabsContent>
       <TabsContent value="rules">
         <PolicyTab agent={agent} />

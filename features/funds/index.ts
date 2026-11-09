@@ -18,5 +18,6 @@ export { balanceLookup, FundsProvider } from "./funds-context";
 export { humanize, statusTone } from "./operations/operation-display-utils";
 export { OperationsPanel } from "./operations/operations-panel";
 export { useOperations } from "./operations/use-operations";
+export { OrdersPanel } from "./orders/orders-panel";
 export { type Lane, Portfolio } from "./portfolio/portfolio";
 export { useAccess, useHoldings } from "./use-funds";

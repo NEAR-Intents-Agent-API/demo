@@ -9,14 +9,19 @@ import {
 /**
  * The operations the dashboard's "Move funds" surface may call.
  *
- * This is a strict subset of the MCP toolbox: quotes, the money-moving writes and inbound deposit
- * addresses. Reads the page needs (balances, tokens, history) have their own routes. Anything not listed here
- * — including every read tool — is refused before it reaches the Agent API.
+ * This is a strict subset of the MCP toolbox: quotes, the money-moving writes, limit-order
+ * placement and cancels, and inbound deposit addresses. Reads the page needs (balances, tokens,
+ * history, limit orders) have their own routes. Anything not listed here — including every read
+ * tool — is refused before it reaches the Agent API.
  */
 export const FUNDS_TOOLS = [
   "swap_quote",
+  "limit_order_quote",
   "withdraw_preview",
   "swap",
+  "place_limit_order",
+  "cancel_limit_order",
+  "cancel_all_limit_orders",
   "withdraw",
   "intents_transfer",
   "confidential_transfer",

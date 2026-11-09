@@ -19,6 +19,10 @@ export const queryKeys = {
   scheduled: (agentId: string) => ["scheduled-executions", agentId] as const,
   operations: (agentId: string) => ["operations", agentId] as const,
   operation: (agentId: string, operationId: string) => ["operation", agentId, operationId] as const,
+  limitOrders: (agentId: string, open: boolean) => ["limit-orders", agentId, open] as const,
+  limitOrder: (agentId: string, orderId: string) => ["limit-order", agentId, orderId] as const,
+  limitOrderQuote: (agentId: string, args: unknown) =>
+    ["limit-order-quote", agentId, args] as const,
   approvals: (agentId: string) => ["approvals", agentId] as const,
   approval: (agentId: string, approvalId: string) => ["approvals", agentId, approvalId] as const,
   mcp: (agentId: string) => ["agent-mcp", agentId] as const,

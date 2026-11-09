@@ -292,3 +292,107 @@ test("MCP tool errors carry only the code and the facts the API named", () => {
     "unlisted facts never reach the harness",
   );
 });
+
+const order = {
+  base_asset: "nep141:wrap.near",
+  quote_asset: "nep141:usdc.near",
+  side: "sell",
+  quantity: "1000000000000000000000000",
+  price: "5.2",
+};
+
+test("MCP limit orders: the quote is a dry order, the placement carries a key and a deadline", async () => {
+  const calls: unknown[][] = [];
+  const client = {
+    placeLimitOrder: async (...args: unknown[]) => {
+      calls.push(args);
+      return { ...operation, type: "limit_order", status: "SUCCESS", details: { order_id: "o1" } };
+    },
+  } as unknown as McpAgentClient;
+  const deadline = "2026-11-12T10:00:00.000Z";
+
+  await runReadTool(
+    "limit_order_quote",
+    toolDefinitions.limit_order_quote.inputSchema.parse(order),
+    {
+      agentId,
+      client,
+    },
+  );
+  assert.deepEqual(calls.at(-1), [
+    agentId,
+    { ...order, deadline: undefined, confidential: false, dry: true },
+  ]);
+
+  const placed = await runWriteTool(
+    "place_limit_order",
+    toolDefinitions.place_limit_order.inputSchema.parse({
+      ...order,
+      deadline,
+      confidential: true,
+      idempotencyKey: "order-12345678",
+    }),
+    { agentId, client },
+  );
+  assert.deepEqual(calls.at(-1), [
+    agentId,
+    { ...order, deadline, confidential: true },
+    { idempotencyKey: "order-12345678" },
+  ]);
+  assert.equal(placed.status, "SUCCESS");
+});
+
+test("MCP limit order prices are exact decimals above zero, and a placement needs a key", () => {
+  const { inputSchema } = toolDefinitions.limit_order_quote;
+  for (const price of ["0", "0.0", "-1", "1e3", "01", "5.", ".5", " 5"])
+    assert.equal(inputSchema.safeParse({ ...order, price }).success, false, price);
+  for (const price of ["0.5", "5", "5.200", "10000.0001"])
+    assert.equal(inputSchema.safeParse({ ...order, price }).success, true, price);
+  assert.equal(toolDefinitions.place_limit_order.inputSchema.safeParse(order).success, false);
+  assert.equal(
+    toolDefinitions.place_limit_order.inputSchema.safeParse({
+      ...order,
+      deadline: "soon",
+      idempotencyKey: "order-12345678",
+    }).success,
+    false,
+  );
+});
+
+test("MCP cancels take no idempotency key and answer with the provider's order", async () => {
+  const calls: unknown[][] = [];
+  const client = {
+    cancelLimitOrder: async (...args: unknown[]) => {
+      calls.push(["one", ...args]);
+      return { order_id: "o1" };
+    },
+    cancelAllLimitOrders: async (...args: unknown[]) => {
+      calls.push(["all", ...args]);
+      return { known: 2, cancelled: 2, failed: 0, remaining: 0, complete: true };
+    },
+  } as unknown as McpAgentClient;
+  const one = await runWriteTool(
+    "cancel_limit_order",
+    toolDefinitions.cancel_limit_order.inputSchema.parse({ orderId: "o1" }),
+    { agentId, client },
+  );
+  const all = await runWriteTool(
+    "cancel_all_limit_orders",
+    toolDefinitions.cancel_all_limit_orders.inputSchema.parse({}),
+    { agentId, client },
+  );
+  assert.deepEqual(calls, [
+    ["one", agentId, "o1"],
+    ["all", agentId],
+  ]);
+  assert.equal(one.status, "cancelled");
+  assert.equal(one.operationId, null);
+  assert.deepEqual(all.result, {
+    data: { known: 2, cancelled: 2, failed: 0, remaining: 0, complete: true },
+  });
+  assert.equal(
+    toolDefinitions.cancel_limit_order.inputSchema.safeParse({ orderId: "o1", idempotencyKey: "x" })
+      .success,
+    false,
+  );
+});

@@ -159,6 +159,7 @@ const preview = (over: Record<string, unknown>) =>
     public: [],
     confidential: [],
     assets_lost: false,
+    open_limit_orders: 0,
     retirement: "provider_delete",
     ...over,
   }) as never;
@@ -185,6 +186,11 @@ describe("deletion summary", () => {
   it("holds nothing for an empty account", () => {
     const summary = deletionSummary(preview({}));
     assert.equal(summary.holdsFunds, false);
+    assert.equal(summary.openLimitOrders, 0);
+  });
+
+  it("carries the limit orders that still block deletion", () => {
+    assert.equal(deletionSummary(preview({ open_limit_orders: 2 })).openLimitOrders, 2);
   });
 
   it("treats listed balances as held even if the flag is false", () => {

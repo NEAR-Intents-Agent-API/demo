@@ -1,6 +1,7 @@
 "use client";
 
 import { AbilityRuleItem } from "./ability-rule-item";
+import { LimitOrderField } from "./limit-order-field";
 import { ABILITIES, type Ability, type Rules } from "./rules";
 import { RulesSection } from "./rules-section";
 
@@ -32,7 +33,11 @@ export function AbilityRules({
               ability={ability}
               on={rules.abilities[ability]}
               onToggle={() => toggle(ability)}
-            />
+            >
+              {ability === "limit_order" ? (
+                <LimitOrderField rules={rules} onChange={onChange} />
+              ) : null}
+            </AbilityRuleItem>
           </li>
         ))}
       </ul>

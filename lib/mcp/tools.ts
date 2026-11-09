@@ -1,7 +1,11 @@
-import type { AgentApi, StatusResponse } from "@near-intents-agent-api/sdk";
+import type { AgentApi, LimitOrderRequest, StatusResponse } from "@near-intents-agent-api/sdk";
 import { z } from "zod";
 import { intentsAccount } from "@/lib/agent-api/address";
-import { correlationIdSchema, operationCorrelationIdSchema } from "@/lib/agent-api/schemas";
+import {
+  correlationIdSchema,
+  limitOrderPriceSchema,
+  operationCorrelationIdSchema,
+} from "@/lib/agent-api/schemas";
 import { demoEnv } from "@/lib/config/runtime";
 import { ownerRiskNotice } from "@/lib/owner-risk-notice";
 
@@ -17,6 +21,11 @@ export type McpAgentClient = Pick<
   | "listApprovals"
   | "getApproval"
   | "swap"
+  | "placeLimitOrder"
+  | "listLimitOrders"
+  | "getLimitOrder"
+  | "cancelLimitOrder"
+  | "cancelAllLimitOrders"
   | "withdraw"
   | "shield"
   | "unshield"
@@ -44,6 +53,9 @@ export const READ_TOOLS = [
   "get_tokens",
   "get_policy",
   "swap_quote",
+  "limit_order_quote",
+  "list_limit_orders",
+  "get_limit_order",
   "withdraw_preview",
   "get_deposit_status",
   "get_operation",
@@ -56,6 +68,9 @@ export const READ_TOOLS = [
 
 export const WRITE_TOOLS = [
   "swap",
+  "place_limit_order",
+  "cancel_limit_order",
+  "cancel_all_limit_orders",
   "shield",
   "unshield",
   "withdraw",
@@ -72,6 +87,29 @@ const amount = z.string().regex(/^[0-9]{1,78}$/);
 const idempotencyKey = z.string().min(8).max(128);
 const operationId = correlationIdSchema;
 const approvalId = z.string().min(1).max(64);
+
+const price = limitOrderPriceSchema.describe(
+  "Quote units per one whole base unit, as an exact decimal string such as 5.2.",
+);
+
+const limitOrderFields = {
+  base_asset: text.describe("The asset the order buys or sells: an `assetId` from get_tokens."),
+  quote_asset: text.describe("The asset the price is stated in: an `assetId` from get_tokens."),
+  side: z
+    .enum(["sell", "buy"])
+    .describe(
+      "`sell` spends `quantity` of base_asset; `buy` spends what `quantity` costs at `price`, rounded up, in quote_asset.",
+    ),
+  quantity: amount.describe("Amount of base_asset, in its smallest unit."),
+  price,
+  deadline: z.iso
+    .datetime()
+    .optional()
+    .describe(
+      "When the order stops resting, RFC 3339; at most 7 days ahead, which is also the default.",
+    ),
+  confidential: z.boolean().default(false),
+};
 
 const recipient = text.describe(
   "Recipient NEAR Intents account: a named account (alice.near), a 64-hex implicit account or a 0x EVM address. A near.com address `nearcom:<account>` is that account; the prefix is stripped.",
@@ -118,6 +156,25 @@ export const toolDefinitions = {
       min_amount_out: amount.optional(),
       confidential: z.boolean().default(false),
     }),
+  },
+  limit_order_quote: {
+    description:
+      "Preview a limit order without placing it. Rules and balance never refuse a preview: each one the live order would fail comes back in `warnings` (policy_action_denied, policy_asset_denied, policy_schedule_denied, a budget or limit code, insufficient_balance with available_amount, amount_too_low for an order worth under 0.1 USD, policy_price_deviation_exceeded when the price is further from the market than the policy's limit_order.max_deviation_bps, market_price_unavailable). `quote` says what the order spends and the least a full fill delivers, before 1Click's own 20 bps fee. `owner_approval` true means the live order would wait in PENDING_APPROVAL for the owner.",
+    inputSchema: z.object(limitOrderFields),
+  },
+  list_limit_orders: {
+    description:
+      "List this account's limit orders, newest first, each read live from the provider: `fill_status`, `payout_status`, `is_payout_status_final`, `partial_fills`, `payouts`, `deadline` and 1Click's `app_fees`. `open: true` lists only orders that are not payout-final.",
+    inputSchema: z.object({
+      open: z.boolean().optional(),
+      limit: z.number().int().min(1).max(100).default(25),
+      offset: z.number().int().min(0).optional(),
+    }),
+  },
+  get_limit_order: {
+    description:
+      "Read one limit order by the `order_id` place_limit_order returned in details.order_id, live from the provider.",
+    inputSchema: z.object({ orderId: text }),
   },
   withdraw_preview: {
     description:
@@ -177,6 +234,21 @@ export const toolDefinitions = {
         ...writeArgs,
       })
       .strict(),
+  },
+  place_limit_order: {
+    description:
+      "Place a resting limit order on the public balance, or with confidential true on the confidential balance (the policy needs `confidential` and `limit_order`). It is funded in full when placed and rests until it fills, is cancelled or reaches `deadline` (default and at most 7 days); fills and refunds return to the balance that funded it. SUCCESS means funded and resting, not filled: `details.order_id` names it, so follow it with get_limit_order. A sell spends `quantity` of base_asset; a buy spends ceil(quantity x price) of quote_asset. The order runs the swap rules on the asset it spends (assets, limits, actions per hour, USD budget, delay, schedule, owner approval) and its price must be within the policy's limit_order.max_deviation_bps (100 when unset) of the market: policy_price_deviation_exceeded or market_price_unavailable otherwise. It must be worth at least 0.1 USD (amount_too_low). 1Click's own 20 bps fee applies to every order. Run limit_order_quote first.",
+    inputSchema: z.object({ ...limitOrderFields, ...writeArgs }).strict(),
+  },
+  cancel_limit_order: {
+    description:
+      "Cancel one resting limit order by its order id; what is unfilled returns to the balance that funded it. Needs no idempotencyKey and works while the account is frozen or the policy no longer allows limit orders. The USD budget charged when the order was placed is not given back.",
+    inputSchema: z.object({ orderId: text }).strict(),
+  },
+  cancel_all_limit_orders: {
+    description:
+      "Cancel up to 50 of this account's resting limit orders in one round. Repeat the call until `complete` is true. Needs no idempotencyKey; same exemptions as cancel_limit_order.",
+    inputSchema: z.object({}).strict(),
   },
   shield: {
     description:
@@ -378,6 +450,12 @@ export async function runReadTool(
       return read(await client.getPolicy(agentId));
     case "swap_quote":
       return read(await client.swap(agentId, { ...swapRequest(args), dry: true }));
+    case "limit_order_quote":
+      return read(await client.placeLimitOrder(agentId, { ...limitOrderRequest(args), dry: true }));
+    case "list_limit_orders":
+      return read(await client.listLimitOrders(agentId, limitOrderListQuery(args)));
+    case "get_limit_order":
+      return read(await client.getLimitOrder(agentId, String(args.orderId)));
     case "withdraw_preview":
       // A preview runs under a key like the withdrawal; the SDK creates one unless the caller sent it.
       return read(
@@ -420,12 +498,20 @@ export async function runWriteTool(
   context: ToolContext,
 ): Promise<ToolOutcome> {
   const { agentId, client } = context;
+  // A cancel moves no money out and takes no key; it answers with the provider's order, not an operation.
+  if (name === "cancel_limit_order")
+    return cancelled(await client.cancelLimitOrder(agentId, String(args.orderId)));
+  if (name === "cancel_all_limit_orders")
+    return cancelled(await client.cancelAllLimitOrders(agentId));
   const options = { idempotencyKey: String(args.idempotencyKey) };
   const move = { asset: String(args.token), amount: String(args.amount) };
   let result: StatusResponse;
   switch (name) {
     case "swap":
       result = await client.swap(agentId, swapRequest(args), options);
+      break;
+    case "place_limit_order":
+      result = await client.placeLimitOrder(agentId, limitOrderRequest(args), options);
       break;
     case "withdraw":
       result = await client.withdraw(agentId, withdrawRequest(args), options);
@@ -472,6 +558,24 @@ function swapRequest(args: Record<string, unknown>) {
     confidential: Boolean(args.confidential),
   };
 }
+function limitOrderRequest(args: Record<string, unknown>) {
+  return {
+    base_asset: String(args.base_asset),
+    quote_asset: String(args.quote_asset),
+    side: args.side as LimitOrderRequest["side"],
+    quantity: String(args.quantity),
+    price: String(args.price),
+    deadline: optionalString(args.deadline),
+    confidential: Boolean(args.confidential),
+  };
+}
+function limitOrderListQuery(args: Record<string, unknown>) {
+  return {
+    open: typeof args.open === "boolean" ? args.open : undefined,
+    limit: typeof args.limit === "number" ? args.limit : 25,
+    offset: typeof args.offset === "number" ? args.offset : undefined,
+  };
+}
 function withdrawRequest(args: Record<string, unknown>) {
   return {
     asset: String(args.token),
@@ -485,6 +589,9 @@ function withdrawRequest(args: Record<string, unknown>) {
 }
 function optionalString(value: unknown) {
   return typeof value === "string" ? value : undefined;
+}
+function cancelled(result: unknown): ToolOutcome {
+  return { status: "cancelled", operationId: null, result: { data: result } };
 }
 function read(result: unknown): ToolOutcome {
   return { status: "read", operationId: null, result: { data: result } };

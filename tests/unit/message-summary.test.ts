@@ -43,7 +43,8 @@ test("a control envelope summarizes as agent control without inventing fields", 
 test("a policy envelope lists the rules that actually limit spending", () => {
   const policy = {
     frozen: false,
-    actions: ["swap", "transfer"],
+    actions: ["swap", "limit_order", "transfer"],
+    limit_order: { max_deviation_bps: 150 },
     confidential: false,
     owner_approval: true,
     assets: ["nep141:wrap.near"],
@@ -67,7 +68,8 @@ test("a policy envelope lists the rules that actually limit spending", () => {
   assert.equal(summary.kind, "policy revision");
   const contents = new Map(summary.details.map((row) => [row.label, row.value]));
   assert.equal(contents.get("Frozen"), "false");
-  assert.equal(contents.get("Allowed actions"), "swap, transfer");
+  assert.equal(contents.get("Allowed actions"), "swap, limit_order, transfer");
+  assert.equal(contents.get("Limit order price bound"), "1.5% from the market");
   assert.equal(contents.get("Confidential balance"), "denied");
   assert.equal(contents.get("Owner approval"), "required for every move");
   assert.equal(contents.get("Allowed tokens"), "nep141:wrap.near");

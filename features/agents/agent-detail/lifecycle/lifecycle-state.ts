@@ -142,6 +142,8 @@ export type DeletionSummary = {
   rows: DeletionRow[];
   /** True while the account holds public or confidential balances; deletion is refused until they are moved out. */
   holdsFunds: boolean;
+  /** Limit orders not yet payout-final; deletion is refused until each has settled. */
+  openLimitOrders: number;
 };
 
 function rowsOf(entries: DeletionPreview["public"], scope: DeletionRow["scope"]): DeletionRow[] {
@@ -159,5 +161,6 @@ export function deletionSummary(preview: DeletionPreview): DeletionSummary {
   return {
     rows,
     holdsFunds: preview.assets_lost || rows.length > 0,
+    openLimitOrders: preview.open_limit_orders,
   };
 }
