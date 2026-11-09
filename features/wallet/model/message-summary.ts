@@ -173,6 +173,12 @@ function collectPolicy(details: SummaryRow[], policy: unknown): void {
   if (!value) return;
   details.push({ label: "Frozen", value: String(value.frozen ?? "—"), emphasis: true });
   pushList(details, "Allowed actions", value.actions, false);
+  const limitOrder = asRecord(value.limit_order);
+  if (limitOrder && typeof limitOrder.max_deviation_bps === "number")
+    details.push({
+      label: "Limit order price bound",
+      value: `${limitOrder.max_deviation_bps / 100}% from the market`,
+    });
   details.push({
     label: "Confidential balance",
     value: value.confidential === true ? "allowed" : "denied",

@@ -1,4 +1,5 @@
 export { ABILITY_INFO } from "./rules/abilities";
+export { deviationPercent } from "./rules/limit-order-field";
 export {
   ABILITIES,
   type Ability,

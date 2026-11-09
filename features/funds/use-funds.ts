@@ -104,9 +104,15 @@ export function useFundsAction(agentId: string) {
     onSuccess: async (_result, input) => {
       if (input.tool.endsWith("_quote") || input.tool.endsWith("_preview")) return;
       await Promise.all(
-        ["balances", "operations", "policy", "controls", "scheduled-executions"].map((key) =>
-          cache.invalidateQueries({ queryKey: [key, agentId] }),
-        ),
+        [
+          "balances",
+          "operations",
+          "policy",
+          "controls",
+          "scheduled-executions",
+          "limit-orders",
+          "limit-order",
+        ].map((key) => cache.invalidateQueries({ queryKey: [key, agentId] })),
       );
     },
   });

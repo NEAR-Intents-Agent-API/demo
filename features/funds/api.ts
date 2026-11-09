@@ -1,12 +1,22 @@
-import type { BalancesView, DestinationRule, StatusResponse } from "@near-intents-agent-api/sdk";
+import type {
+  BalancesView,
+  DestinationRule,
+  LimitOrderPage,
+  LimitOrderView,
+  StatusResponse,
+} from "@near-intents-agent-api/sdk";
 import type { IntentStep } from "@/features/intents";
 import type { AccessView } from "@/lib/agent-api/access";
 import { request } from "@/lib/http/request";
 
 export type FundsTool =
   | "swap_quote"
+  | "limit_order_quote"
   | "withdraw_preview"
   | "swap"
+  | "place_limit_order"
+  | "cancel_limit_order"
+  | "cancel_all_limit_orders"
   | "withdraw"
   | "intents_transfer"
   | "confidential_transfer"
@@ -59,6 +69,13 @@ export const fundsApi = {
       method: "POST",
       body: JSON.stringify({ tool, args }),
     }),
+  /** `open` lists only resting orders; without it the list includes closed ones. */
+  limitOrders: (agentId: string, open: boolean) =>
+    request<LimitOrderPage>(
+      `/api/agents/${agentId}/limit-orders?${open ? "open=true&" : ""}limit=100`,
+    ),
+  limitOrder: (agentId: string, orderId: string) =>
+    request<LimitOrderView>(`/api/agents/${agentId}/limit-orders/${encodeURIComponent(orderId)}`),
   operations: (agentId: string) =>
     request<{ data: StatusResponse[] }>(`/api/agents/${agentId}/operations`),
   operation: (

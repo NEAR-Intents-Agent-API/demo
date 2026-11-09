@@ -13,6 +13,8 @@ export function evidenceRows(
 ): EvidenceRow[] {
   const hash = (value: string) => <MonoId value={value} head={8} tail={6} />;
   const rows: EvidenceRow[] = [];
+  if (evidence.orderId)
+    rows.push({ label: "Order", value: <MonoId value={evidence.orderId} head={8} tail={6} /> });
   if (evidence.txHash) rows.push({ label: "Transaction", value: hash(evidence.txHash) });
   if (evidence.depositTxHash)
     rows.push({ label: "Deposit transaction", value: hash(evidence.depositTxHash) });

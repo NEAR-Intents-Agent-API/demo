@@ -64,6 +64,36 @@ export function extractSwapPreview(result: unknown): SwapPreview {
   return { quote: extractQuote(result), warnings: extractWarnings(result) };
 }
 
+/**
+ * A limit-order dry run: the API's own terms for the order (`spend_asset`, `spend_amount`,
+ * `receive_asset`, `min_amount_out`), the USD value it would count, and the warnings beside it.
+ */
+export type OrderPreview = {
+  quote: Json | null;
+  warnings: QuoteWarning[];
+  /** The order's USD value, six decimals; null when the asset has no usable price. */
+  spendUsd: string | null;
+  /** The account's rules hold orders for the owner's vote, so the live order would wait for it. */
+  ownerApproval: boolean;
+};
+
+export function extractOrderPreview(result: unknown): OrderPreview {
+  let node: unknown = result;
+  for (let depth = 0; depth < 3 && isRecord(node); depth += 1) {
+    if (isRecord(node.quote)) {
+      const usd = isRecord(node.spend) ? node.spend.amount_usd : null;
+      return {
+        quote: node.quote,
+        warnings: extractWarnings(node),
+        spendUsd: typeof usd === "string" ? usd : null,
+        ownerApproval: node.owner_approval === true,
+      };
+    }
+    node = node.data;
+  }
+  return { quote: null, warnings: [], spendUsd: null, ownerApproval: false };
+}
+
 /** Finds the first string/number under any of `keys`, looking one object level down too. */
 export function pick(quote: Json | null, keys: readonly string[]): string | null {
   if (!quote) return null;

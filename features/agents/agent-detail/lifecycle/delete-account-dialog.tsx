@@ -35,7 +35,9 @@ export function DeleteAccountDialog({
   onRetry: () => void;
 }) {
   const busy = stage === "signing" || stage === "submitting";
-  const ready = Boolean(challenge && summary && !summary.holdsFunds);
+  const ready = Boolean(
+    challenge && summary && !summary.holdsFunds && summary.openLimitOrders === 0,
+  );
 
   return (
     <ResponsiveDialog
@@ -93,6 +95,15 @@ function Holdings({ summary }: { summary: DeletionSummary }) {
           The account holds no tokens, so nothing needs to be moved out first.
         </Callout>
       )}
+      {summary.openLimitOrders > 0 ? (
+        <Callout tone="danger" title="Cancel the open limit orders first">
+          {summary.openLimitOrders === 1
+            ? "1 limit order is still open or settling."
+            : `${summary.openLimitOrders} limit orders are still open or settling.`}{" "}
+          The API refuses deletion until each has settled. Cancel them on the Orders tab, give them
+          a moment to pay out, then delete the account.
+        </Callout>
+      ) : null}
       {summary.rows.length > 0 ? (
         <ul className="flex flex-col divide-y rounded-xl border">
           {summary.rows.map((row) => (

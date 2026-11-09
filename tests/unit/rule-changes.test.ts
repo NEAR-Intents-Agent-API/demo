@@ -27,10 +27,28 @@ test("edits across dialogs accumulate into one complete policy payload", () => {
     ["swap", "dailyUsd", "delay"],
   );
   const policy = policyFromRules(null, draft);
-  assert.deepEqual(policy.actions, ["transfer", "withdraw"]);
+  assert.deepEqual(policy.actions, ["limit_order", "transfer", "withdraw"]);
   assert.equal(policy.budget.daily_usd, "25.00");
   assert.equal(policy.timelock_ms, 60_000);
   assert.equal(rulesProblem(draft), null);
+});
+
+test("the limit order switch and its price bound are one setting", () => {
+  const current = structuredClone(defaultRules);
+  const draft = structuredClone(current);
+  draft.limitOrderDeviationBps = "250";
+  assert.deepEqual(
+    changedRuleSettings(current, draft).map(({ id }) => id),
+    ["limit_order"],
+  );
+  draft.abilities.limit_order = false;
+  draft.limitOrderDeviationBps = "";
+  assert.deepEqual(
+    changedRuleSettings(current, draft).map(({ id }) => id),
+    ["limit_order"],
+  );
+  draft.abilities.limit_order = true;
+  assert.deepEqual(changedRuleSettings(current, draft), []);
 });
 
 test("dependent fields appear under their corresponding setting", () => {

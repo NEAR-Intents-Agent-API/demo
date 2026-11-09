@@ -1,4 +1,4 @@
-export const AGENT_TABS = ["rules", "activity", "funds"] as const;
+export const AGENT_TABS = ["rules", "orders", "activity", "funds"] as const;
 export type AgentTab = (typeof AGENT_TABS)[number];
 export const DEFAULT_AGENT_TAB: AgentTab = "rules";
 export type AccountSetupStep = "live" | "fund" | "access" | "connect";

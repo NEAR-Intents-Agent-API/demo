@@ -208,7 +208,7 @@ const assetId = z
   .refine((id) => id !== "*", 'Use "any" to allow every asset; "*" is not an asset id');
 const limitBucket = z.record(assetId, amountRaw);
 const usdAmount = z.string().regex(/^(0|[1-9][0-9]{0,8})(\.[0-9]{1,2})?$/);
-const policyActionSchema = z.enum(["swap", "transfer", "withdraw"]);
+const policyActionSchema = z.enum(["swap", "limit_order", "transfer", "withdraw"]);
 const nearRecipient = nearAccount.regex(
   /^(?:[a-z\d]+[-_])*[a-z\d]+(?:\.(?:[a-z\d]+[-_])*[a-z\d]+)*$/,
 );
@@ -383,6 +383,17 @@ export function domainKey(domain: TypedDataDomain): string {
   );
 }
 
+/** The widest `limit_order.max_deviation_bps` an owner may sign, and what applies when it is left out. */
+/** Quote units per one whole base unit: an exact decimal above zero, no sign or exponent. */
+export const limitOrderPriceSchema = z
+  .string()
+  .max(40)
+  .regex(/^(0|[1-9][0-9]*)(\.[0-9]+)?$/)
+  .refine((value) => /[1-9]/.test(value), "Must be greater than zero");
+
+export const limitOrderDeviationCapBps = 300;
+export const limitOrderDefaultDeviationBps = 100;
+
 /** The owner's complete rulebook for one agent account, signed as a whole. */
 export const policySchema = z.strictObject({
   frozen: z.boolean(),
@@ -408,6 +419,11 @@ export const policySchema = z.strictObject({
   }),
   timelock_ms: z.number().int().min(0).max(maxTimelockMs),
   schedule: scheduleSchema.optional(),
+  limit_order: z
+    .strictObject({
+      max_deviation_bps: z.number().int().min(0).max(limitOrderDeviationCapBps),
+    })
+    .optional(),
   native: nativeSchema.optional(),
 });
 assertType<Equal<z.infer<typeof policySchema>, Policy>>();
@@ -432,6 +448,16 @@ export const issuedGrantSchema = z.object({ grant_id: hex64, expires_at: z.strin
 export const balanceQuerySchema = z.strictObject({
   source: z.enum(["public", "confidential"]).default("public"),
   asset: z.string().min(1).max(256).optional(),
+});
+
+/** The limit-order list's paging, as the dashboard sends it in the query string. */
+export const limitOrderQuerySchema = z.strictObject({
+  open: z
+    .enum(["true", "false"])
+    .transform((value) => value === "true")
+    .optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
 });
 
 // ---- Pass-through payloads

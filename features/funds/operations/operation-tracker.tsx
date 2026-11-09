@@ -20,6 +20,7 @@ export function OperationTracker({
   operationId,
   initialStatus,
   title,
+  type,
   onDone,
   onOpenActivity,
   token,
@@ -29,6 +30,8 @@ export function OperationTracker({
   operationId: string;
   initialStatus: string;
   title: string;
+  /** The operation's type, known from the click before the first poll answers. */
+  type?: string;
   onDone: () => void;
   onOpenActivity?: () => void;
   /** The moved token, so a refunded amount reads in token units rather than base units. */
@@ -46,6 +49,7 @@ export function OperationTracker({
     hasTransaction: Boolean(evidence.txHash || evidence.destinationTxHash),
     minAmount: evidence.minAmount,
     token,
+    type: operation.data?.type ?? type,
   });
   const settled = TERMINAL_STATUSES.has(status);
 

@@ -1,5 +1,10 @@
 import type { DestinationRule, Policy, Schedule } from "@near-intents-agent-api/sdk";
-import { type NativePolicy, policySchema } from "@/lib/agent-api/schemas";
+import {
+  limitOrderDefaultDeviationBps,
+  limitOrderDeviationCapBps,
+  type NativePolicy,
+  policySchema,
+} from "@/lib/agent-api/schemas";
 import { nativeEnabled, nativeOff } from "./native";
 
 /**
@@ -11,12 +16,12 @@ import { nativeEnabled, nativeOff } from "./native";
  * compiles the policy to the custody provider; nothing provider-specific lives here.
  */
 
-export const ABILITIES = ["swap", "transfer", "withdraw", "confidential"] as const;
+export const ABILITIES = ["swap", "limit_order", "transfer", "withdraw", "confidential"] as const;
 export type Ability = (typeof ABILITIES)[number];
 
 /** The policy action behind each ability; `confidential` is a separate policy switch. */
 type PolicyAction = Policy["actions"][number];
-const ACTION_ABILITIES: readonly PolicyAction[] = ["swap", "transfer", "withdraw"];
+const ACTION_ABILITIES: readonly PolicyAction[] = ["swap", "limit_order", "transfer", "withdraw"];
 
 /** Rules for one token: the most a single move may spend, in the token's smallest unit. */
 export type TokenLimit = { assetId: string; perTransaction: string };
@@ -28,6 +33,8 @@ export type Rules = {
   limits: TokenLimit[];
   /** Most money actions per hour, as typed; empty means no cap. */
   maxPerHour: string;
+  /** How far worse than the market a limit order may be priced, in basis points as typed; empty means the API's default. */
+  limitOrderDeviationBps: string;
   /** The account's one destination rule, shared by the dashboard and every client. */
   destinations: DestinationRule;
   /** Every money action waits for the owner's approval. */
@@ -44,10 +51,11 @@ export type Rules = {
 
 /** A new agent can do everything NEAR Intents offers, to any destination, until the owner narrows it. */
 export const defaultRules: Rules = {
-  abilities: { swap: true, transfer: true, withdraw: true, confidential: true },
+  abilities: { swap: true, limit_order: true, transfer: true, withdraw: true, confidential: true },
   tokens: "any",
   limits: [],
   maxPerHour: "",
+  limitOrderDeviationBps: "",
   destinations: { mode: "any", list: [] },
   approval: false,
   frozen: false,
@@ -62,6 +70,7 @@ export function rulesFromPolicy(policy: Policy | null): Rules {
   return {
     abilities: {
       swap: policy.actions.includes("swap"),
+      limit_order: policy.actions.includes("limit_order"),
       transfer: policy.actions.includes("transfer"),
       withdraw: policy.actions.includes("withdraw"),
       confidential: policy.confidential,
@@ -71,6 +80,7 @@ export function rulesFromPolicy(policy: Policy | null): Rules {
       ([assetId, perTransaction]) => ({ assetId, perTransaction }),
     ),
     maxPerHour: policy.max_actions_per_hour?.toString() ?? "",
+    limitOrderDeviationBps: policy.limit_order?.max_deviation_bps.toString() ?? "",
     destinations: structuredClone(policy.destinations),
     approval: policy.owner_approval,
     frozen: policy.frozen,
@@ -104,6 +114,7 @@ export function policyFromRules(current: Policy | null, rules: Rules): Policy {
     budget: budgetFromRules(rules),
     timelock_ms: delayMsFromRules(rules),
     ...(rules.schedule ? { schedule: rules.schedule } : {}),
+    ...limitOrderFromRules(rules),
     ...(nativeEnabled(rules.native) ? { native: structuredClone(rules.native) } : {}),
   };
 }
@@ -133,6 +144,16 @@ function budgetFromRules(rules: Rules): Policy["budget"] {
   };
 }
 
+/**
+ * The price bound is written only while limit orders are allowed and a value is typed; an empty
+ * field leaves the API's default. Dropping `limit_order` from the actions drops the bound with it.
+ */
+function limitOrderFromRules(rules: Rules): Pick<Policy, "limit_order"> {
+  const typed = rules.limitOrderDeviationBps.trim();
+  if (!rules.abilities.limit_order || !typed) return {};
+  return { limit_order: { max_deviation_bps: Number(typed) } };
+}
+
 /** The typed seconds as exact milliseconds; `NaN` when they are not a number. */
 function delayMsFromRules(rules: Rules): number {
   return Math.round(Number(rules.delaySeconds) * 1000);
@@ -157,10 +178,23 @@ export function rulesProblem(rules: Rules): string | null {
     return native.error.issues.some((issue) => issue.message.includes("intents.near"))
       ? "intents.near and intents.far can never be listed for native methods."
       : "Every native sign-in service must be a unique NEAR account or domain, every contract and receiver a unique NEAR account, every sign-in domain a lowercase host, every withdrawal address unique and spelled as destinations are, slippage 0 to 300 basis points, and every typed data domain unique.";
+  const limitOrder = limitOrderProblem(rules);
+  if (limitOrder) return limitOrder;
   const perHour = rules.maxPerHour.trim();
   if (perHour && !/^[1-9][0-9]{0,6}$/.test(perHour))
     return "Actions per hour must be a whole number, or empty for no cap.";
   return null;
+}
+
+function limitOrderProblem(rules: Rules): string | null {
+  const deviation = rules.limitOrderDeviationBps.trim();
+  if (!rules.abilities.limit_order || !deviation) return null;
+  const valid =
+    /^[0-9]+$/.test(deviation) &&
+    policySchema.shape.limit_order.safeParse(limitOrderFromRules(rules).limit_order).success;
+  return valid
+    ? null
+    : `The limit order price bound must be a whole number from 0 to ${limitOrderDeviationCapBps} basis points, or empty for ${limitOrderDefaultDeviationBps}.`;
 }
 
 /** The tokens a flow may offer: everything, or only what the rules list. */

@@ -8,10 +8,12 @@ export function AbilityRuleItem({
   ability,
   on,
   onToggle,
+  children,
 }: {
   ability: Ability;
   on: boolean;
   onToggle: () => void;
+  children?: React.ReactNode;
 }) {
   const info = ABILITY_INFO[ability];
   return (
@@ -23,6 +25,7 @@ export function AbilityRuleItem({
         label={info.title}
         description={info.description}
       />
+      {on ? children : null}
     </div>
   );
 }

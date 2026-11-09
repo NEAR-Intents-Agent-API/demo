@@ -28,6 +28,10 @@ OpenClaw, all under rules the owner signed.
   fields use the API's `available` balance (the balance minus queued or timelocked work), and a
   swap or withdrawal preview lists every rule or balance check the live request would fail as a
   warning.
+- **Orders tab**: resting limit orders on the public or confidential balance. A dry preview shows
+  what the order locks and the least a full fill delivers; orders are listed live with their fills
+  and payouts, and can be cancelled one at a time or all at once. The Rules tab has a Limit orders
+  switch and a price bound against the market; switching it off cancels resting orders.
 - **Activity and Rules tabs**: operations and pending owner approvals; live rules, emergency
   stop, USD budget and execution delay, all editable in place.
 - **MCP/OAuth server**: one endpoint per account, one owner-signed grant per client, instant revocation.

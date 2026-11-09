@@ -7,6 +7,8 @@ import {
 } from "./settings/rule-setting-definitions";
 
 function settingValue(rules: Rules, id: RuleSettingId): unknown {
+  // The price bound belongs to the limit-order switch: changing either is one change to it.
+  if (id === "limit_order") return [rules.abilities.limit_order, rules.limitOrderDeviationBps];
   if (isAbilitySetting(id)) return rules.abilities[id];
   if (isBudgetSetting(id)) return rules.budget[id];
   if (id === "limits") return [rules.limits, rules.maxPerHour];

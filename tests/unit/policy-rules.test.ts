@@ -26,7 +26,7 @@ test("a new agent can do everything NEAR Intents offers and send anywhere", () =
   const policy = policySchema.parse(policyFromRules(null, rules()));
   assert.deepEqual(policy, {
     frozen: false,
-    actions: ["swap", "transfer", "withdraw"],
+    actions: ["swap", "limit_order", "transfer", "withdraw"],
     confidential: true,
     owner_approval: false,
     assets: "any",
@@ -48,7 +48,13 @@ test('"*" is not an asset id: the API refuses it in assets and as a limits key',
 
 test("each ability maps to one policy switch", () => {
   const off = rules({
-    abilities: { swap: false, transfer: false, withdraw: false, confidential: false },
+    abilities: {
+      swap: false,
+      limit_order: false,
+      transfer: false,
+      withdraw: false,
+      confidential: false,
+    },
   });
   const policy = policyFromRules(null, off);
   assert.deepEqual(policy.actions, []);
@@ -61,6 +67,64 @@ test("each ability maps to one policy switch", () => {
   );
   assert.deepEqual(swapOnly.actions, ["swap"]);
   assert.equal(swapOnly.confidential, true);
+});
+
+test("limit orders survive a rules save, with their price bound, unless the owner turns them off", () => {
+  const installed = policySchema.parse({
+    ...policyFromRules(null, rules()),
+    actions: ["limit_order"],
+    limit_order: { max_deviation_bps: 250 },
+  });
+  const loaded = rulesFromPolicy(installed);
+  assert.equal(loaded.abilities.limit_order, true);
+  assert.equal(loaded.limitOrderDeviationBps, "250");
+
+  // A save of unrelated rules writes the action and the bound back unchanged.
+  const unrelated = policyFromRules(installed, { ...loaded, maxPerHour: "5" });
+  assert.deepEqual(unrelated.actions, ["limit_order"]);
+  assert.deepEqual(unrelated.limit_order, { max_deviation_bps: 250 });
+  assert.deepEqual(policyFromRules(installed, loaded), installed);
+
+  // Editing the bound changes only the bound; zero is a real bound, not "unset".
+  assert.deepEqual(
+    policyFromRules(installed, { ...loaded, limitOrderDeviationBps: "0" }).limit_order,
+    {
+      max_deviation_bps: 0,
+    },
+  );
+
+  // Turning the switch off removes the action and the bound; the API then cancels resting orders.
+  const off = policyFromRules(installed, {
+    ...loaded,
+    abilities: { ...loaded.abilities, limit_order: false },
+  });
+  assert.deepEqual(off.actions, []);
+  assert.equal("limit_order" in off, false);
+});
+
+test("an empty price bound leaves the API's default, and a typed one is checked against the cap", () => {
+  const policy = policyFromRules(null, rules());
+  assert.equal("limit_order" in policy, false);
+  assert.equal(rulesProblem(rules()), null);
+  assert.equal(rulesProblem(rules({ limitOrderDeviationBps: "300" })), null);
+  assert.equal(rulesProblem(rules({ limitOrderDeviationBps: "0" })), null);
+  for (const bad of ["301", "-1", "1.5", "abc"])
+    assert.match(rulesProblem(rules({ limitOrderDeviationBps: bad })) ?? "", /price bound/, bad);
+  // A bound nobody can use is not checked.
+  assert.equal(
+    rulesProblem(
+      rules({
+        limitOrderDeviationBps: "999",
+        abilities: { ...defaultRules.abilities, limit_order: false },
+      }),
+    ),
+    null,
+  );
+  assert.equal(
+    policySchema.safeParse({ ...policy, limit_order: { max_deviation_bps: 301 } }).success,
+    false,
+  );
+  assert.equal(policySchema.safeParse({ ...policy, limit_order: {} }).success, false);
 });
 
 test("tokens and per-move caps are the policy's assets and limits, with no provider aliases", () => {
