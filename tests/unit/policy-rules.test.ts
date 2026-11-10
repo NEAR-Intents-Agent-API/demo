@@ -455,9 +455,9 @@ test("sign_intent, sign_in and sign_transfer round-trip and are omitted when off
   assert.deepEqual(policy.native, native);
   assert.deepEqual(rulesFromPolicy(policy).native, native);
   assert.deepEqual(describeNative(native), [
-    `EVM NEAR Intents payloads (pay alice.near; fund 1Click deposits that pay the agent or a receiver; fund 1Click withdrawals to base 0x${"ab".repeat(20)}; slippage and fee up to 150 bps)`,
+    `EVM NEAR Intents payloads (pay alice.near; fund 1Click deposits that pay the agent or a receiver; fund 1Click withdrawals to base 0x${"ab".repeat(20)}; value lost to fees and slippage up to 150 bps)`,
     "Solana sign-in for app.example.com:8443",
-    "Solana NEAR Intents payloads (pay no listed account; slippage and fee up to 100 bps)",
+    "Solana NEAR Intents payloads (pay no listed account; value lost to fees and slippage up to 100 bps)",
     "Solana transfers to allowed destinations",
   ]);
 });

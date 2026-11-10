@@ -70,7 +70,7 @@ export function describeSignIntent(rules: SignIntentRules): string {
     rules.withdrawals?.length
       ? `fund 1Click withdrawals to ${rules.withdrawals.map(withdrawalLabel).join(", ")}`
       : null,
-    `slippage and fee up to ${slippage} bps`,
+    `value lost to fees and slippage up to ${slippage} bps`,
   ]
     .filter((part) => part !== null)
     .join("; ");
