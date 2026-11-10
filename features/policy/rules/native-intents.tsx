@@ -31,8 +31,9 @@ function receiverProblem(list: readonly string[], account: string): string | nul
 }
 
 /**
- * The widest slippage plus 1Click fee a signed deposit may allow, in basis points. A typed value
- * is kept only while it is valid; leaving the field puts the saved value back.
+ * The most value a signed deposit may lose, in basis points: from the amount sent to the
+ * quote's guaranteed minimum, by 1Click's signed USD amounts. A typed value is kept only while it
+ * is valid; leaving the field puts the saved value back.
  */
 function SlippageField({
   value,
@@ -57,9 +58,10 @@ function SlippageField({
   };
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>Most slippage and fees (basis points)</Label>
+      <Label htmlFor={id}>Most value lost (basis points)</Label>
       <p className="text-xs leading-5 text-muted-foreground">
-        A deposit&rsquo;s quote may allow at most this much slippage plus 1Click&rsquo;s own fee
+        A deposit may lose at most this much between the amount sent and the least the quote
+        guarantees, by 1Click&rsquo;s signed USD amounts, with every fee and the slippage included
         (100 is 1%). Leaving it alone means {signIntentDefaultSlippageBps}; the most you can set is{" "}
         {signIntentSlippageCapBps}. This bounds what a deposit can lose, since no amount limit
         applies.
@@ -230,7 +232,7 @@ export function NativeSignIntent({
             checked={value.one_click_deposits}
             onChange={(one_click_deposits) => set({ ...value, one_click_deposits })}
             label="Fund 1Click deposits"
-            description="A transfer may also fund a 1Click deposit address whose live quote pays the agent or a listed receiver inside NEAR Intents and refunds the agent, for exactly the quoted amount."
+            description="A transfer may also fund a 1Click deposit address whose signed 1Click quote, sent with the request, pays the agent or a listed receiver inside NEAR Intents and refunds the agent, for exactly the quoted amount."
           />
           <NativeWithdrawals
             value={value.withdrawals ?? []}

@@ -290,7 +290,7 @@ export const signInDomainSchema = z
   )
   .refine((host) => Number(host.split(":")[1] ?? 1) <= 65_535, "A port is at most 65535");
 
-/** The widest `sign_intent.max_slippage_bps` an owner may sign, and what applies when it is left out. */
+/** The widest `sign_intent.max_slippage_bps` (the most value a deposit may lose) an owner may sign, and what applies when it is left out. */
 export const signIntentSlippageCapBps = 300;
 export const signIntentDefaultSlippageBps = 100;
 

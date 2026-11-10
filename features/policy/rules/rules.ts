@@ -177,7 +177,7 @@ export function rulesProblem(rules: Rules): string | null {
   if (!native.success)
     return native.error.issues.some((issue) => issue.message.includes("intents.near"))
       ? "intents.near and intents.far can never be listed for native methods."
-      : "Every native sign-in service must be a unique NEAR account or domain, every contract and receiver a unique NEAR account, every sign-in domain a lowercase host, every withdrawal address unique and spelled as destinations are, slippage 0 to 300 basis points, and every typed data domain unique.";
+      : "Every native sign-in service must be a unique NEAR account or domain, every contract and receiver a unique NEAR account, every sign-in domain a lowercase host, every withdrawal address unique and spelled as destinations are, most value lost 0 to 300 basis points, and every typed data domain unique.";
   const limitOrder = limitOrderProblem(rules);
   if (limitOrder) return limitOrder;
   const perHour = rules.maxPerHour.trim();
