@@ -67,10 +67,14 @@ export const TOKEN_LOGOS_BY_ASSET: Readonly<Record<string, string>> = {
   "nep141:bera.omft.near": "https://s2.coinmarketcap.com/static/img/coins/128x128/24647.png",
   "nep245:v2_1.omni.hot.tg:56_11111111111111111111":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/1839.png",
+  "nep141:bnb.omdep.near": "https://s2.coinmarketcap.com/static/img/coins/128x128/1839.png",
   "nep245:v2_1.omni.hot.tg:56_12zbnsg6xndDVj25QyL82YMPudb":
+    "https://s2.coinmarketcap.com/static/img/coins/128x128/36341.png",
+  "nep141:bnb-0x000ae314e2a2172a039b26378814c252734f556a.omdep.near":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/36341.png",
   "nep245:v2_1.omni.hot.tg:137_11111111111111111111":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/28321.png",
+  "nep141:pol.omdep.near": "https://s2.coinmarketcap.com/static/img/coins/128x128/28321.png",
   "nep141:base-0x98d0baa52b2d063e780de12f615f963fe8537553.omft.near":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/35763.png",
   "nep141:tron.omft.near": "https://s2.coinmarketcap.com/static/img/coins/128x128/1958.png",
@@ -80,6 +84,7 @@ export const TOKEN_LOGOS_BY_ASSET: Readonly<Record<string, string>> = {
     "https://s2.coinmarketcap.com/static/img/coins/128x128/11840.png",
   "nep245:v2_1.omni.hot.tg:43114_11111111111111111111":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/5805.png",
+  "nep141:avax.omdep.near": "https://s2.coinmarketcap.com/static/img/coins/128x128/5805.png",
   "nep245:v2_1.omni.hot.tg:1100_111bzQBB5v7AhLyPMDwS8uJgQV24KaAPXtwyVWu2KXbbfQU6NXRCz":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/512.png",
   "nep141:eth-0x2260fac5e5542a773aa44fbcfedf7c193bc2c599.omft.near":
@@ -119,11 +124,19 @@ export const TOKEN_LOGOS_BY_ASSET: Readonly<Record<string, string>> = {
     "https://s2.coinmarketcap.com/static/img/coins/128x128/825.png",
   "nep245:v2_1.omni.hot.tg:137_qiStmoQJDQPTebaPjgx5VBxZv6L":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/3408.png",
+  "nep141:pol-0x3c499c542cef5e3811e1192ce70d8cc03d5c3359.omdep.near":
+    "https://s2.coinmarketcap.com/static/img/coins/128x128/3408.png",
   "nep245:v2_1.omni.hot.tg:137_3hpYoaLtt8MP1Z2GH1U473DMRKgr":
+    "https://s2.coinmarketcap.com/static/img/coins/128x128/825.png",
+  "nep141:pol-0xc2132d05d31c914a87c6611c10748aeb04b58e8f.omdep.near":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/825.png",
   "nep245:v2_1.omni.hot.tg:56_2w93GqMcEmQFDru84j3HZZWt557r":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/3408.png",
+  "nep141:bnb-0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d.omdep.near":
+    "https://s2.coinmarketcap.com/static/img/coins/128x128/3408.png",
   "nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g":
+    "https://s2.coinmarketcap.com/static/img/coins/128x128/825.png",
+  "nep141:bnb-0x55d398326f99059ff775485246999027b3197955.omdep.near":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/825.png",
   "nep141:eth-0xd9c2d319cd7e6177336b0a9c93c21cb48d84fb54.omft.near":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/8567.png",
@@ -137,6 +150,8 @@ export const TOKEN_LOGOS_BY_ASSET: Readonly<Record<string, string>> = {
     "https://s2.coinmarketcap.com/static/img/coins/128x128/21351.png",
   "nep245:v2_1.omni.hot.tg:56_28V9BijGeZDBFEEtkAcnJo4tPRH4":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/21351.png",
+  "nep141:bnb-0x510ad22d8c956dcc20f68932861f54a591001283.omdep.near":
+    "https://s2.coinmarketcap.com/static/img/coins/128x128/21351.png",
   "nep141:aptos-88cb7619440a914fe6400149a12b443c3ac21d59.omft.near":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/825.png",
   "nep245:v2_1.omni.hot.tg:10_11111111111111111111":
@@ -147,7 +162,11 @@ export const TOKEN_LOGOS_BY_ASSET: Readonly<Record<string, string>> = {
     "https://s2.coinmarketcap.com/static/img/coins/128x128/3408.png",
   "nep245:v2_1.omni.hot.tg:43114_372BeH7ENZieCaabwkbWkBiTTgXp":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/825.png",
+  "nep141:avax-0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7.omdep.near":
+    "https://s2.coinmarketcap.com/static/img/coins/128x128/825.png",
   "nep245:v2_1.omni.hot.tg:43114_3atVJH3r5c4GqiSYmg9fECvjc47o":
+    "https://s2.coinmarketcap.com/static/img/coins/128x128/3408.png",
+  "nep141:avax-0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e.omdep.near":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/3408.png",
   "nep245:v2_1.omni.hot.tg:1117_3tsdfyziyc7EJbP2aULWSKU4toBaAcN4FdTgfm5W1mC4ouR":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/825.png",
@@ -157,9 +176,13 @@ export const TOKEN_LOGOS_BY_ASSET: Readonly<Record<string, string>> = {
     "https://s2.coinmarketcap.com/static/img/coins/128x128/3408.png",
   "nep245:v2_1.omni.hot.tg:56_24S22V8GMmQN8t6PbCdRb3mBewAd":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/37529.png",
+  "nep141:bnb-0x4c067de26475e1cefee8b8d1f6e2266b33a2372e.omdep.near":
+    "https://s2.coinmarketcap.com/static/img/coins/128x128/37529.png",
   "nep141:sol-1f00bb36e75cfc8e1274c1507cc3054f5b3f3ce1.omft.near":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/37728.png",
   "nep245:v2_1.omni.hot.tg:56_SZzgw3HSudhZcTwPWUTi2RJB19t":
+    "https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png",
+  "nep141:bnb-0x1fa4a73a3f0133f0025378af00236f3abdee5d63.omdep.near":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png",
   "nep141:sol-c634d063ceff771aff0c972ec396fd915a6bbd0e.omft.near":
     "https://s2.coinmarketcap.com/static/img/coins/128x128/28081.png",
@@ -271,6 +294,8 @@ export const TOKEN_LOGOS_BY_ASSET: Readonly<Record<string, string>> = {
   "nep245:v2_1.omni.hot.tg:10_vLAiSt9KfUGKpw5cD3vsSyNYBn5":
     "https://assets.coingecko.com/coins/images/2518/large/weth.png",
   "nep245:v2_1.omni.hot.tg:137_2jwTGwKRX3AEe7tyzDrxtDjEFgSt":
+    "https://assets.coingecko.com/coins/images/2518/large/weth.png",
+  "nep141:pol-0x7ceb23fd6bc0add59e62ac25578270cff1b9f619.omdep.near":
     "https://assets.coingecko.com/coins/images/2518/large/weth.png",
   "nep245:v2_1.omni.hot.tg:534352_11111111111111111111":
     "https://assets.coingecko.com/coins/images/279/large/ethereum.png",
