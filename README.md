@@ -23,17 +23,20 @@ OpenClaw, all under rules the owner signed.
 - **One-signature agent creation** with a plain-language rules editor (what it can do, which
   tokens, the most one move may spend, where funds can go, owner approval, and the agent's own
   NEAR, EVM and Solana keys outside NEAR Intents, all off by default).
-- **Wallet tab**: holdings with USD values (public and confidential), swap, transfer, deposit,
-  withdraw and make confidential/make public, each against the public or confidential balance. Amount
-  fields use the API's `available` balance (the balance minus queued or timelocked work), and a
-  swap or withdrawal preview lists every rule or balance check the live request would fail as a
-  warning.
-- **Orders tab**: resting limit orders on the public or confidential balance. A dry preview shows
+- **Wallet tab**: holdings with USD values, swap, transfer, deposit and withdraw, all from the
+  confidential balance, which is where every new account keeps its funds. Transfers and
+  withdrawals take an optional Reference (shared with the payee through the receipt) and Note (the
+  account's own record). A public balance left from before shows read-only, with only Shield and
+  Withdraw. Amount fields use the API's `available` balance (the balance minus queued or
+  timelocked work), and a swap or withdrawal preview lists every rule or balance check the live
+  request would fail as a warning.
+- **Orders tab**: resting limit orders on the confidential balance. A dry preview shows
   what the order locks and the least a full fill delivers; orders are listed live with their fills
   and payouts, and can be cancelled one at a time or all at once. The Rules tab has a Limit orders
   switch and a price bound against the market; switching it off cancels resting orders.
-- **Activity and Rules tabs**: operations and pending owner approvals; live rules, emergency
-  stop, USD budget and execution delay, all editable in place.
+- **Activity and Rules tabs**: operations, a Receipts view of settled executions (each can be
+  checked against the Agent API's transparency log with Verify) and pending owner approvals; live
+  rules, emergency stop, USD budget and execution delay, all editable in place.
 - **MCP/OAuth server**: one endpoint per account, one owner-signed grant per client, instant revocation.
 - **Live token catalogue** from the Agent API's public `GET /v1/tokens`.
 
@@ -60,6 +63,7 @@ BETTER_AUTH_SECRET=YOUR_BETTER_AUTH_SECRET
 |---|---|
 | `NEAR_INTENTS_AGENT_API_URL` | A running [Agent API](https://github.com/NEAR-Intents-Agent-API/api); hosted: `https://api.agentsonintents.com` |
 | `NEAR_INTENTS_AGENT_API_KEY` | A server-only partner API key, created in the partner portal for the API you point at: [partners.near-intents.org](https://partners.near-intents.org) for `https://api.agentsonintents.com`, [partners.demo.agentsonintents.com](https://partners.demo.agentsonintents.com) for the staging API at `https://api.demo.agentsonintents.com`. The portal shows a key once and it expires after 365 days; keys created before the partner portal are retired and the API answers `401 api_key_retired` |
+| `RECEIPT_LOG_ORIGIN`, `RECEIPT_LOG_URL`, `RECEIPT_WITNESS_KEY` | Optional. What Verify on a receipt trusts: the log's origin, its HTTPS tile URL and the witness public key (hex). Defaults pin the production Agent API (`api.agentsonintents.com/log`, `https://log.agentsonintents.com/`); set all three to verify receipts from another deployment |
 | `DATABASE_URL` | `pnpm docker:up` creates `near_intents_agent_demo` as database, user and password; use that password |
 | `SECRET_ENCRYPTION_KEY`, `BETTER_AUTH_SECRET` | Two separate 32–64 character secrets, each from `openssl rand -hex 32` |
 

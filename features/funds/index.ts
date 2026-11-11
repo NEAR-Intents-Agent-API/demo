@@ -20,4 +20,5 @@ export { OperationsPanel } from "./operations/operations-panel";
 export { useOperations } from "./operations/use-operations";
 export { OrdersPanel } from "./orders/orders-panel";
 export { type Lane, Portfolio } from "./portfolio/portfolio";
+export { ReceiptsPanel } from "./receipts/receipts-panel";
 export { useAccess, useHoldings } from "./use-funds";

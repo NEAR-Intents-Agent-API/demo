@@ -48,3 +48,30 @@ export function demoConfig(settings: ReturnType<typeof parseDemoEnv>, origin: st
   };
 }
 export type DemoEnv = ReturnType<typeof demoConfig>;
+
+/**
+ * What a receipt check trusts, pinned in this deployment's own config and never read from an API
+ * response. The defaults pin the production Agent API's transparency log and witness; point the
+ * three variables at another deployment's log to verify its receipts.
+ */
+export const receiptPinsSchema = z.object({
+  RECEIPT_LOG_ORIGIN: z.string().min(1).default("api.agentsonintents.com/log"),
+  RECEIPT_LOG_URL: z.url({ protocol: /^https$/ }).default("https://log.agentsonintents.com/"),
+  RECEIPT_WITNESS_KEY: z
+    .string()
+    .regex(/^[0-9a-f]{64}$/)
+    .default("598165a18b588f504e159c0e2573d73983ae22bf15cf80d36902276d63a11101"),
+});
+
+export function parseReceiptPins(environment: Record<string, string | undefined> = process.env) {
+  const result = receiptPinsSchema.safeParse({
+    RECEIPT_LOG_ORIGIN: environment.RECEIPT_LOG_ORIGIN || undefined,
+    RECEIPT_LOG_URL: environment.RECEIPT_LOG_URL || undefined,
+    RECEIPT_WITNESS_KEY: environment.RECEIPT_WITNESS_KEY || undefined,
+  });
+  if (!result.success)
+    throw new Error(
+      `Invalid receipt configuration: ${result.error.issues.map((issue) => issue.path.join(".")).join(", ")}`,
+    );
+  return result.data;
+}

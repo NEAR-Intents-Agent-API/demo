@@ -39,6 +39,10 @@ export const errorMessages: Record<string, string> = {
     "The signature did not verify. Sign again with the same wallet.",
   policy_delegate_signature_invalid:
     "The signature did not verify. Sign again with the same wallet.",
+  receipt_not_available:
+    "Only settled transfers, withdrawals, swaps, limit orders and deposits have a receipt.",
+  transparency_log_disabled:
+    "This deployment does not run a transparency log, so there are no receipts.",
   agent_api_unreachable: "The Agent API is unreachable. Retry in a moment.",
   network_unreachable: "Could not reach the dashboard server. Check your connection and try again.",
   network_mismatch: "The Agent API is on a different network than this dashboard.",
@@ -394,6 +398,8 @@ export function errorMessage(source: unknown): string {
  */
 const PERMANENT_CODES = new Set([
   "public_balance_exit_only",
+  "receipt_not_available",
+  "transparency_log_disabled",
   "intent_expired",
   "intent_not_found",
   "intent_payload_mismatch",
