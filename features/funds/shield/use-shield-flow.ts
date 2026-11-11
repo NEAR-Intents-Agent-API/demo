@@ -1,28 +1,27 @@
 "use client";
-import { useState } from "react";
 import { useFunds } from "../funds-context";
 import { useIdempotencyKey } from "../model/use-idempotency-key";
 import { amountReason, useSourceAmount, useTracking } from "../model/use-move";
 import { useFundsAction } from "../use-funds";
-import { COPY, type Direction } from "./private-utils";
 
-export function usePrivateFlow() {
+/**
+ * Moving the legacy public balance into the confidential one. It is the only move between the
+ * two: the confidential balance can never be made public again.
+ */
+export function useShieldFlow() {
   const funds = useFunds();
-  const [direction, setDirection] = useState<Direction>("shield");
-  const lane = direction === "shield" ? funds.holdings : funds.privateHoldings;
-  const source = useSourceAmount(lane);
+  const source = useSourceAmount(funds.publicHoldings);
   const { tracking, track, clear } = useTracking();
   const action = useFundsAction(funds.agent.id);
   const { token, atomic } = source;
-  const key = useIdempotencyKey(`${direction}|${token?.assetId}|${atomic}`);
-  const copy = COPY[direction];
+  const key = useIdempotencyKey(`shield|${token?.assetId}|${atomic}`);
 
-  const reason = amountReason({ ...source, empty: copy.empty });
+  const reason = amountReason({ ...source, empty: "Nothing in the public balance to shield" });
   const move = () => {
     if (!token || !atomic) return;
     action.mutate(
       {
-        tool: direction,
+        tool: "shield",
         args: { token: token.assetId, amount: atomic.toString(), idempotencyKey: key },
       },
       { onSuccess: track },
@@ -33,19 +32,7 @@ export function usePrivateFlow() {
     clear();
     source.setPicked(null);
     source.setAmount("");
-
     action.reset();
   };
-  return {
-    resetDraft,
-    direction,
-    setDirection,
-    source,
-    tracking,
-    clear,
-    action,
-    copy,
-    reason,
-    move,
-  };
+  return { resetDraft, source, tracking, clear, action, reason, move };
 }

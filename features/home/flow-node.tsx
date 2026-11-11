@@ -2,7 +2,6 @@ import {
   ArrowDataTransferHorizontalIcon,
   ArrowUp02Icon,
   SentIcon,
-  ViewOffSlashIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ChainStack } from "@/features/assets";
@@ -45,7 +44,6 @@ export function FlowNode({ node }: { node: FlowDiagramNode }) {
               ["Swap", ArrowDataTransferHorizontalIcon],
               ["Transfer", SentIcon],
               ["Withdraw", ArrowUp02Icon],
-              ["Make confidential", ViewOffSlashIcon],
             ] as const
           ).map(([label, verbIcon]) => (
             <span

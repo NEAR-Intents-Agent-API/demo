@@ -7,6 +7,7 @@ import { BalanceContext } from "../flows/balance-context";
 import { DestinationPicker } from "../flows/destination-picker";
 import { FlowButton, FlowError, FlowShell } from "../flows/flow-parts";
 import { QuoteWarnings } from "../flows/quote-warnings";
+import { ReceiptFields } from "../flows/receipt-fields";
 import { NetworkChoice } from "./network-choice";
 import type { useWithdrawFlow } from "./use-withdraw-flow";
 import { WithdrawReview } from "./withdraw-review";
@@ -60,6 +61,13 @@ export function WithdrawFlow({ view }: { view: ReturnType<typeof useWithdrawFlow
           onManage={() =>
             funds.manageDestinations({ action: "withdraw", chain: view.network ?? undefined })
           }
+        />
+
+        <ReceiptFields
+          labels={view.labels}
+          id="withdraw"
+          withReference
+          disabled={action.isPending}
         />
 
         {args && token && atomic && view.network ? (

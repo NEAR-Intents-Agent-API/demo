@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Holding } from "../use-funds";
 import { PortfolioAssetsDialog } from "./portfolio-assets-dialog";
@@ -26,6 +27,7 @@ export function Portfolio({
   onAddFunds,
   embedded = false,
   showLaneSwitch = true,
+  onLegacyAction,
 }: {
   lane: Lane;
   onLane: (lane: Lane) => void;
@@ -42,6 +44,8 @@ export function Portfolio({
   onAddFunds?: () => void;
   embedded?: boolean;
   showLaneSwitch?: boolean;
+  /** The legacy public balance can only be shielded or withdrawn. */
+  onLegacyAction?: (action: "shield" | "withdraw") => void;
 }) {
   const assets = usePortfolioDialog();
   const visible = holdings.filter((holding) => holding.raw > 0n);
@@ -75,6 +79,33 @@ export function Portfolio({
           />
         ) : null}
       </PortfolioSummary>
+      {lane === "public" && onLegacyAction ? (
+        <div className="mt-4 flex flex-col gap-2">
+          <p className="text-xs leading-5 text-muted-foreground">
+            This balance is read-only. Everything the account does now runs on the confidential
+            balance, so funds left here can only be shielded or withdrawn.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              className="flex-1"
+              disabled={laneDisabled}
+              onClick={() => onLegacyAction("shield")}
+            >
+              Shield
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1"
+              disabled={laneDisabled}
+              onClick={() => onLegacyAction("withdraw")}
+            >
+              Withdraw
+            </Button>
+          </div>
+        </div>
+      ) : null}
       <PortfolioAssetsDialog
         open={assets.open}
         onOpenChange={assets.setOpen}

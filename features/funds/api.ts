@@ -18,10 +18,8 @@ export type FundsTool =
   | "cancel_limit_order"
   | "cancel_all_limit_orders"
   | "withdraw"
-  | "intents_transfer"
   | "confidential_transfer"
   | "shield"
-  | "unshield"
   | "create_cross_chain_deposit";
 
 /** What the Agent API says about an owner grant; the signed message itself stays server-side. */

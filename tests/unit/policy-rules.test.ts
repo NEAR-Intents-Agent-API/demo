@@ -53,20 +53,49 @@ test("each ability maps to one policy switch", () => {
       limit_order: false,
       transfer: false,
       withdraw: false,
-      confidential: false,
     },
   });
   const policy = policyFromRules(null, off);
   assert.deepEqual(policy.actions, []);
-  assert.equal(policy.confidential, false);
   assert.deepEqual(rulesFromPolicy(policy).abilities, off.abilities);
 
-  const swapOnly = policyFromRules(
-    null,
-    rules({ abilities: { ...off.abilities, swap: true, confidential: true } }),
-  );
+  const swapOnly = policyFromRules(null, rules({ abilities: { ...off.abilities, swap: true } }));
   assert.deepEqual(swapOnly.actions, ["swap"]);
   assert.equal(swapOnly.confidential, true);
+});
+
+test("a stored public-balance policy still reads, and saving it moves every rule to the confidential balance", () => {
+  const stored = policySchema.parse({
+    ...policyFromRules(null, rules()),
+    confidential: false,
+    destinations: {
+      mode: "only",
+      list: [
+        { action: "transfer", address: "alice.near", confidential: false },
+        { action: "transfer", address: "alice.near", confidential: true },
+        {
+          action: "withdraw",
+          chain: "eth",
+          address: "0x20b66648b41ee2c24789df95bd3129d1a6fe2367",
+          memo: null,
+        },
+      ],
+    },
+  });
+  const loaded = rulesFromPolicy(stored);
+  assert.equal(loaded.publicPolicy, true);
+  const saved = policyFromRules(stored, loaded);
+  assert.equal(saved.confidential, true);
+  assert.deepEqual(saved.destinations.list, [
+    { action: "transfer", address: "alice.near", confidential: true },
+    {
+      action: "withdraw",
+      chain: "eth",
+      address: "0x20b66648b41ee2c24789df95bd3129d1a6fe2367",
+      memo: null,
+    },
+  ]);
+  assert.equal(rulesFromPolicy(saved).publicPolicy, false);
 });
 
 test("limit orders survive a rules save, with their price bound, unless the owner turns them off", () => {
@@ -200,7 +229,7 @@ test("destinations are the account's one rule, in the API's own shape", () => {
     destinations: {
       mode: "only",
       list: [
-        { action: "transfer", address: "alice.near", confidential: false },
+        { action: "transfer", address: "alice.near", confidential: true },
         { action: "withdraw", chain: "eth", address: `0x${"a".repeat(40)}`, memo: null },
       ],
     },
@@ -209,7 +238,7 @@ test("destinations are the account's one rule, in the API's own shape", () => {
   assert.deepEqual(policy.destinations, only.destinations);
   assert.deepEqual(rulesFromPolicy(policy).destinations, only.destinations);
   policySchema.parse(policy);
-  // The private balance works with any destination rule: shield/unshield name no destination.
+  // The private balance works with any destination rule: shield names no destination.
   assert.equal(rulesProblem(only), null);
   assert.equal(rulesProblem(rules()), null, "an empty list is a valid rule");
   assert.match(

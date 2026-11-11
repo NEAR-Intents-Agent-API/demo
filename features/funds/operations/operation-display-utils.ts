@@ -42,7 +42,7 @@ const ACTION_LABELS: Readonly<Record<string, string>> = {
   intents_transfer: "Transfer funds",
   confidential_transfer: "Confidential transfer",
   cross_chain_deposit: "Deposit funds",
-  shield: "Make confidential",
+  shield: "Shield",
   unshield: "Make public",
   swap: "Swap tokens",
   limit_order: "Limit order",

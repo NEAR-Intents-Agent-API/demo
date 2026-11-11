@@ -1,4 +1,4 @@
-import type { DestinationRule, Policy, Schedule } from "@near-intents-agent-api/sdk";
+import type { Destination, DestinationRule, Policy, Schedule } from "@near-intents-agent-api/sdk";
 import {
   limitOrderDefaultDeviationBps,
   limitOrderDeviationCapBps,
@@ -16,18 +16,20 @@ import { nativeEnabled, nativeOff } from "./native";
  * compiles the policy to the custody provider; nothing provider-specific lives here.
  */
 
-export const ABILITIES = ["swap", "limit_order", "transfer", "withdraw", "confidential"] as const;
+export const ABILITIES = ["swap", "limit_order", "transfer", "withdraw"] as const;
 export type Ability = (typeof ABILITIES)[number];
-
-/** The policy action behind each ability; `confidential` is a separate policy switch. */
-type PolicyAction = Policy["actions"][number];
-const ACTION_ABILITIES: readonly PolicyAction[] = ["swap", "limit_order", "transfer", "withdraw"];
 
 /** Rules for one token: the most a single move may spend, in the token's smallest unit. */
 export type TokenLimit = { assetId: string; perTransaction: string };
 
 export type Rules = {
   abilities: Record<Ability, boolean>;
+  /**
+   * The saved policy still lets the account use the public balance: `confidential` off, or a
+   * transfer destination on a public account. Read-only: every policy written from these rules
+   * is confidential, so saving anything, or just updating, clears it.
+   */
+  publicPolicy: boolean;
   /** `"any"`, or the exact asset ids the agent may spend; a swap may still buy an unlisted one. */
   tokens: "any" | string[];
   limits: TokenLimit[];
@@ -51,7 +53,8 @@ export type Rules = {
 
 /** A new agent can do everything NEAR Intents offers, to any destination, until the owner narrows it. */
 export const defaultRules: Rules = {
-  abilities: { swap: true, limit_order: true, transfer: true, withdraw: true, confidential: true },
+  abilities: { swap: true, limit_order: true, transfer: true, withdraw: true },
+  publicPolicy: false,
   tokens: "any",
   limits: [],
   maxPerHour: "",
@@ -73,8 +76,8 @@ export function rulesFromPolicy(policy: Policy | null): Rules {
       limit_order: policy.actions.includes("limit_order"),
       transfer: policy.actions.includes("transfer"),
       withdraw: policy.actions.includes("withdraw"),
-      confidential: policy.confidential,
     },
+    publicPolicy: usesPublicBalance(policy),
     tokens: policy.assets === "any" ? "any" : [...new Set(policy.assets)],
     limits: Object.entries(policy.limits.per_transaction ?? {}).map(
       ([assetId, perTransaction]) => ({ assetId, perTransaction }),
@@ -104,19 +107,41 @@ export function policyFromRules(current: Policy | null, rules: Rules): Policy {
   const { abilities } = rules;
   return {
     frozen: rules.frozen,
-    actions: ACTION_ABILITIES.filter((ability) => abilities[ability]),
-    confidential: abilities.confidential,
+    actions: ABILITIES.filter((ability) => abilities[ability]),
+    // The API refuses a new policy that is not confidential, or that lists a public transfer.
+    confidential: true,
     owner_approval: rules.approval,
     assets: rules.tokens === "any" ? "any" : [...rules.tokens],
     limits: limitsFromRules(current, rules),
     max_actions_per_hour: maxPerHourFromRules(rules),
-    destinations: rules.destinations,
+    destinations: confidentialDestinations(rules.destinations),
     budget: budgetFromRules(rules),
     timelock_ms: delayMsFromRules(rules),
     ...(rules.schedule ? { schedule: rules.schedule } : {}),
     ...limitOrderFromRules(rules),
     ...(nativeEnabled(rules.native) ? { native: structuredClone(rules.native) } : {}),
   };
+}
+
+/** A saved policy from before the confidential balance became the account's only one. */
+function usesPublicBalance(policy: Policy): boolean {
+  return (
+    !policy.confidential ||
+    policy.destinations.list.some((item) => item.action === "transfer" && !item.confidential)
+  );
+}
+
+/** Every transfer destination is confidential in a new policy; a public one and its twin merge. */
+function confidentialDestinations(rule: DestinationRule): DestinationRule {
+  const seen = new Set<string>();
+  const list = rule.list.flatMap((item): Destination[] => {
+    const next = item.action === "transfer" ? { ...item, confidential: true } : item;
+    const key = JSON.stringify(next);
+    if (seen.has(key)) return [];
+    seen.add(key);
+    return [next];
+  });
+  return { ...rule, list };
 }
 
 function limitsFromRules(current: Policy | null, rules: Rules): Policy["limits"] {

@@ -122,7 +122,6 @@ test("an order is only quotable with two tokens, an amount and an exact price", 
     side: "sell" as const,
     quantity: 5n,
     price: "5.2",
-    confidential: false,
   };
   assert.deepEqual(buildOrderRequest(input), {
     base_asset: "nep141:wrap.near",
@@ -130,7 +129,6 @@ test("an order is only quotable with two tokens, an amount and an exact price", 
     side: "sell",
     quantity: "5",
     price: "5.2",
-    confidential: false,
   });
   for (const patch of [
     { quote: NEAR },

@@ -5,13 +5,13 @@ import { AmountField } from "../flows/amount-field";
 import { BalanceContext } from "../flows/balance-context";
 import { DestinationPicker } from "../flows/destination-picker";
 import { FlowButton, FlowError, FlowShell } from "../flows/flow-parts";
+import { ReceiptFields } from "../flows/receipt-fields";
 import { ReviewCard } from "../flows/review-card";
 import type { useSendFlow } from "./use-send-flow";
 
 export function SendFlow({ view }: { view: ReturnType<typeof useSendFlow> }) {
   const {
     funds,
-    lane,
     source,
     setRecipient,
     destinations,
@@ -19,7 +19,6 @@ export function SendFlow({ view }: { view: ReturnType<typeof useSendFlow> }) {
     nearcom,
     tracking,
     action,
-    confidential,
     reason,
     send,
   } = view;
@@ -33,7 +32,7 @@ export function SendFlow({ view }: { view: ReturnType<typeof useSendFlow> }) {
       onDone={view.resetDraft}
     >
       <div className="flex flex-col gap-4">
-        <BalanceContext label="Transfer from" lane={lane} />
+        <BalanceContext label="Transfer from" />
         <AmountField
           label="You send"
           token={token}
@@ -56,22 +55,26 @@ export function SendFlow({ view }: { view: ReturnType<typeof useSendFlow> }) {
           value={view.displayRecipient}
           onChange={setRecipient}
           open={view.open}
-          onManage={() => funds.manageDestinations({ action: view.transferAction })}
+          onManage={() => funds.manageDestinations({ action: "confidential_transfer" })}
           placeholder="NEAR account or near.com address (nearcom:…)"
         />
 
         {nearcom ? (
           <p className="text-xs leading-5 text-muted-foreground">
-            {confidential
-              ? "near.com address: it arrives in the confidential balance near.com shows."
-              : "near.com address: a public transfer arrives in their legacy public balance, not the confidential balance near.com shows. Transfer from the confidential balance to reach it."}
+            near.com address: it arrives in the confidential balance near.com shows.
           </p>
         ) : null}
+
+        <ReceiptFields
+          labels={view.labels}
+          id="transfer"
+          withReference
+          disabled={action.isPending}
+        />
 
         {token && atomic && recipient ? (
           <ReviewCard
             rows={[
-              { label: "Balance", value: confidential ? "Confidential balance" : "Public balance" },
               {
                 label: "Amount",
                 value: `${formatDisplay(atomic.toString(), token.decimals)} ${token.symbol}`,
@@ -79,9 +82,7 @@ export function SendFlow({ view }: { view: ReturnType<typeof useSendFlow> }) {
               },
               {
                 label: "Route",
-                value: confidential
-                  ? "Confidential NEAR Intents transfer"
-                  : "NEAR Intents · no fee",
+                value: "Confidential NEAR Intents transfer",
               },
               { label: "Recipient", value: <span className="console-id">{recipient}</span> },
             ]}

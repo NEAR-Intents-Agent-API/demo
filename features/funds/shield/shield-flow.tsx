@@ -6,35 +6,25 @@ import { formatDisplay } from "@/lib/format/amount";
 import { AmountField } from "../flows/amount-field";
 import { FlowButton, FlowError, FlowShell } from "../flows/flow-parts";
 import { ReviewCard } from "../flows/review-card";
-import { DirectionSwitch } from "./direction-switch";
-import type { usePrivateFlow } from "./use-private-flow";
+import type { useShieldFlow } from "./use-shield-flow";
 
-export function PrivateFlow({ view }: { view: ReturnType<typeof usePrivateFlow> }) {
-  const { direction, setDirection, source, tracking, action, copy, reason, move } = view;
+export function ShieldFlow({ view }: { view: ReturnType<typeof useShieldFlow> }) {
+  const { source, tracking, action, reason, move } = view;
   const { token, atomic } = source;
 
   return (
-    <FlowShell
-      ability="confidential"
-      tracking={tracking}
-      title={`${copy.label}: ${token?.symbol ?? ""}`}
-      onDone={view.resetDraft}
-    >
+    <FlowShell tracking={tracking} title={`Shield ${token?.symbol ?? ""}`} onDone={view.resetDraft}>
       <div className="flex flex-col gap-4">
-        <DirectionSwitch
-          value={direction}
-          onChange={(next) => {
-            setDirection(next);
-            source.setAmount("");
-          }}
-        />
-
         <div className="flex items-center gap-3 text-sm">
-          <span className="font-medium">{copy.from}</span>
+          <span className="font-medium">Legacy public balance</span>
           <HugeiconsIcon icon={ArrowRight01Icon} className="size-4 text-muted-foreground" />
-          <span className="font-medium">{copy.to}</span>
+          <span className="font-medium">Confidential balance</span>
         </div>
-        <p className="-mt-2 text-xs leading-5 text-muted-foreground">{copy.blurb}</p>
+        <p className="-mt-2 text-xs leading-5 text-muted-foreground">
+          Moves funds into the confidential balance, off the public NEAR chain. The move itself is
+          public, and operators and solvers can still see the funds. It cannot be undone: the
+          confidential balance cannot be made public again.
+        </p>
 
         <AmountField
           label="Amount"
@@ -64,7 +54,7 @@ export function PrivateFlow({ view }: { view: ReturnType<typeof usePrivateFlow> 
 
         <FlowError error={action.error} />
         <FlowButton busy={action.isPending} disabled={Boolean(reason)} onClick={move}>
-          {reason ?? (action.isPending ? "Moving…" : copy.label)}
+          {reason ?? (action.isPending ? "Moving…" : "Shield")}
         </FlowButton>
       </div>
     </FlowShell>

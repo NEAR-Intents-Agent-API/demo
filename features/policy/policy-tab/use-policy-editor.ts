@@ -1,13 +1,10 @@
 "use client";
 
 import type { AgentView, PolicyView } from "@near-intents-agent-api/sdk";
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useCatalog } from "@/features/assets";
 import { DemoApiError } from "@/lib/http/request";
 import { rulesState } from "@/lib/policy/rules-state";
-import { queryKeys } from "@/lib/query/keys";
-import { policyApi } from "../api";
 import { policyFromRules, type Rules, rulesFromPolicy } from "../rules/rules";
 import { pendingChange } from "./pending-change";
 import { changedRuleSettings } from "./rule-changes-utils";
@@ -43,17 +40,6 @@ export function usePolicyEditor(agent: AgentView, view: PolicyView) {
   // The rules moved on (another tab, a freeze) after this draft was started.
   const stale = Boolean(draft && draft.baseRevision !== revision);
   const changes = editing ? changedRuleSettings(current, editing) : [];
-  const turnsPrivateBalanceOff =
-    changes.some((setting) => setting.id === "confidential") && !editing?.abilities.confidential;
-  const privateBalance = useQuery({
-    queryKey: queryKeys.balances(agent.id, "confidential"),
-    queryFn: () => policyApi.privateBalances(agent.id),
-    enabled: turnsPrivateBalanceOff,
-  });
-  const holdsPrivateFunds = Boolean(
-    turnsPrivateBalanceOff &&
-      privateBalance.data?.balances.some((entry) => BigInt(entry.balance_raw) > 0n),
-  );
 
   const editDraft = (update: (rules: Rules) => Rules) => {
     setConflict(false);
@@ -99,6 +85,14 @@ export function usePolicyEditor(agent: AgentView, view: PolicyView) {
     );
   };
 
+  // A stored public-balance policy keeps working; saving it as it reads rewrites it on the
+  // confidential balance (policyFromRules always writes `confidential: true`).
+  const upgrade = () =>
+    workflow.save.mutate({
+      policy: policyFromRules(view.policy, current),
+      expectedRevision: revision,
+    });
+
   return {
     catalog,
     workflow,
@@ -121,6 +115,6 @@ export function usePolicyEditor(agent: AgentView, view: PolicyView) {
     stale,
     conflict: conflict || stale,
     changeAvailableAt,
-    holdsPrivateFunds,
+    upgrade,
   };
 }

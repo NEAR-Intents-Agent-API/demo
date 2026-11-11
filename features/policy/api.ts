@@ -1,10 +1,4 @@
-import type {
-  BalancesView,
-  Policy,
-  PolicyView,
-  ScheduledPage,
-  SignedData,
-} from "@near-intents-agent-api/sdk";
+import type { Policy, PolicyView, ScheduledPage, SignedData } from "@near-intents-agent-api/sdk";
 import type { IntentStep } from "@/features/intents";
 import type { AccountControls } from "@/lib/agent-api/controls";
 import { DemoApiError, request } from "@/lib/http/request";
@@ -28,9 +22,6 @@ function requireIntentStep(value: unknown): IntentStep {
 
 export const policyApi = {
   policy: (agentId: string) => request<PolicyView>(`/api/agents/${agentId}/policy`),
-  /** The confidential balance, read under the same cache key as the Funds screen's. */
-  privateBalances: (agentId: string) =>
-    request<BalancesView>(`/api/agents/${agentId}/balances?source=confidential`),
   controls: (agentId: string) => request<AccountControls>(`/api/agents/${agentId}/controls`),
   scheduled: (agentId: string, cursor?: string) =>
     request<ScheduledPage>(

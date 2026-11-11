@@ -3,7 +3,6 @@ import {
   ArrowUp02Icon,
   ChartBreakoutSquareIcon,
   SentIcon,
-  ViewOffSlashIcon,
 } from "@hugeicons/core-free-icons";
 import type { Ability } from "./rules";
 
@@ -39,12 +38,5 @@ export const ABILITY_INFO: Record<
     description: "Move funds out of NEAR Intents to an address on NEAR or another network.",
     icon: ArrowUp02Icon,
     off: "Withdrawals are off for this account.",
-  },
-  confidential: {
-    title: "Confidential balance",
-    description:
-      "Hold and move funds in the confidential balance, off the public NEAR chain. Operators and solvers can still see them.",
-    icon: ViewOffSlashIcon,
-    off: "The confidential balance is off for this account.",
   },
 };

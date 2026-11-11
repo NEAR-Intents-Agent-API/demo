@@ -19,7 +19,6 @@ export function PolicyChangeSummary({
   busy,
   stage,
   blockedReason,
-  warning,
   onCancel,
   onSave,
 }: {
@@ -32,8 +31,6 @@ export function PolicyChangeSummary({
   stage: string;
   /** Why signing is not possible right now, even though the draft is valid. */
   blockedReason?: string;
-  /** A consequence of the draft the owner should read before signing. */
-  warning?: string;
   onCancel: () => void;
   onSave: () => void;
 }) {
@@ -86,11 +83,6 @@ export function PolicyChangeSummary({
         {problem ? (
           <p role="alert" className="text-xs text-warning">
             {problem}
-          </p>
-        ) : null}
-        {warning ? (
-          <p role="status" className="text-xs text-warning">
-            {warning}
           </p>
         ) : null}
         {blockedReason ? (

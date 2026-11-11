@@ -2,11 +2,12 @@
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import { AccessStatus } from "../access/access-status";
 import { DepositFlow } from "../deposit/deposit-flow";
 import { useFunds } from "../funds-context";
-import { PrivateFlow } from "../private/private-flow";
 import { SendFlow } from "../send/send-flow";
+import { ShieldFlow } from "../shield/shield-flow";
 import { SwapFlow } from "../swap/swap-flow";
 import { WithdrawFlow } from "../withdraw/withdraw-flow";
 import { FLOWS, type FlowId } from "./flow-options";
@@ -36,6 +37,10 @@ export function MoveFunds({
 }) {
   const funds = useFunds();
   const selectedFlow = effectiveFlow(flow, moreActions);
+  // Shield only exists for the legacy public balance; it stays while it is the open flow.
+  const flows = FLOWS.filter(
+    (item) => item.id !== "shield" || funds.hasPublicBalance || selectedFlow === "shield",
+  );
   const busy =
     selectedFlow === "deposit"
       ? views.deposit.form.action.isPending
@@ -53,9 +58,12 @@ export function MoveFunds({
         {moreActions ? (
           <TabsList
             aria-label="Ways to move funds"
-            className="grid w-full max-w-full grid-cols-5 gap-1 group-data-horizontal/tabs:h-auto"
+            className={cn(
+              "grid w-full max-w-full gap-1 group-data-horizontal/tabs:h-auto",
+              flows.length === 5 ? "grid-cols-5" : "grid-cols-4",
+            )}
           >
-            {FLOWS.map((item) => (
+            {flows.map((item) => (
               <TabsTrigger
                 key={item.id}
                 value={item.id}
@@ -83,8 +91,8 @@ export function MoveFunds({
               <TabsContent value="withdraw" className="m-0">
                 <WithdrawFlow view={views.withdraw} />
               </TabsContent>
-              <TabsContent value="private" className="m-0">
-                <PrivateFlow view={views.private} />
+              <TabsContent value="shield" className="m-0">
+                <ShieldFlow view={views.shield} />
               </TabsContent>
             </>
           ) : null}
@@ -94,7 +102,7 @@ export function MoveFunds({
               onChange={onMoreActions}
               disabled={busy}
               label="More actions"
-              description="Swap, transfer, withdraw and move funds between the public and confidential balance. These spend from the account and need dashboard authorization; deposits don't."
+              description="Swap, transfer, withdraw and shield a legacy public balance. These spend from the account and need dashboard authorization; deposits don't."
             />
           </div>
           <AccessStatus

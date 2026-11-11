@@ -25,7 +25,7 @@ export function DestinationRules({
         onChange={(destinations) => onChange({ ...rules, destinations })}
       />
       <p className="max-w-2xl text-xs leading-5 text-muted-foreground">
-        Swaps and moves between the public and confidential balance stay within this account. This
+        Swaps and shielding stay within this account. Transfers go to confidential accounts. This
         rule applies to the dashboard and every connected client; changing it does not require a new
         grant.
       </p>

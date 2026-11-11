@@ -11,17 +11,11 @@ export function depositReason(
   return null;
 }
 
-export function depositArgs(input: {
-  token: CatalogOption;
-  atomic: bigint | null;
-  confidential: boolean;
-  key: string;
-}) {
+export function depositArgs(input: { token: CatalogOption; atomic: bigint | null; key: string }) {
   return {
-    // The agent is credited the token that was sent, in the chosen balance; refunds go back there.
+    // The agent is credited the token that was sent, in its confidential balance; refunds go back there.
     source_asset: input.token.assetId,
     ...(input.atomic ? { amount: input.atomic.toString() } : {}),
-    confidential: input.confidential,
     idempotencyKey: input.key,
   };
 }

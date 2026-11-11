@@ -101,6 +101,7 @@ const apiCodes = [
   "provider_refused",
   "provider_response_invalid",
   "provider_unavailable",
+  "public_balance_exit_only",
   "rate_limited",
   "refund_address_required",
   "route_unavailable",

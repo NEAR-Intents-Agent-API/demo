@@ -10,9 +10,9 @@ import {
   applyFlowBalance,
   canSwitchFundsFlow,
   effectiveFlow,
-  initialFlowLane,
   isFlowVisible,
   shouldInitializeLane,
+  withdrawLane,
 } from "../../features/funds/flows/flow-state-utils.js";
 
 test("viewing a completed setup step keeps completion distinct from the next unfinished step", () => {
@@ -25,15 +25,9 @@ test("viewing a completed setup step keeps completion distinct from the next unf
 });
 
 // Cover context changes that could otherwise select the wrong source balance.
-test("fresh funds forms inherit Holdings balance; private restrictions remain enforced", () => {
-  for (const flow of ["swap", "send", "withdraw"] as const) {
-    assert.equal(initialFlowLane(flow, "confidential"), "private");
-    assert.equal(initialFlowLane(flow, "public"), "public");
-    assert.equal(initialFlowLane(flow, "confidential", false), "public");
-  }
-  assert.equal(initialFlowLane("deposit", "confidential"), "private");
-  assert.equal(initialFlowLane("deposit", "public"), "public");
-  assert.equal(initialFlowLane("deposit", "confidential", false), "private");
+test("a fresh withdrawal pays from the confidential balance unless the legacy public balance is shown", () => {
+  assert.equal(withdrawLane("confidential"), "private");
+  assert.equal(withdrawLane("public"), "public");
 });
 
 test("Holdings balance changes clear spending inputs, keeping accepted and pending moves fixed", () => {
@@ -133,7 +127,7 @@ test("setup progress can complete while the optional dashboard permission remain
 });
 
 test("only Deposit is offered until more actions are enabled", () => {
-  for (const flow of ["swap", "send", "withdraw", "private"] as const) {
+  for (const flow of ["swap", "send", "withdraw", "shield"] as const) {
     assert.equal(isFlowVisible(flow, false), false);
     assert.equal(isFlowVisible(flow, true), true);
     assert.equal(effectiveFlow(flow, false), "deposit");

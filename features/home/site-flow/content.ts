@@ -6,7 +6,6 @@ export const FLOW_ACTIONS = [
   { label: "Swap", asset: "flow-swap" },
   { label: "Transfer", asset: "flow-transfer" },
   { label: "Withdraw", asset: "flow-withdraw" },
-  { label: "Make confidential", asset: "flow-shield" },
 ] as const;
 
 /** The four steps; the last one names the live network count once the catalogue has loaded. */
@@ -29,7 +28,7 @@ export function flowSteps(networkCount: number | null) {
       id: "execute",
       step: "3 · THE AGENT",
       title: "Custody wallet",
-      description: "Holds a public and a confidential balance. Your agent acts through MCP or API.",
+      description: "Holds a confidential balance. Your agent acts through MCP or API.",
     },
     {
       id: "networks",

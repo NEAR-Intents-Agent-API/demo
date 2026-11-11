@@ -4,14 +4,12 @@ import type { TokenOption } from "../use-funds";
 import { SLIPPAGE_BP } from "./use-swap-flow";
 
 export function SwapReview({
-  lane,
   token,
   to,
   atomic,
   outAtomic,
   quote,
 }: {
-  lane: "public" | "private";
   token: TokenOption;
   to: TokenOption;
   atomic: bigint;
@@ -24,10 +22,6 @@ export function SwapReview({
     <>
       <ReviewCard
         rows={[
-          {
-            label: "Balance",
-            value: lane === "private" ? "Confidential balance" : "Public balance",
-          },
           {
             label: "Rate",
             value: `1 ${token.symbol} ≈ ${formatDisplay(perUnit.toString(), to.decimals)} ${to.symbol}`,

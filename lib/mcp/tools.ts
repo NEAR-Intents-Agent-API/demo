@@ -3,8 +3,10 @@ import { z } from "zod";
 import { intentsAccount } from "@/lib/agent-api/address";
 import {
   correlationIdSchema,
+  executionNoteSchema,
   limitOrderPriceSchema,
   operationCorrelationIdSchema,
+  paymentReferenceSchema,
 } from "@/lib/agent-api/schemas";
 import { demoEnv } from "@/lib/config/runtime";
 import { ownerRiskNotice } from "@/lib/owner-risk-notice";
@@ -28,7 +30,6 @@ export type McpAgentClient = Pick<
   | "cancelAllLimitOrders"
   | "withdraw"
   | "shield"
-  | "unshield"
   | "transfer"
   | "deposit"
 >;
@@ -72,9 +73,7 @@ export const WRITE_TOOLS = [
   "cancel_limit_order",
   "cancel_all_limit_orders",
   "shield",
-  "unshield",
   "withdraw",
-  "intents_transfer",
   "confidential_transfer",
   "create_cross_chain_deposit",
 ] as const;
@@ -108,12 +107,31 @@ const limitOrderFields = {
     .describe(
       "When the order stops resting, RFC 3339; at most 7 days ahead, which is also the default.",
     ),
-  confidential: z.boolean().default(false),
 };
+
+/** Withdrawing is the one request that still names a balance: `false` is the public exit. */
+const withdrawalBalance = z
+  .boolean()
+  .optional()
+  .describe(
+    "Omit to pay from the confidential balance. `false` pays from the legacy public balance, the only way to withdraw it.",
+  );
 
 const recipient = text.describe(
   "Recipient NEAR Intents account: a named account (alice.near), a 64-hex implicit account or a 0x EVM address. A near.com address `nearcom:<account>` is that account; the prefix is stripped.",
 );
+
+const reference = paymentReferenceSchema
+  .optional()
+  .describe(
+    "Your label for this payment, 1 to 128 printable ASCII characters without spaces, e.g. an order id. Shared with the payee through the receipt; not sent on chain and not unique.",
+  );
+
+const note = executionNoteSchema
+  .optional()
+  .describe(
+    "Why you run this, in your own words: 1 to 500 characters on one line. The account's owner reads it back beside what happened; it is never sent to the provider, put on chain or written into a receipt.",
+  );
 
 /** Shared by every write tool: an idempotency key is the double-spend guard. */
 const writeArgs = { idempotencyKey };
@@ -134,8 +152,8 @@ export const toolDefinitions = {
   },
   get_balances: {
     description:
-      "Read multi-asset balances. `intents` is the execution lane; `confidential` is the NEAR Intents confidential deployment on FAR. Each entry has `balance` (what the account holds) and `available` (what it can spend now: the balance minus queued or timelocked work not yet dispatched). Plan with `available_raw`/`available`.",
-    inputSchema: z.object({ source: z.enum(["public", "confidential"]) }),
+      "Read multi-asset balances. `confidential` (the default) is the account's balance: every swap, transfer, limit order and deposit runs on it. `public` is the legacy public balance, which can only be shielded or withdrawn with `confidential` false. Each entry has `balance` (what the account holds) and `available` (what it can spend now: the balance minus queued or timelocked work not yet dispatched). Plan with `available_raw`/`available`.",
+    inputSchema: z.object({ source: z.enum(["public", "confidential"]).default("confidential") }),
   },
   get_tokens: {
     description: "List the tokens the provider supports for Intents swaps and withdrawals.",
@@ -154,7 +172,6 @@ export const toolDefinitions = {
       token_out: text,
       amount_in: amount,
       min_amount_out: amount.optional(),
-      confidential: z.boolean().default(false),
     }),
   },
   limit_order_quote: {
@@ -185,7 +202,7 @@ export const toolDefinitions = {
       chain: text,
       to: text,
       memo: z.string().max(256).optional(),
-      confidential: z.boolean().default(false),
+      confidential: withdrawalBalance,
       idempotencyKey: idempotencyKey.optional(),
     }),
   },
@@ -230,15 +247,15 @@ export const toolDefinitions = {
         token_out: text,
         amount_in: amount,
         min_amount_out: amount.optional(),
-        confidential: z.boolean().default(false),
+        note,
         ...writeArgs,
       })
       .strict(),
   },
   place_limit_order: {
     description:
-      "Place a resting limit order on the public balance, or with confidential true on the confidential balance (the policy needs `confidential` and `limit_order`). It is funded in full when placed and rests until it fills, is cancelled or reaches `deadline` (default and at most 7 days); fills and refunds return to the balance that funded it. SUCCESS means funded and resting, not filled: `details.order_id` names it, so follow it with get_limit_order. A sell spends `quantity` of base_asset; a buy spends ceil(quantity x price) of quote_asset. The order runs the swap rules on the asset it spends (assets, limits, actions per hour, USD budget, delay, schedule, owner approval) and its price must be within the policy's limit_order.max_deviation_bps (100 when unset) of the market: policy_price_deviation_exceeded or market_price_unavailable otherwise. It must be worth at least 0.1 USD (amount_too_low). 1Click's own 20 bps fee applies to every order. Run limit_order_quote first.",
-    inputSchema: z.object({ ...limitOrderFields, ...writeArgs }).strict(),
+      "Place a resting limit order on the confidential balance (the policy needs `confidential` and `limit_order`). It is funded in full when placed and rests until it fills, is cancelled or reaches `deadline` (default and at most 7 days); fills and refunds return to the confidential balance. SUCCESS means funded and resting, not filled: `details.order_id` names it, so follow it with get_limit_order. A sell spends `quantity` of base_asset; a buy spends ceil(quantity x price) of quote_asset. The order runs the swap rules on the asset it spends (assets, limits, actions per hour, USD budget, delay, schedule, owner approval) and its price must be within the policy's limit_order.max_deviation_bps (100 when unset) of the market: policy_price_deviation_exceeded or market_price_unavailable otherwise. It must be worth at least 0.1 USD (amount_too_low). 1Click's own 20 bps fee applies to every order. Run limit_order_quote first.",
+    inputSchema: z.object({ ...limitOrderFields, note, ...writeArgs }).strict(),
   },
   cancel_limit_order: {
     description:
@@ -252,17 +269,12 @@ export const toolDefinitions = {
   },
   shield: {
     description:
-      "Move an Intents balance into the confidential shard. Counts toward the asset's per-asset limits and the hourly action cap.",
-    inputSchema: z.object({ token: text, amount, ...writeArgs }).strict(),
-  },
-  unshield: {
-    description:
-      "Move a confidential balance back to Intents. Counts toward the asset's per-asset limits and the hourly action cap.",
+      "Move the legacy public balance into the confidential balance, the account's balance. Nothing moves funds back. Counts toward the asset's per-asset limits and the hourly action cap.",
     inputSchema: z.object({ token: text, amount, ...writeArgs }).strict(),
   },
   withdraw: {
     description:
-      "Withdraw to an address on another chain, or to a NEAR account with chain near. NEAR (nep141:wrap.near) withdrawn to chain near always arrives as native NEAR; there is no wNEAR option. Cross-chain settles asynchronously. A near.com `nearcom:` address is not on any chain: send to it with a transfer instead.",
+      "Withdraw from the confidential balance to an address on another chain, or to a NEAR account with chain near; confidential false withdraws from the legacy public balance instead. NEAR (nep141:wrap.near) withdrawn to chain near always arrives as native NEAR; there is no wNEAR option. Cross-chain settles asynchronously. A near.com `nearcom:` address is not on any chain: send to it with a transfer instead.",
     inputSchema: z
       .object({
         token: text,
@@ -270,32 +282,31 @@ export const toolDefinitions = {
         chain: text,
         to: text,
         memo: z.string().max(256).optional(),
-        confidential: z.boolean().default(false),
+        confidential: withdrawalBalance,
         async: z.boolean().default(false),
+        reference,
+        note,
         ...writeArgs,
       })
       .strict(),
   },
-  intents_transfer: {
-    description:
-      "Send from this account's public balance to another NEAR Intents account's public balance. For a near.com (`nearcom:`) recipient this is allowed but lands in their legacy public balance, not the confidential balance near.com shows: prefer confidential_transfer unless the user asks for public, and tell them where it lands.",
-    inputSchema: z.object({ token: text, amount, to: recipient, ...writeArgs }).strict(),
-  },
   confidential_transfer: {
     description:
-      "Send from this account's confidential balance to another NEAR Intents account's confidential balance, the balance near.com shows its users. If the confidential balance is short, shield the difference first.",
-    inputSchema: z.object({ token: text, amount, to: recipient, ...writeArgs }).strict(),
+      "Send from this account's confidential balance to another NEAR Intents account's confidential balance, the balance near.com shows its users. If the confidential balance is short, shield the legacy public balance first.",
+    inputSchema: z
+      .object({ token: text, amount, to: recipient, reference, note, ...writeArgs })
+      .strict(),
   },
   create_cross_chain_deposit: {
     description:
       `Before the owner funds this account, show them this notice unaltered: ${ownerRiskNotice} ` +
-      "Get a deposit address that funds this agent account inside NEAR Intents, without a spending grant. `source_asset` is required: the exact `assetId` from get_tokens of the token being sent, never a symbol or chain name (it fixes the source chain and token, e.g. `nep141:eth.omft.near` is ETH on Ethereum, while `nep141:base.omft.near` is ETH on Base). Omit `amount` to accept any amount at or above `deposit.minAmount` until `deposit.expiresAt`; pass `amount` (the source token's smallest unit) for an exact deposit. The agent is credited `source_asset` unless `destination_asset` names another token. The user sends only to `deposit.depositAddress`, with `deposit.memo` when it is set; if the address is null, no funds are sent. A failed or late deposit refunds into this agent's own balance; there is no refund address to ask for. `correlationId` is the tracking id for get_deposit_status, never an address. Poll get_deposit_status until SUCCESS. `confidential: true` credits the confidential balance. Never tell a user to send funds to the agent's own chain address: only NEAR Intents balances are usable.",
+      "Get a deposit address that funds this agent account inside NEAR Intents, without a spending grant. `source_asset` is required: the exact `assetId` from get_tokens of the token being sent, never a symbol or chain name (it fixes the source chain and token, e.g. `nep141:eth.omft.near` is ETH on Ethereum, while `nep141:base.omft.near` is ETH on Base). Omit `amount` to accept any amount at or above `deposit.minAmount` until `deposit.expiresAt`; pass `amount` (the source token's smallest unit) for an exact deposit. The agent is credited `source_asset` unless `destination_asset` names another token. The user sends only to `deposit.depositAddress`, with `deposit.memo` when it is set; if the address is null, no funds are sent. A failed or late deposit refunds into this agent's own balance; there is no refund address to ask for. `correlationId` is the tracking id for get_deposit_status, never an address. Poll get_deposit_status until SUCCESS. It credits the confidential balance. Never tell a user to send funds to the agent's own chain address: only NEAR Intents balances are usable.",
     inputSchema: z
       .object({
         amount: amount.optional(),
         source_asset: text,
         destination_asset: text.optional(),
-        confidential: z.boolean().default(false),
+        note,
         ...writeArgs,
       })
       .strict(),
@@ -441,7 +452,7 @@ export async function runReadTool(
     case "get_balances":
       return read(
         await client.getBalances(agentId, {
-          source: args.source === "confidential" ? "confidential" : "public",
+          source: args.source === "public" ? "public" : "confidential",
         }),
       );
     case "get_tokens":
@@ -519,18 +530,10 @@ export async function runWriteTool(
     case "shield":
       result = await client.shield(agentId, move, options);
       break;
-    case "unshield":
-      result = await client.unshield(agentId, move, options);
-      break;
-    case "intents_transfer":
     case "confidential_transfer":
       result = await client.transfer(
         agentId,
-        {
-          ...move,
-          recipient: intentsAccount(String(args.to)),
-          confidential: name === "confidential_transfer",
-        },
+        { ...move, recipient: intentsAccount(String(args.to)), ...labels(args) },
         options,
       );
       break;
@@ -541,7 +544,7 @@ export async function runWriteTool(
           amount: optionalString(args.amount),
           origin_asset: String(args.source_asset),
           destination_asset: optionalString(args.destination_asset),
-          confidential: Boolean(args.confidential),
+          ...labels(args),
         },
         options,
       );
@@ -555,7 +558,7 @@ function swapRequest(args: Record<string, unknown>) {
     destination_asset: String(args.token_out),
     amount: String(args.amount_in),
     min_amount_out: optionalString(args.min_amount_out),
-    confidential: Boolean(args.confidential),
+    ...labels(args),
   };
 }
 function limitOrderRequest(args: Record<string, unknown>) {
@@ -566,7 +569,7 @@ function limitOrderRequest(args: Record<string, unknown>) {
     quantity: String(args.quantity),
     price: String(args.price),
     deadline: optionalString(args.deadline),
-    confidential: Boolean(args.confidential),
+    ...labels(args),
   };
 }
 function limitOrderListQuery(args: Record<string, unknown>) {
@@ -583,8 +586,17 @@ function withdrawRequest(args: Record<string, unknown>) {
     chain: String(args.chain),
     recipient: String(args.to),
     memo: optionalString(args.memo),
-    confidential: Boolean(args.confidential),
+    // The confidential balance is the default; only the legacy public exit says otherwise.
+    ...(args.confidential === false ? { confidential: false } : {}),
     async: Boolean(args.async),
+    ...labels(args),
+  };
+}
+/** The payment `reference` and the agent's `note`, only when the call carried them. */
+function labels(args: Record<string, unknown>) {
+  return {
+    ...(typeof args.reference === "string" ? { reference: args.reference } : {}),
+    ...(typeof args.note === "string" ? { note: args.note } : {}),
   };
 }
 function optionalString(value: unknown) {

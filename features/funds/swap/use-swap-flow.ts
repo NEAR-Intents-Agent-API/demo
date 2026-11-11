@@ -5,11 +5,11 @@ import { useState } from "react";
 import { fractionOf } from "@/lib/format/amount";
 import { queryKeys } from "@/lib/query/keys";
 import { fundsApi } from "../api";
-import type { BalanceLane } from "../flows/flow-parts";
 import { useFunds } from "../funds-context";
 import { extractSwapPreview, isAtomic, pick } from "../model/quote";
 import { useIdempotencyKey } from "../model/use-idempotency-key";
 import { amountReason, useDebouncedValue, useSourceAmount, useTracking } from "../model/use-move";
+import { useReceiptLabels } from "../model/use-receipt-labels";
 import { type TokenOption, useFundsAction } from "../use-funds";
 
 /** Slippage the swap tolerates before the provider refuses to fill. */
@@ -19,7 +19,6 @@ export type SwapRequest = {
   token_in: string;
   token_out: string;
   amount_in: string;
-  confidential: boolean;
 };
 
 /**
@@ -52,16 +51,14 @@ function buildSwapRequest(input: {
   to: TokenOption | null;
   atomic: bigint | null;
   over: boolean;
-  confidential: boolean;
 }): SwapRequest | null {
-  const { token, to, atomic, over, confidential } = input;
+  const { token, to, atomic, over } = input;
   if (!token || !to || !atomic || atomic === 0n || over) return null;
   if (token.assetId === to.assetId) return null;
   return {
     token_in: token.assetId,
     token_out: to.assetId,
     amount_in: atomic.toString(),
-    confidential,
   };
 }
 
@@ -79,20 +76,19 @@ function swapReason(
  * The swap draft and its quote. The amount a swap would receive is derived here so the field and
  * the review card read the same number, and the minimum-received guard is computed with it.
  */
-export function useSwapFlow(initialLane: BalanceLane = "public") {
+export function useSwapFlow() {
   const funds = useFunds();
-  const [lane, setLane] = useState<BalanceLane>(initialLane);
-  const confidential = lane === "private";
-  const source = useSourceAmount(confidential ? funds.privateHoldings : funds.holdings);
+  const source = useSourceAmount(funds.holdings);
   const [to, setTo] = useState<TokenOption | null>(null);
   const { tracking, track, clear } = useTracking();
+  const labels = useReceiptLabels();
 
   const { token, atomic } = source;
-  const request = buildSwapRequest({ token, to, atomic, over: source.over, confidential });
+  const request = buildSwapRequest({ token, to, atomic, over: source.over });
   const quote = useSwapQuote(funds.agent.id, request, Boolean(funds.access));
   const amountOut = pick(quote.data?.quote ?? null, ["amount_out", "amount_out_formatted"]);
-  const key = useIdempotencyKey(JSON.stringify(request));
-  const reason = swapReason(source, to);
+  const key = useIdempotencyKey(JSON.stringify([request, labels.args]));
+  const reason = swapReason(source, to) ?? labels.problem;
 
   const action = useFundsAction(funds.agent.id);
   const title = `Swap ${token?.symbol ?? ""} → ${to?.symbol ?? ""}`;
@@ -103,7 +99,10 @@ export function useSwapFlow(initialLane: BalanceLane = "public") {
     if (!request) return;
     const minOut = outAtomic ? fractionOf(outAtomic, 10_000 - SLIPPAGE_BP).toString() : undefined;
     action.mutate(
-      { tool: "swap", args: { ...request, min_amount_out: minOut, idempotencyKey: key } },
+      {
+        tool: "swap",
+        args: { ...request, ...labels.args, min_amount_out: minOut, idempotencyKey: key },
+      },
       { onSuccess: (result) => track({ ...result, title }) },
     );
   };
@@ -113,6 +112,7 @@ export function useSwapFlow(initialLane: BalanceLane = "public") {
     source.setPicked(null);
     source.setAmount("");
     setTo(null);
+    labels.reset();
     action.reset();
   };
   return {
@@ -122,10 +122,8 @@ export function useSwapFlow(initialLane: BalanceLane = "public") {
     execute,
     title,
     funds,
+    labels,
     source,
-    lane,
-    setLane,
-    confidential,
     to,
     setTo,
     request,

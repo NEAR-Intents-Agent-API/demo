@@ -5,8 +5,9 @@ import { Choice } from "@/components/shared/choice";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { AmountField } from "../flows/amount-field";
-import { FlowButton, FlowError, FlowShell, LaneSwitch } from "../flows/flow-parts";
+import { FlowButton, FlowError, FlowShell } from "../flows/flow-parts";
 import { QuoteWarnings } from "../flows/quote-warnings";
+import { ReceiptFields } from "../flows/receipt-fields";
 import { balanceLookup } from "../funds-context";
 import { OrderReview } from "./order-review";
 import { DEADLINES, type DeadlineId, type usePlaceOrder } from "./use-place-order";
@@ -44,7 +45,6 @@ export function PlaceOrderFlow({
             ]}
           />
         </div>
-        <LaneSwitch value={view.lane} onChange={view.setLane} label="Funded from" />
         <div className="flex flex-col gap-2">
           <AmountField
             label={side === "sell" ? "You sell" : "You buy"}
@@ -86,6 +86,8 @@ export function PlaceOrderFlow({
           </NativeSelect>
         </div>
 
+        <ReceiptFields labels={view.labels} id="order" disabled={action.isPending} />
+
         <FlowError error={preview.error} />
         <QuoteWarnings warnings={preview.data?.warnings ?? []} token={spendToken} />
         {preview.data?.ownerApproval ? (
@@ -95,13 +97,7 @@ export function PlaceOrderFlow({
           </Callout>
         ) : null}
         {base && quote && preview.data?.quote ? (
-          <OrderReview
-            side={side}
-            lane={view.lane}
-            base={base}
-            quote={quote}
-            preview={preview.data}
-          />
+          <OrderReview side={side} base={base} quote={quote} preview={preview.data} />
         ) : null}
 
         <FlowError error={action.error} />

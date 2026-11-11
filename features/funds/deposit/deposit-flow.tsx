@@ -18,7 +18,7 @@ export function DepositFlow({ view }: { view: ReturnType<typeof useDepositFlow> 
   return (
     <div className="flex flex-col gap-5">
       <OwnerRiskNotice />
-      <BalanceContext label="Deposit into" lane={source === "network" ? form.lane : "public"} />
+      <BalanceContext label="Deposit into" lane={source === "network" ? "private" : "public"} />
       <DepositSourceDropdown
         value={source}
         onChange={view.pickSource}

@@ -383,6 +383,20 @@ export function domainKey(domain: TypedDataDomain): string {
   );
 }
 
+/** The payer's own label for a transfer or withdrawal: shared with the payee, never sent on chain. */
+export const paymentReferenceSchema = z
+  .string()
+  .regex(/^[\x21-\x7e]{1,128}$/, "Must be 1 to 128 printable ASCII characters without spaces.");
+
+/** Why an execution ran, in the agent's own words: the account's record only, never sent on. */
+export const executionNoteSchema = z
+  .string()
+  // Line and paragraph separators break the one line; a lone surrogate cannot be stored.
+  .regex(
+    /^[^\p{Cc}\p{Cs}\p{Zl}\p{Zp}]{1,500}$/u,
+    "Must be 1 to 500 characters on one line, with no control characters or unpaired surrogates.",
+  );
+
 /** The widest `limit_order.max_deviation_bps` an owner may sign, and what applies when it is left out. */
 /** Quote units per one whole base unit: an exact decimal above zero, no sign or exponent. */
 export const limitOrderPriceSchema = z
@@ -446,7 +460,7 @@ export const terminalStatuses: readonly Status[] = ["SUCCESS", "REFUNDED", "FAIL
 export const issuedGrantSchema = z.object({ grant_id: hex64, expires_at: z.string() });
 
 export const balanceQuerySchema = z.strictObject({
-  source: z.enum(["public", "confidential"]).default("public"),
+  source: z.enum(["public", "confidential"]).default("confidential"),
   asset: z.string().min(1).max(256).optional(),
 });
 

@@ -23,10 +23,8 @@ export const FUNDS_TOOLS = [
   "cancel_limit_order",
   "cancel_all_limit_orders",
   "withdraw",
-  "intents_transfer",
   "confidential_transfer",
   "shield",
-  "unshield",
   "create_cross_chain_deposit",
 ] as const satisfies readonly ToolName[];
 

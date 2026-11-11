@@ -47,7 +47,6 @@ test("MCP maps execution fields and header options, returns owner approval link"
         destination_asset: "usdc",
         amount: "100",
         min_amount_out: undefined,
-        confidential: false,
       },
       { idempotencyKey: swap.idempotencyKey },
     ],
@@ -56,7 +55,7 @@ test("MCP maps execution fields and header options, returns owner approval link"
   assert.match(JSON.stringify(result.result), /tab=activity/);
 });
 
-test("MCP deposits pass both modes, an optional amount and no refund address", async () => {
+test("MCP deposits pass an optional amount, no balance choice and no refund address", async () => {
   const calls: unknown[][] = [];
   const client = {
     deposit: async (...args: unknown[]) => {
@@ -64,26 +63,27 @@ test("MCP deposits pass both modes, an optional amount and no refund address", a
       return { ...operation, type: "deposit", status: "PENDING_DEPOSIT" };
     },
   } as unknown as McpAgentClient;
-  for (const confidential of [false, true])
-    for (const amount of ["100", undefined]) {
-      const args = toolDefinitions.create_cross_chain_deposit.inputSchema.parse({
-        source_asset: "nep141:btc.omft.near",
-        ...(amount ? { amount } : {}),
-        confidential,
-        idempotencyKey: `mcp-deposit-${confidential}-${amount}`,
-      });
-      await runWriteTool("create_cross_chain_deposit", args, { agentId, client });
-      assert.deepEqual(calls.at(-1), [
-        agentId,
-        {
-          amount,
-          origin_asset: "nep141:btc.omft.near",
-          destination_asset: undefined,
-          confidential,
-        },
-        { idempotencyKey: `mcp-deposit-${confidential}-${amount}` },
-      ]);
-    }
+  for (const amount of ["100", undefined]) {
+    const args = toolDefinitions.create_cross_chain_deposit.inputSchema.parse({
+      source_asset: "nep141:btc.omft.near",
+      ...(amount ? { amount } : {}),
+      idempotencyKey: `mcp-deposit-${amount}`,
+    });
+    await runWriteTool("create_cross_chain_deposit", args, { agentId, client });
+    assert.deepEqual(calls.at(-1), [
+      agentId,
+      { amount, origin_asset: "nep141:btc.omft.near", destination_asset: undefined },
+      { idempotencyKey: `mcp-deposit-${amount}` },
+    ]);
+  }
+  // The public balance is not a choice any more: the API refuses it, so the tool does not offer it.
+  assert.throws(() =>
+    toolDefinitions.create_cross_chain_deposit.inputSchema.parse({
+      source_asset: "nep141:btc.omft.near",
+      confidential: false,
+      idempotencyKey: "mcp-deposit-public",
+    }),
+  );
   // Refunds always go to the agent's own balance; the tool has no field to send them elsewhere.
   assert.throws(() =>
     toolDefinitions.create_cross_chain_deposit.inputSchema.parse({
@@ -319,24 +319,20 @@ test("MCP limit orders: the quote is a dry order, the placement carries a key an
       client,
     },
   );
-  assert.deepEqual(calls.at(-1), [
-    agentId,
-    { ...order, deadline: undefined, confidential: false, dry: true },
-  ]);
+  assert.deepEqual(calls.at(-1), [agentId, { ...order, deadline: undefined, dry: true }]);
 
   const placed = await runWriteTool(
     "place_limit_order",
     toolDefinitions.place_limit_order.inputSchema.parse({
       ...order,
       deadline,
-      confidential: true,
       idempotencyKey: "order-12345678",
     }),
     { agentId, client },
   );
   assert.deepEqual(calls.at(-1), [
     agentId,
-    { ...order, deadline, confidential: true },
+    { ...order, deadline },
     { idempotencyKey: "order-12345678" },
   ]);
   assert.equal(placed.status, "SUCCESS");
