@@ -50,7 +50,7 @@ export function PortfolioSummary({
   onViewAssets: () => void;
   assetsOpen: boolean;
 }) {
-  let detail = `${count} ${count === 1 ? "asset" : "assets"} in ${lane === "public" ? "public" : "confidential"} balance`;
+  let detail = `${count} ${count === 1 ? "asset" : "assets"} in ${lane === "public" ? "legacy public" : "confidential"} balance`;
   if (error) detail = "Balance unavailable";
   if (loading) detail = "Reading the wallet…";
   return (

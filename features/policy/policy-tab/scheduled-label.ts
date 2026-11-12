@@ -6,7 +6,7 @@ const ACTION_LABELS: Readonly<Record<string, string>> = {
   intents_transfer: "Transfer",
   confidential_transfer: "Confidential transfer",
   withdraw: "Withdrawal",
-  shield: "Move to confidential balance",
+  shield: "Shield",
   unshield: "Move to public balance",
 };
 

@@ -32,7 +32,7 @@ async function fundsContext(
  * `POST /api/agents/[agentId]/funds`
  *
  * One door for every money movement the dashboard offers: quotes, swaps, transfers, withdrawals
- * and moves between the public and confidential balances. It is deliberately the same set of
+ * and shields of the legacy public balance. It is deliberately the same set of
  * operations an MCP harness gets. Inbound deposit addresses require no spending grant; other
  * tools still run under the dashboard's own live owner grant.
  *

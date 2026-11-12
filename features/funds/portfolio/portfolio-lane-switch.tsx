@@ -20,8 +20,8 @@ export function PortfolioLaneSwitch({
       disabled={disabled}
       className={className}
       options={[
-        { value: "public", label: "Public" },
         { value: "confidential", label: "Confidential" },
+        { value: "public", label: "Legacy public" },
       ]}
     />
   );

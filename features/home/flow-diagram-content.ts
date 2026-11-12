@@ -40,11 +40,7 @@ export const NODES: FlowDiagramNode[] = [
     owner: "The agent",
     title: "Custody wallet",
     icon: Robot02Icon,
-    lines: [
-      "Holds a public and a confidential balance",
-      "Acts through MCP or API",
-      "Cannot exceed the rules",
-    ],
+    lines: ["Holds a confidential balance", "Acts through MCP or API", "Cannot exceed the rules"],
     verbs: true,
   },
   {

@@ -6,36 +6,36 @@ import {
   ViewOffSlashIcon,
 } from "@hugeicons/core-free-icons";
 
-export type FlowId = "deposit" | "swap" | "send" | "withdraw" | "private";
+export type FlowId = "deposit" | "swap" | "send" | "withdraw" | "shield";
 export const FLOWS = [
   {
     id: "deposit",
     label: "Deposit",
-    hint: "Fund either balance from another network or a NEAR Intents account.",
+    hint: "Fund the confidential balance from another network or a NEAR Intents account.",
     icon: ArrowDown02Icon,
   },
   {
     id: "swap",
     label: "Swap",
-    hint: "Trade one token for another, in the public or confidential balance.",
+    hint: "Trade one token for another in the confidential balance.",
     icon: ArrowDataTransferHorizontalIcon,
   },
   {
     id: "send",
     label: "Transfer",
-    hint: "Pay another NEAR Intents account from the public or confidential balance.",
+    hint: "Pay another NEAR Intents account from the confidential balance.",
     icon: SentIcon,
   },
   {
     id: "withdraw",
     label: "Withdraw",
-    hint: "Send funds out of either balance to an address on any network.",
+    hint: "Send funds out of the account to an address on any network.",
     icon: ArrowUp02Icon,
   },
   {
-    id: "private",
-    label: "Confidential balance",
-    hint: "Move a token to the confidential balance, or back to public, inside this account.",
+    id: "shield",
+    label: "Shield",
+    hint: "Move a token from the legacy public balance to the confidential balance.",
     icon: ViewOffSlashIcon,
   },
 ] as const;

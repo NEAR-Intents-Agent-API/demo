@@ -68,7 +68,7 @@ test("destination edits allow private balances; invalid token choices still requ
   const draft = structuredClone(current);
   draft.destinations = {
     mode: "only",
-    list: [{ action: "transfer", address: "sample.near", confidential: false }],
+    list: [{ action: "transfer", address: "sample.near", confidential: true }],
   };
   assert.deepEqual(
     changedRuleSettings(current, draft).map(({ id }) => id),

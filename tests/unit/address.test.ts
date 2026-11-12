@@ -212,7 +212,7 @@ test("a draft destination says what is wrong with it", () => {
     /Memo is at most 256 characters/,
   );
   assert.throws(
-    () => destinationFromDraft({ ...draft, action: "intents_transfer", address: "No Way" }),
+    () => destinationFromDraft({ ...draft, action: "confidential_transfer", address: "No Way" }),
     /Not a valid NEAR account/,
   );
 });

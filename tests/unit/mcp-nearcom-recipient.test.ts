@@ -19,7 +19,7 @@ test("MCP transfers send a near.com `nearcom:` address as its bare Intents accou
   };
   const context = { agentId: "agent", client } as unknown as Parameters<typeof runWriteTool>[2];
   await runWriteTool(
-    "intents_transfer",
+    "confidential_transfer",
     {
       token: "nep141:wrap.near",
       amount: "1",
@@ -29,7 +29,7 @@ test("MCP transfers send a near.com `nearcom:` address as its bare Intents accou
     context,
   );
   assert.equal(sent[0]?.recipient, "royo.near");
-  assert.equal(sent[0]?.confidential, false);
+  assert.equal("confidential" in (sent[0] ?? {}), false);
 });
 
 test("owner-typed transfer destinations store a `nearcom:` address as its bare account", () => {

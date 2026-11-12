@@ -14,7 +14,7 @@ export function IntentsDeposit() {
       <p className="text-sm leading-6 text-muted-foreground">
         Send any token from another NEAR Intents account, for example from{" "}
         <span className="font-medium text-foreground">near-intents.org</span>. It arrives in the
-        public balance instantly, with no fee. Use Make confidential afterwards to move it into the
+        public balance instantly, with no fee. Use Shield afterwards to move it into the
         confidential balance.
       </p>
       <div className="flex items-center gap-3 rounded-xl border bg-muted/40 p-4">

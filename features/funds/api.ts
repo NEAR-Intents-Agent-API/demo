@@ -3,10 +3,12 @@ import type {
   DestinationRule,
   LimitOrderPage,
   LimitOrderView,
+  ReceiptPage,
   StatusResponse,
 } from "@near-intents-agent-api/sdk";
 import type { IntentStep } from "@/features/intents";
 import type { AccessView } from "@/lib/agent-api/access";
+import type { ReceiptVerification } from "@/lib/agent-api/receipts";
 import { request } from "@/lib/http/request";
 
 export type FundsTool =
@@ -18,10 +20,8 @@ export type FundsTool =
   | "cancel_limit_order"
   | "cancel_all_limit_orders"
   | "withdraw"
-  | "intents_transfer"
   | "confidential_transfer"
   | "shield"
-  | "unshield"
   | "create_cross_chain_deposit";
 
 /** What the Agent API says about an owner grant; the signed message itself stays server-side. */
@@ -78,6 +78,14 @@ export const fundsApi = {
     request<LimitOrderView>(`/api/agents/${agentId}/limit-orders/${encodeURIComponent(orderId)}`),
   operations: (agentId: string) =>
     request<{ data: StatusResponse[] }>(`/api/agents/${agentId}/operations`),
+  receipts: (agentId: string, cursor?: string) =>
+    request<ReceiptPage>(
+      `/api/agents/${agentId}/receipts${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`,
+    ),
+  receiptVerification: (agentId: string, correlationId: string) =>
+    request<ReceiptVerification>(
+      `/api/agents/${agentId}/receipts/${encodeURIComponent(correlationId)}/verification`,
+    ),
   operation: (
     agentId: string,
     correlationId: string,

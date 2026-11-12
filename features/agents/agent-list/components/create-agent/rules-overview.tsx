@@ -13,15 +13,13 @@ import { limitOrderDefaultDeviationBps } from "@/lib/agent-api/schemas";
 import { formatDelayMs } from "@/lib/format/delay";
 import { RulesOverviewRow } from "./rules-overview-row";
 
-const MONEY_ACTIONS = ABILITIES.filter((ability) => ability !== "confidential");
-
 /**
  * Every rule an activation signature installs, in plain words, with nothing hidden behind the
  * editor. A passkey prompt cannot show any of this, so this is the owner's one chance to read it.
  */
 export function RulesOverview({ rules }: { rules: Rules }) {
   const catalog = useCatalog();
-  const actions = MONEY_ACTIONS.filter((ability) => rules.abilities[ability]);
+  const actions = ABILITIES.filter((ability) => rules.abilities[ability]);
   const capped = [
     { value: rules.budget.dailyUsd, period: "day" },
     { value: rules.budget.weeklyUsd, period: "week" },
@@ -42,10 +40,8 @@ export function RulesOverview({ rules }: { rules: Rules }) {
           "None"
         )}
       </RulesOverviewRow>
-      <RulesOverviewRow label="Confidential balance">
-        {rules.abilities.confidential
-          ? "On: funds can be held and moved in the confidential balance"
-          : "Off: the confidential balance cannot be used"}
+      <RulesOverviewRow label="Balance">
+        Confidential: every swap, transfer, order and deposit runs on the confidential balance
       </RulesOverviewRow>
       {rules.abilities.limit_order ? (
         <RulesOverviewRow label="Limit order price">

@@ -1,13 +1,8 @@
 import type { FlowId } from "./flow-options";
 
-export function initialFlowLane(
-  flow: FlowId,
-  portfolioLane: "public" | "confidential",
-  privateAllowed = true,
-) {
-  return portfolioLane === "public" || (flow !== "deposit" && !privateAllowed)
-    ? "public"
-    : "private";
+/** The legacy public balance is the only other balance a withdrawal can pay from. */
+export function withdrawLane(portfolioLane: "public" | "confidential") {
+  return portfolioLane === "public" ? "public" : "private";
 }
 
 /** Reopening must never silently change a drafted or submitted move. */

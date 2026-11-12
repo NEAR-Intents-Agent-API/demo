@@ -5,7 +5,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useCatalog } from "@/features/assets";
 import {
-  balanceLookup,
   type FlowId,
   type Lane,
   useAccess,
@@ -26,7 +25,7 @@ export function useWalletTab(
   open: { activity: () => void; rules: () => void; connect: () => void },
 ) {
   const cache = useQueryClient();
-  const [lane, setLane] = useState<Lane>("public");
+  const [chosenLane, setLane] = useState<Lane>("confidential");
   const [flow, setFlow] = useState<FlowId | null>("deposit");
   const [refreshing, setRefreshing] = useState(false);
 
@@ -41,25 +40,22 @@ export function useWalletTab(
     [policy.data],
   );
 
+  // A legacy public balance is only shown while there are funds in it.
+  const hasPublicBalance = publicLane.holdings.some((holding) => holding.raw > 0n);
+  const lane = hasPublicBalance ? chosenLane : "confidential";
   const active = lane === "public" ? publicLane : privateLane;
   // Flows only offer what the rules let the account spend; the holdings list shows everything.
   const spendable = useMemo(
-    () => publicLane.holdings.filter((holding) => tokenAllowed(rules, holding.assetId)),
-    [publicLane.holdings, rules],
-  );
-  const privateSpendable = useMemo(
     () => privateLane.holdings.filter((holding) => tokenAllowed(rules, holding.assetId)),
     [privateLane.holdings, rules],
+  );
+  const publicSpendable = useMemo(
+    () => publicLane.holdings.filter((holding) => tokenAllowed(rules, holding.assetId)),
+    [publicLane.holdings, rules],
   );
   const allowedTokens = useMemo(
     () => catalog.tokens.filter((token) => tokenAllowed(rules, token.assetId)),
     [catalog.tokens, rules],
-  );
-
-  const publicBalances = useMemo(() => balanceLookup(publicLane.holdings), [publicLane.holdings]);
-  const privateBalances = useMemo(
-    () => balanceLookup(privateLane.holdings),
-    [privateLane.holdings],
   );
 
   const refresh = async () => {
@@ -80,9 +76,8 @@ export function useWalletTab(
       tokens: allowedTokens,
       chains: catalog.chains,
       holdings: spendable,
-      privateHoldings: privateSpendable,
-      publicBalances,
-      privateBalances,
+      publicHoldings: publicSpendable,
+      hasPublicBalance,
       access: access.data ?? null,
       enableAccess: accessFlow.openForm,
       manageDestinations: accessFlow.manageDestinations,
@@ -100,21 +95,26 @@ export function useWalletTab(
       catalog,
       open.activity,
       open.rules,
-      privateBalances,
-      privateSpendable,
-      publicBalances,
+      hasPublicBalance,
+      publicSpendable,
       rules,
       spendable,
     ],
   );
 
-  // The combined total needs both balances; until then only the active lane's total is shown.
+  // The combined total only matters while there is a public balance to add to the confidential one.
   const allHoldings = useMemo(
     () =>
-      publicLane.query.data && privateLane.query.data
+      hasPublicBalance && publicLane.query.data && privateLane.query.data
         ? { public: publicLane.holdings, confidential: privateLane.holdings }
         : null,
-    [publicLane.query.data, privateLane.query.data, publicLane.holdings, privateLane.holdings],
+    [
+      hasPublicBalance,
+      publicLane.query.data,
+      privateLane.query.data,
+      publicLane.holdings,
+      privateLane.holdings,
+    ],
   );
 
   return {

@@ -39,6 +39,10 @@ export const errorMessages: Record<string, string> = {
     "The signature did not verify. Sign again with the same wallet.",
   policy_delegate_signature_invalid:
     "The signature did not verify. Sign again with the same wallet.",
+  receipt_not_available:
+    "Only settled transfers, withdrawals, swaps, limit orders and deposits have a receipt.",
+  transparency_log_disabled:
+    "This deployment does not run a transparency log, so there are no receipts.",
   agent_api_unreachable: "The Agent API is unreachable. Retry in a moment.",
   network_unreachable: "Could not reach the dashboard server. Check your connection and try again.",
   network_mismatch: "The Agent API is on a different network than this dashboard.",
@@ -149,7 +153,7 @@ export const errorMessages: Record<string, string> = {
   policy_denied:
     "This account's rules do not allow this: the token, action, destination, per-token limit or moves-per-hour cap. Raising the USD budget will not change that; change the blocking rule on the Rules tab.",
   policy_limit_exceeded:
-    "This would go over the account's per-token limit for this hour, day or month. Moving funds between the public and confidential balance counts too. Raise the limit on the Rules tab, or wait until earlier moves age out.",
+    "This would go over the account's per-token limit for this hour, day or month. Shielding the public balance counts too. Raise the limit on the Rules tab, or wait until earlier moves age out.",
   policy_transaction_limit_exceeded:
     "This amount is above the account's per-transaction limit for the token it spends. Nothing was sent. Send a smaller amount, or raise the per-transaction limit on the Rules tab.",
   policy_action_limit_exceeded:
@@ -166,6 +170,8 @@ export const errorMessages: Record<string, string> = {
     "The account's rules do not allow this token. Change the token rule on the Rules tab; raising the USD budget will not help.",
   policy_delegate_invalid:
     "The signed transaction could not be read. Prepare the rules change again and sign it again.",
+  public_balance_exit_only:
+    "Everything in this account now runs on the confidential balance, so a public swap, transfer, order or deposit is no longer possible. Funds still in the public balance can only be shielded or withdrawn.",
   policy_action_denied:
     "The account's rules turn this action off. Turn it on in Rules; the dashboard and every connected client can then use it, with no new grant.",
   policy_deposit_limit: "The rules change is too large to store. Simplify the rules and try again.",
@@ -391,6 +397,9 @@ export function errorMessage(source: unknown): string {
  * that does not help.
  */
 const PERMANENT_CODES = new Set([
+  "public_balance_exit_only",
+  "receipt_not_available",
+  "transparency_log_disabled",
   "intent_expired",
   "intent_not_found",
   "intent_payload_mismatch",

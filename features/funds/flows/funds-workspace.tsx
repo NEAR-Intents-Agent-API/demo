@@ -1,5 +1,6 @@
 "use client";
 import type { ComponentProps, ReactNode } from "react";
+import { useFunds } from "../funds-context";
 import { Portfolio } from "../portfolio/portfolio";
 import { PortfolioLaneSwitch } from "../portfolio/portfolio-lane-switch";
 import type { FlowId } from "./flow-options";
@@ -34,22 +35,29 @@ export function FundsWorkspace({
   }) => ReactNode;
   setupFunding?: boolean;
 }) {
+  const funds = useFunds();
   const [moreActions, setMoreActions] = useMoreActions();
   const selectedFlow = setupFunding ? "deposit" : effectiveFlow(flow, moreActions);
   const controller = useFundsFlows(portfolio.lane, selectedFlow, onFlow, portfolio.onLane);
   return children({
-    balanceSwitch: (
+    balanceSwitch: funds.hasPublicBalance ? (
       <PortfolioLaneSwitch
         lane={portfolio.lane}
         onLane={controller.changeLane}
         disabled={controller.busy || balanceLocked}
       />
-    ),
+    ) : null,
     portfolio: (
       <Portfolio
         {...portfolio}
         showLaneSwitch={false}
         onLane={controller.changeLane}
+        onLegacyAction={(next) => {
+          if (controller.busy || balanceLocked) return;
+          setMoreActions(true);
+          controller.openFlow(next);
+          portfolio.onManageFunds?.();
+        }}
         laneDisabled={controller.busy || balanceLocked}
         onAddFunds={
           portfolio.onManageFunds
@@ -75,13 +83,7 @@ export function FundsWorkspace({
         onSelectFlow={controller.openFlow}
       />
     ),
-    deposit: (
-      <SetupDeposit
-        view={controller.views.deposit}
-        onLane={controller.changeLane}
-        busy={controller.busy}
-      />
-    ),
+    deposit: <SetupDeposit view={controller.views.deposit} busy={controller.busy} />,
     busy: controller.busy,
   });
 }

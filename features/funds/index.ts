@@ -14,10 +14,11 @@ export {
 } from "./api";
 export { FundsWorkspace } from "./flows/funds-workspace";
 export { type FlowId, MoveFunds } from "./flows/move-funds";
-export { balanceLookup, FundsProvider } from "./funds-context";
+export { FundsProvider } from "./funds-context";
 export { humanize, statusTone } from "./operations/operation-display-utils";
 export { OperationsPanel } from "./operations/operations-panel";
 export { useOperations } from "./operations/use-operations";
 export { OrdersPanel } from "./orders/orders-panel";
 export { type Lane, Portfolio } from "./portfolio/portfolio";
+export { ReceiptsPanel } from "./receipts/receipts-panel";
 export { useAccess, useHoldings } from "./use-funds";

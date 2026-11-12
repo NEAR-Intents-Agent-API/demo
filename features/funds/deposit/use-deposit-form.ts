@@ -4,7 +4,6 @@ import { useState } from "react";
 import { type CatalogOption, chainInfo } from "@/features/assets";
 import { tokenAllowed } from "@/features/policy/model";
 import { parseUnits } from "@/lib/format/amount";
-import type { BalanceLane } from "../flows/flow-parts";
 import { useFunds } from "../funds-context";
 import { useIdempotencyKey } from "../model/use-idempotency-key";
 import { useFundsAction } from "../use-funds";
@@ -18,28 +17,22 @@ export function useDepositForm(onCreated: (ticket: DepositTracking) => void) {
   const [chain, setChain] = useState<string>("near");
   const [picked, setPicked] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
-  const [lane, setLane] = useState<BalanceLane>("public");
 
   const tokens = funds.catalog.tokens.filter(
     (token) => token.chain === chain && tokenAllowed(funds.rules, token.assetId),
   );
   const token = tokens.find((item) => item.assetId === picked) ?? tokens[0] ?? null;
   const atomic = token ? parseUnits(amount, token.decimals) : null;
-  const privateOn = funds.rules?.abilities.confidential !== false;
-  const confidential = lane === "private";
-  const key = useIdempotencyKey(`${token?.assetId}|${atomic}|${confidential}`);
+  const key = useIdempotencyKey(`${token?.assetId}|${atomic}`);
 
-  const reason =
-    !privateOn && confidential
-      ? "Confidential deposits are off in this account's rules"
-      : depositReason(token, amount, atomic);
+  const reason = depositReason(token, amount, atomic);
 
   const create = () => {
     if (!token || reason) return;
     action.mutate(
       {
         tool: "create_cross_chain_deposit",
-        args: depositArgs({ token, atomic, confidential, key }),
+        args: depositArgs({ token, atomic, key }),
       },
       {
         onSuccess: (result) =>
@@ -61,7 +54,6 @@ export function useDepositForm(onCreated: (ticket: DepositTracking) => void) {
     setChain("near");
     setPicked(null);
     setAmount("");
-    setLane("public");
     action.reset();
   };
   return {
@@ -72,8 +64,6 @@ export function useDepositForm(onCreated: (ticket: DepositTracking) => void) {
     setPicked,
     amount,
     setAmount,
-    lane,
-    setLane,
     tokens,
     token,
     atomic,

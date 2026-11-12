@@ -12,6 +12,7 @@ import { useFunds } from "../funds-context";
 import { extractWithdrawPreview } from "../model/quote";
 import { useIdempotencyKey } from "../model/use-idempotency-key";
 import { amountReason, useSourceAmount, useTracking } from "../model/use-move";
+import { useReceiptLabels } from "../model/use-receipt-labels";
 import { type TokenOption, useFundsAction } from "../use-funds";
 
 export type WithdrawArgs = {
@@ -19,7 +20,8 @@ export type WithdrawArgs = {
   amount: string;
   chain: string;
   to: string;
-  confidential: boolean;
+  /** Only ever `false`: the legacy public balance is the one thing a withdrawal can still name. */
+  confidential?: false;
   memo?: string;
 };
 
@@ -65,17 +67,17 @@ function buildWithdrawArgs(input: {
   atomic: bigint | null;
   over: boolean;
   recipient: string | null;
-  confidential: boolean;
+  legacyPublic: boolean;
   memo?: string;
 }): WithdrawArgs | null {
-  const { token, network, atomic, over, recipient, confidential } = input;
+  const { token, network, atomic, over, recipient, legacyPublic } = input;
   if (!token || !network || !atomic || atomic === 0n || over || !recipient) return null;
   return {
     token: token.assetId,
     amount: atomic.toString(),
     chain: network,
     to: recipient,
-    confidential,
+    ...(legacyPublic ? { confidential: false as const } : {}),
     ...(input.memo === undefined ? {} : { memo: input.memo }),
   };
 }
@@ -95,13 +97,14 @@ function withdrawReason(
  * Every fact and draft the withdrawal form needs: which balance pays, which network it settles
  * to, which approved destination receives it, and the live fee preview for exactly those inputs.
  */
-export function useWithdrawFlow(initialLane: BalanceLane = "public") {
+export function useWithdrawFlow() {
   const funds = useFunds();
-  const [lane, setLane] = useState<BalanceLane>(initialLane);
-  const source = useSourceAmount(lane === "private" ? funds.privateHoldings : funds.holdings);
+  const [lane, setLane] = useState<BalanceLane>("private");
+  const source = useSourceAmount(lane === "private" ? funds.holdings : funds.publicHoldings);
   const [chain, setChain] = useState<string | null>(null);
   const [recipient, setRecipient] = useState<string | null>(null);
   const { tracking, track, clear } = useTracking();
+  const labels = useReceiptLabels();
 
   const { token, atomic } = source;
   // Destinations restrict where funds may go; every network the token reaches is open to withdraw.
@@ -127,17 +130,17 @@ export function useWithdrawFlow(initialLane: BalanceLane = "public") {
     over: source.over,
     recipient: open ? recipient || null : (selected?.address ?? null),
     ...(selected?.memo != null ? { memo: selected.memo } : {}),
-    confidential: lane === "private",
+    legacyPublic: lane === "public",
   });
   const preview = useWithdrawPreview(funds.agent.id, args, Boolean(funds.access));
-  const key = useIdempotencyKey(JSON.stringify(args));
-  const reason = withdrawReason(source, network, recipient);
+  const key = useIdempotencyKey(JSON.stringify([args, labels.args]));
+  const reason = withdrawReason(source, network, recipient) ?? labels.problem;
 
   const action = useFundsAction(funds.agent.id);
   const submit = () => {
     if (!args) return;
     action.mutate(
-      { tool: "withdraw", args: { ...args, async: true, idempotencyKey: key } },
+      { tool: "withdraw", args: { ...args, ...labels.args, async: true, idempotencyKey: key } },
       { onSuccess: track },
     );
   };
@@ -148,6 +151,7 @@ export function useWithdrawFlow(initialLane: BalanceLane = "public") {
     source.setAmount("");
     setChain(null);
     setRecipient(null);
+    labels.reset();
     action.reset();
   };
   return {
@@ -155,6 +159,7 @@ export function useWithdrawFlow(initialLane: BalanceLane = "public") {
     action,
     submit,
     funds,
+    labels,
     source,
     lane,
     setLane,

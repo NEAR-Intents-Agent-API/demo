@@ -16,11 +16,12 @@ export type FundsContextValue = {
   agent: AgentView;
   tokens: readonly TokenOption[];
   chains: readonly string[];
+  /** What the confidential balance can spend. */
   holdings: readonly Holding[];
-  /** Confidential-balance holdings; empty until that lane asks for them. */
-  privateHoldings: readonly Holding[];
-  publicBalances: BalanceLookup;
-  privateBalances: BalanceLookup;
+  /** The legacy public balance, which can only be shielded or withdrawn. */
+  publicHoldings: readonly Holding[];
+  /** The account still has funds in the legacy public balance. */
+  hasPublicBalance: boolean;
   access: NonNullable<ReturnType<typeof useAccess>["data"]> | null;
   enableAccess: () => void;
   manageDestinations: (initial?: DestinationContext) => void;

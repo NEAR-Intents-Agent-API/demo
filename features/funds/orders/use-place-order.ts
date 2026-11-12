@@ -6,11 +6,11 @@ import { limitOrderPriceSchema } from "@/lib/agent-api/schemas";
 import { parseUnits } from "@/lib/format/amount";
 import { queryKeys } from "@/lib/query/keys";
 import { fundsApi } from "../api";
-import type { BalanceLane } from "../flows/flow-parts";
 import { heldTokens, useFunds } from "../funds-context";
 import { extractOrderPreview, pick } from "../model/quote";
 import { useIdempotencyKey } from "../model/use-idempotency-key";
 import { useDebouncedValue, useTracking } from "../model/use-move";
+import { useReceiptLabels } from "../model/use-receipt-labels";
 import { type TokenOption, useFundsAction } from "../use-funds";
 
 export type OrderSide = "sell" | "buy";
@@ -31,7 +31,6 @@ export type OrderRequest = {
   side: OrderSide;
   quantity: string;
   price: string;
-  confidential: boolean;
 };
 
 /** An order is only quotable once it names two different tokens, an amount and a valid price. */
@@ -41,9 +40,8 @@ export function buildOrderRequest(input: {
   side: OrderSide;
   quantity: bigint | null;
   price: string;
-  confidential: boolean;
 }): OrderRequest | null {
-  const { base, quote, side, quantity, price, confidential } = input;
+  const { base, quote, side, quantity, price } = input;
   if (!base || !quote || !quantity || quantity === 0n) return null;
   if (base.assetId === quote.assetId) return null;
   if (!limitOrderPriceSchema.safeParse(price).success) return null;
@@ -53,7 +51,6 @@ export function buildOrderRequest(input: {
     side,
     quantity: quantity.toString(),
     price,
-    confidential,
   };
 }
 
@@ -90,19 +87,18 @@ function useDeadline(id: DeadlineId, fingerprint: string): string | undefined {
 export function usePlaceOrder() {
   const funds = useFunds();
   const [side, setSide] = useState<OrderSide>("sell");
-  const [lane, setLane] = useState<BalanceLane>("public");
   const [pickedBase, setBase] = useState<TokenOption | null>(null);
   const [quote, setQuote] = useState<TokenOption | null>(null);
   const [amount, setAmount] = useState("");
   const [price, setPriceText] = useState("");
   const [deadlineId, setDeadlineId] = useState<DeadlineId>("7d");
   const { tracking, track } = useTracking();
+  const labels = useReceiptLabels();
 
-  const confidential = lane === "private";
-  const holdings = confidential ? funds.privateHoldings : funds.holdings;
+  const holdings = funds.holdings;
   const base = pickedBase ?? heldTokens(holdings)[0] ?? null;
   const quantity = base ? parseUnits(amount, base.decimals) : null;
-  const request = buildOrderRequest({ base, quote, side, quantity, price, confidential });
+  const request = buildOrderRequest({ base, quote, side, quantity, price });
   const fingerprint = JSON.stringify(request);
   // The request is rebuilt every render; debouncing its text keeps the timer from restarting.
   const debounced = useDebouncedValue(fingerprint);
@@ -116,10 +112,10 @@ export function usePlaceOrder() {
     retry: false,
     staleTime: 20_000,
   });
-  const key = useIdempotencyKey(fingerprint);
+  const key = useIdempotencyKey(`${fingerprint}|${JSON.stringify(labels.args)}`);
   const deadline = useDeadline(deadlineId, fingerprint);
   const action = useFundsAction(funds.agent.id);
-  const reason = orderReason({ base, quote, quantity, price });
+  const reason = orderReason({ base, quote, quantity, price }) ?? labels.problem;
   const title = `${side === "sell" ? "Sell" : "Buy"} ${base?.symbol ?? ""} for ${quote?.symbol ?? ""}`;
   const waitingOnPreview =
     request !== null &&
@@ -129,17 +125,19 @@ export function usePlaceOrder() {
   const execute = () => {
     if (!request) return;
     action.mutate(
-      { tool: "place_limit_order", args: { ...request, deadline, idempotencyKey: key } },
+      {
+        tool: "place_limit_order",
+        args: { ...request, ...labels.args, deadline, idempotencyKey: key },
+      },
       { onSuccess: (result) => track({ ...result, title }) },
     );
   };
 
   return {
     funds,
+    labels,
     side,
     setSide,
-    lane,
-    setLane,
     holdings,
     base,
     setBase,

@@ -5,7 +5,7 @@ export const MOVES: { verb: string; asset: string; what: string; who: Who; guard
     verb: "Deposit",
     asset: "Deposit",
     who: "No one",
-    what: "Fund the agent's public balance through NEAR Intents from a supported network.",
+    what: "Fund the agent's confidential balance through NEAR Intents from a supported network.",
     guard:
       "Receiving funds needs no approval and does not spend the account’s balance. Deposits are refused while the account is frozen.",
   },
@@ -32,13 +32,6 @@ export const MOVES: { verb: string; asset: string; what: string; who: Who; guard
     what: "Send funds to an approved address on a supported network.",
     guard:
       "Uses approved destinations, counts toward your USD budget, and waits out any execution delay, which gives you time to cancel.",
-  },
-  {
-    verb: "Confidential balance",
-    asset: "Confidential",
-    who: "Agent alone",
-    what: "Move funds between the public and confidential balances of the account.",
-    guard: "Funds stay inside the agent account, under your rules.",
   },
 ];
 

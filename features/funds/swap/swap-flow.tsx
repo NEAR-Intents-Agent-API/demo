@@ -6,6 +6,7 @@ import { AmountField } from "../flows/amount-field";
 import { BalanceContext } from "../flows/balance-context";
 import { FlowButton, FlowDivider, FlowError, FlowShell } from "../flows/flow-parts";
 import { QuoteWarnings } from "../flows/quote-warnings";
+import { ReceiptFields } from "../flows/receipt-fields";
 import { isAtomic } from "../model/quote";
 import { SwapReview } from "./swap-review";
 import type { useSwapFlow } from "./use-swap-flow";
@@ -23,7 +24,7 @@ export function SwapFlow({ view }: { view: ReturnType<typeof useSwapFlow> }) {
       onDone={view.resetDraft}
     >
       <div className="flex flex-col gap-4">
-        <BalanceContext label="Swap in" lane={view.lane} />
+        <BalanceContext label="Swap in" />
         <div className="flex flex-col gap-2">
           <AmountField
             label="You pay"
@@ -50,11 +51,12 @@ export function SwapFlow({ view }: { view: ReturnType<typeof useSwapFlow> }) {
           />
         </div>
 
+        <ReceiptFields labels={view.labels} id="swap" disabled={action.isPending} />
+
         <FlowError error={quote.error} />
         <QuoteWarnings warnings={quote.data?.warnings ?? []} token={token} />
         {outAtomic && token && view.to && source.atomic ? (
           <SwapReview
-            lane={view.lane}
             token={token}
             to={view.to}
             atomic={source.atomic}

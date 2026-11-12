@@ -4,6 +4,7 @@ import { SnowIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { AgentView, PolicyView } from "@near-intents-agent-api/sdk";
 import { Callout } from "@/components/shared/callout";
+import { Button } from "@/components/ui/button";
 import { errorMessage } from "@/lib/http/messages";
 import { PolicyChangeSummary } from "./policy-change-summary";
 import { PolicyNotices } from "./policy-notices";
@@ -41,7 +42,7 @@ export function PolicyRules({ agent, view }: { agent: AgentView; view: PolicyVie
     stale,
     conflict,
     changeAvailableAt,
-    holdsPrivateFunds,
+    upgrade,
   } = usePolicyEditor(agent, view);
   const blockedReason = stale
     ? "The rules changed after you started editing."
@@ -65,6 +66,26 @@ export function PolicyRules({ agent, view }: { agent: AgentView; view: PolicyVie
         </Callout>
       ) : null}
       <ApplyingNotice state={state} />
+      {current.publicPolicy && !editing ? (
+        <Callout
+          tone="warning"
+          compact
+          action={
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!canSign || busy || Boolean(blockedReason)}
+              onClick={upgrade}
+            >
+              Update rules
+            </Button>
+          }
+        >
+          These rules still apply to the public balance. Updating them moves every rule to the
+          confidential balance with one signature. Funds left in the public balance can still be
+          shielded or withdrawn.
+        </Callout>
+      ) : null}
       {RULE_SETTING_GROUPS.map((group, index) => (
         <RuleSettingGroup
           key={group.title}
@@ -101,11 +122,6 @@ export function PolicyRules({ agent, view }: { agent: AgentView; view: PolicyVie
           busy={busy}
           stage={workflow.stage}
           blockedReason={blockedReason}
-          warning={
-            holdsPrivateFunds
-              ? "This account holds a confidential balance. While Confidential balance is off, those funds cannot be moved back to the public balance; turn it back on first."
-              : undefined
-          }
           onCancel={cancelEditing}
           onSave={() => submit(editing)}
         />

@@ -1,12 +1,7 @@
 import type { Destination } from "@near-intents-agent-api/sdk";
-import { destinationRoute } from "./destination-utils";
-
-const DESTINATION_ACTION_LABELS: Record<ReturnType<typeof destinationRoute>, string> = {
-  withdraw: "Withdrawal",
-  intents_transfer: "Public transfer",
-  confidential_transfer: "Confidential transfer",
-};
 
 export function destinationActionLabel(destination: Destination): string {
-  return DESTINATION_ACTION_LABELS[destinationRoute(destination)];
+  if (destination.action === "withdraw") return "Withdrawal";
+  // A stored policy can still list a public transfer; it is replaced when the rules are saved.
+  return destination.confidential ? "Confidential transfer" : "Public transfer";
 }

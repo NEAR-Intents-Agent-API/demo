@@ -15,7 +15,7 @@ export function PortfolioAssetsDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="All assets"
-      description={`Holdings and account details for your ${details.lane === "public" ? "public" : "confidential"} balance.`}
+      description={`Holdings and account details for your ${details.lane === "public" ? "legacy public" : "confidential"} balance.`}
       contentClassName="sm:max-w-lg"
       bodyClassName="space-y-4 pt-2"
     >

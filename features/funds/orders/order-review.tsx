@@ -7,13 +7,11 @@ import type { OrderSide } from "./use-place-order";
 /** What the API says the order spends and the least a full fill delivers, in token units. */
 export function OrderReview({
   side,
-  lane,
   base,
   quote,
   preview,
 }: {
   side: OrderSide;
-  lane: "public" | "private";
   base: TokenOption;
   quote: TokenOption;
   preview: OrderPreview;
@@ -22,12 +20,7 @@ export function OrderReview({
   const received = side === "sell" ? quote : base;
   const spend = pick(preview.quote, ["spend_amount"]);
   const receive = pick(preview.quote, ["min_amount_out"]);
-  const rows = [
-    {
-      label: "Funded from",
-      value: lane === "private" ? "Confidential balance" : "Public balance",
-    },
-  ];
+  const rows: { label: string; value: string }[] = [];
   if (isAtomic(spend))
     rows.push({
       label: "Locked in the order",

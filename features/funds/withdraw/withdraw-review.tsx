@@ -39,7 +39,7 @@ export function WithdrawReview({
         rows={[
           {
             label: "Balance",
-            value: lane === "private" ? "Confidential balance" : "Public balance",
+            value: lane === "private" ? "Confidential balance" : "Legacy public balance",
           },
           { label: "You withdraw", value: show(atomic.toString()), emphasis: true },
           {

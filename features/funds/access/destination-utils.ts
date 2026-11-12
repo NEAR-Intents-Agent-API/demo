@@ -6,18 +6,12 @@ import { canonicalDestination } from "@/lib/agent-api/schemas";
 export const MEMO_MAX_LENGTH = 256;
 
 /**
- * The route an owner picks for a destination, in the words the dashboard uses: a withdrawal, a
- * public transfer or a confidential transfer. A policy destination is `withdraw` or `transfer`, with
- * `confidential` marking the confidential transfer; `destinationRoute` and `destinationFromDraft`
- * convert between the two.
+ * The route an owner picks for a destination, in the words the dashboard uses: a withdrawal or a
+ * confidential transfer. A policy destination is `withdraw` or `transfer` with `confidential` set;
+ * only a stored policy can still carry a public transfer, which the owner cannot add any more.
  */
-export type DestinationAction = "withdraw" | "intents_transfer" | "confidential_transfer";
+export type DestinationAction = "withdraw" | "confidential_transfer";
 export type DestinationContext = { action: DestinationAction; chain?: string };
-
-export function destinationRoute(destination: Destination): DestinationAction {
-  if (destination.action === "withdraw") return "withdraw";
-  return destination.confidential ? "confidential_transfer" : "intents_transfer";
-}
 
 type Draft = {
   action: DestinationAction;
@@ -71,11 +65,6 @@ export const DESTINATION_ACTIONS = [
     value: "withdraw",
     label: "Withdraw to a wallet or exchange",
     description: "Send funds out of NEAR Intents to an address on the selected network.",
-  },
-  {
-    value: "intents_transfer",
-    label: "Transfer to a public Intents account",
-    description: "Send funds to another NEAR Intents account. This is not a blockchain withdrawal.",
   },
   {
     value: "confidential_transfer",

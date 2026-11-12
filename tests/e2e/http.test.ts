@@ -132,12 +132,8 @@ async function depositFlow(stub: Awaited<ReturnType<typeof startStubAgentApi>>) 
   });
   assert.equal(access.access, null);
   const before = stub.submissions();
-  for (const confidential of [false, true]) {
-    const response = await browserPost(
-      path,
-      { ...body, args: { ...args, confidential, idempotencyKey: `demo-deposit-${confidential}` } },
-      login.cookie,
-    );
+  {
+    const response = await browserPost(path, body, login.cookie);
     assert.equal(response.status, 200, await response.clone().text());
     const result = await response.json();
     assert.equal(result.status, "PENDING_DEPOSIT");
@@ -325,9 +321,11 @@ async function mcpFlow(
     const names = body.result.tools.map((tool) => tool.name);
     assert.ok(names.includes("get_balances"));
     assert.ok(names.includes("get_policy"));
-    assert.ok(names.includes("intents_transfer"));
+    assert.ok(names.includes("confidential_transfer"));
     assert.ok(
       !names.includes("transfer") &&
+        !names.includes("intents_transfer") &&
+        !names.includes("unshield") &&
         !names.includes("sign_message") &&
         !names.includes("get_budget") &&
         !names.includes("get_limits") &&
@@ -1437,7 +1435,7 @@ async function startStubAgentApi(): Promise<{
     {
       match: (url) => url.pathname.endsWith("/deposit"),
       respond: (_url, body) => {
-        const input = body as { confidential: boolean; refund_to?: string };
+        const input = body as { confidential?: boolean; refund_to?: string };
         assert.equal(input.refund_to, undefined, "refunds go to the agent; none is named");
         const correlationId = "de".repeat(31) + (++depositCount).toString(16).padStart(2, "0");
         const status = {
@@ -1452,7 +1450,7 @@ async function startStubAgentApi(): Promise<{
           details: {
             action: "cross_chain_deposit",
             deposit_address: "deposit.near",
-            confidential: input.confidential,
+            confidential: input.confidential ?? true,
           },
         };
         statuses.set(correlationId, status);
