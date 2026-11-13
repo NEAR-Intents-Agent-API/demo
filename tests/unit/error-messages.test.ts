@@ -23,6 +23,7 @@ const apiCodes = [
   "agent_unfreeze_throttled",
   "amount_too_low",
   "approval_already_voted",
+  "approval_backlog_full",
   "approval_changed",
   "approval_closed",
   "approval_not_allowed",

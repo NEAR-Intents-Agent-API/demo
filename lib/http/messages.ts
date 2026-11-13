@@ -160,6 +160,8 @@ export const errorMessages: Record<string, string> = {
     "The account has used its moves for this hour. Wait until earlier moves age out of the hour, or raise the moves-per-hour cap on the Rules tab.",
   policy_usage_unavailable:
     "This account has earlier moves that cannot be counted against its per-token limits yet. Nothing was sent. Moves of limited tokens resume once those age out.",
+  approval_backlog_full:
+    "This agent already has 100 requests waiting for the owner's approval. Nothing was sent. Approve or reject some in Activity, then send this again.",
   withdraw_preview_pending: "A preview of this withdrawal is still running. Try again in a moment.",
   withdraw_preview_expired: "This withdrawal preview has expired. Preview it again.",
   withdraw_preview_limit_reached:

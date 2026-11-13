@@ -127,8 +127,7 @@ export function useAccessFlow(agent: AgentView, onEnabled?: () => void) {
           {committed ? (
             <Callout tone="warning" title={REVOKE_NOTICE_TITLE}>
               <RevokeNotice
-                ids={committed.ids}
-                truncated={committed.truncated}
+                committed={committed}
                 activityHref={`/agents/${encodeURIComponent(agent.id)}?tab=activity`}
               />
             </Callout>

@@ -103,19 +103,51 @@ test("access text carries date and time", () => {
   );
 });
 
-test("a revoke reports the operations already committed", () => {
-  const revoke = (ids: string[] | null, truncated: boolean | null) =>
+test("a revoke reports the operations and cancels already committed", () => {
+  const revoke = (
+    ids: string[] | null,
+    cancels: { order_id: string | null; committed_at: string }[] | null,
+    truncated: boolean | null,
+  ) =>
     ({
       type: "grant_revoke",
-      details: { grant_id: "g", committed_correlation_ids: ids, committed_truncated: truncated },
+      details: {
+        grant_id: "g",
+        committed_correlation_ids: ids,
+        committed_cancellations: cancels,
+        committed_truncated: truncated,
+      },
     }) as unknown as StatusResponse;
+  const at = "2026-11-13T10:00:00Z";
   assert.equal(committedAfterRevoke(null), null);
-  assert.equal(committedAfterRevoke(revoke(null, null)), null);
-  assert.equal(committedAfterRevoke(revoke([], false)), null);
-  assert.deepEqual(committedAfterRevoke(revoke(["op_a", "op_b"], true)), {
+  assert.equal(committedAfterRevoke(revoke(null, null, null)), null);
+  assert.equal(committedAfterRevoke(revoke([], [], false)), null);
+  assert.deepEqual(committedAfterRevoke(revoke(["op_a", "op_b"], null, true)), {
     ids: ["op_a", "op_b"],
+    cancellations: [],
     truncated: true,
   });
+  // A cancel alone is enough to warn, and a null order id cancels every open order.
+  assert.deepEqual(
+    committedAfterRevoke(
+      revoke(
+        [],
+        [
+          { order_id: "order_1", committed_at: at },
+          { order_id: null, committed_at: at },
+        ],
+        false,
+      ),
+    ),
+    {
+      ids: [],
+      cancellations: [
+        { orderId: "order_1", committedAt: at },
+        { orderId: null, committedAt: at },
+      ],
+      truncated: false,
+    },
+  );
   assert.equal(
     committedAfterRevoke({ type: "agent_archive", details: {} } as unknown as StatusResponse),
     null,
