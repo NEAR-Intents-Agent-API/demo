@@ -1491,6 +1491,7 @@ async function startStubAgentApi(): Promise<{
           details = {
             grant_id: grant.grant_id,
             committed_correlation_ids: [],
+            committed_cancellations: [],
             committed_truncated: false,
           };
         } else {

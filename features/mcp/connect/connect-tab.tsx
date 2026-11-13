@@ -90,8 +90,7 @@ export function ConnectTab({
           }
         >
           <RevokeNotice
-            ids={committed.ids}
-            truncated={committed.truncated}
+            committed={committed}
             activityHref={`/agents/${encodeURIComponent(agentId)}?tab=activity`}
           />
         </Callout>

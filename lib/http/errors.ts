@@ -65,6 +65,7 @@ const errorStatus: Record<string, number> = {
   policy_limit_exceeded: 403,
   policy_action_limit_exceeded: 403,
   policy_usage_unavailable: 409,
+  approval_backlog_full: 409,
   withdraw_preview_pending: 409,
   withdraw_preview_expired: 409,
   policy_schedule_denied: 403,
