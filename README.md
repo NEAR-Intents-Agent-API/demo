@@ -61,7 +61,7 @@ BETTER_AUTH_SECRET=YOUR_BETTER_AUTH_SECRET
 
 | Variable | Value |
 |---|---|
-| `NEAR_INTENTS_AGENT_API_URL` | A running [Agent API](https://github.com/NEAR-Intents-Agent-API/api); hosted: `https://api.agentsonintents.com` |
+| `NEAR_INTENTS_AGENT_API_URL` | A running [Agent API](https://github.com/NEAR-Intents-Agent-API/api); hosted: `https://api.agentsonintents.com`. Use the URL the API publishes as `servers[0]`, not an alias: the OIDC audience shown for workload grants is built from it |
 | `NEAR_INTENTS_AGENT_API_KEY` | A server-only partner API key, created in the partner portal for the API you point at: [partners.near-intents.org](https://partners.near-intents.org) for `https://api.agentsonintents.com`, [partners.demo.agentsonintents.com](https://partners.demo.agentsonintents.com) for the staging API at `https://api.demo.agentsonintents.com`. The portal shows a key once and it expires after 365 days; keys created before the partner portal are retired and the API answers `401 api_key_retired` |
 | `RECEIPT_LOG_ORIGIN`, `RECEIPT_LOG_URL`, `RECEIPT_WITNESS_KEY` | Optional. What Verify on a receipt trusts: the log's origin, its HTTPS tile URL and the witness public key (hex). Defaults pin the production Agent API (`api.agentsonintents.com/log`, `https://log.agentsonintents.com/`); set all three to verify receipts from another deployment |
 | `DATABASE_URL` | `pnpm docker:up` creates `near_intents_agent_demo` as database, user and password; use that password |

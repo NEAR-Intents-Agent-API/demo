@@ -1,4 +1,5 @@
-import type { GrantView } from "@near-intents-agent-api/sdk";
+import type { GrantCredentialType, GrantView } from "@near-intents-agent-api/sdk";
+import { type CredentialBinding, grantBinding, tokenCommitment } from "./workload-grants";
 
 export type AccessStatus = "active" | "expired" | "revoked";
 
@@ -16,6 +17,10 @@ export type AccessView = {
   /** When the owner revoked it; null unless `status` is `revoked`. */
   revokedAt: string | null;
   holder: AccessHolder;
+  /** How the holder proves itself: a grant token, a workload identity (OIDC) or a workload key. */
+  kind: GrantCredentialType;
+  /** What the owner signed about a workload's identity; null for a token or one this app cannot read. */
+  binding: Exclude<CredentialBinding, { type: "token" }> | null;
 };
 
 export function accessStatus(grant: GrantView, now: number = Date.now()): AccessStatus {
@@ -28,6 +33,7 @@ export function accessView(
   holder: AccessHolder = "client",
   now: number = Date.now(),
 ): AccessView {
+  const binding = grantBinding(grant);
   return {
     grantId: grant.grant_id,
     label: grant.label,
@@ -36,13 +42,16 @@ export function accessView(
     status: accessStatus(grant, now),
     revokedAt: grant.revoked_at,
     holder,
+    kind: grant.credential_type,
+    binding: binding && binding.type !== "token" ? binding : null,
   };
 }
 
 /**
  * Every grant on an account, active ones first and then the ended ones. Within each group the
  * API's order (newest first) is kept, so a revoked or expired grant stays visible instead of
- * disappearing. `dashboardCommitments` are the token commitments this dashboard itself holds.
+ * disappearing. `dashboardCommitments` are the token commitments this dashboard itself holds; a
+ * workload grant never matches one.
  */
 export function accessViews(
   grants: readonly GrantView[],
@@ -52,7 +61,7 @@ export function accessViews(
   const views = grants.map((grant) =>
     accessView(
       grant,
-      dashboardCommitments.has(grant.owner_message.credential) ? "dashboard" : "client",
+      dashboardCommitments.has(tokenCommitment(grant) ?? "") ? "dashboard" : "client",
       now,
     ),
   );

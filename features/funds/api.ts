@@ -10,6 +10,7 @@ import type { IntentStep } from "@/features/intents";
 import type { AccessView } from "@/lib/agent-api/access";
 import type { ReceiptVerification } from "@/lib/agent-api/receipts";
 import { request } from "@/lib/http/request";
+import type { WorkloadCredential } from "./access/workload-grant-form-utils";
 
 export type FundsTool =
   | "swap_quote"
@@ -60,8 +61,17 @@ export const fundsApi = {
       method: "POST",
       body: JSON.stringify(input),
     }),
+  /** `audience` is what a workload requests its OIDC identity token for on this agent. */
   grants: (agentId: string) =>
-    request<{ data: AccessGrantView[] }>(`/api/agents/${agentId}/grants`),
+    request<{ data: AccessGrantView[]; audience: string }>(`/api/agents/${agentId}/grants`),
+  issueWorkloadGrant: (
+    agentId: string,
+    input: { label: string; expiresAt: string; credential: WorkloadCredential },
+  ) =>
+    request<IntentStep>(`/api/agents/${agentId}/grants`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
   revokeAccess: (agentId: string) =>
     request<IntentStep>(`/api/agents/${agentId}/access`, { method: "DELETE" }),
   funds: (agentId: string, tool: FundsTool, args: Record<string, unknown>) =>

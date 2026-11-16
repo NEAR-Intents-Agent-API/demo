@@ -11,8 +11,8 @@ import {
 
 export type AccessRequest = { label: string; expiresAt: string };
 
-export function useAccessForm() {
-  const [label, setLabel] = useState(DEFAULT_ACCESS_LABEL);
+export function useAccessForm(initialLabel: string = DEFAULT_ACCESS_LABEL) {
+  const [label, setLabel] = useState(initialLabel);
   const [duration, setDuration] = useState<AccessDuration>(7);
   const [custom, setCustom] = useState("");
   const [problems, setProblems] = useState<AccessProblems | null>(null);

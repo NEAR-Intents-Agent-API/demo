@@ -38,9 +38,13 @@ const apiCodes = [
   "deposit_quota_exceeded",
   "execution_not_cancellable",
   "grant_action_unsupported",
+  "grant_ambiguous",
+  "grant_credential_invalid",
   "grant_expiry_invalid",
   "grant_limit_reached",
   "grant_not_found",
+  "grant_proof_invalid",
+  "grant_session_limit_reached",
   "insufficient_balance",
   "intent_expired",
   "intent_not_found",
@@ -50,6 +54,7 @@ const apiCodes = [
   "intent_type_mismatch",
   "internal_error",
   "invalid_address",
+  "issuer_unavailable",
   "limit_order_not_found",
   "limit_orders_open",
   "market_price_unavailable",
@@ -116,6 +121,7 @@ const apiCodes = [
   "spend_price_unavailable",
   "sponsor_balance_insufficient",
   "sponsor_busy",
+  "subject_token_invalid",
   "transaction_unconfirmed",
   "transparency_log_disabled",
   "unsupported_chain",
@@ -303,4 +309,27 @@ test("a code with no text of its own gets guidance from the layer that refused",
 test("the codes the API removed have no message and no alias", () => {
   for (const code of ["quote_unavailable", "invalid_request", "status_not_found"])
     assert.equal(Object.hasOwn(errorMessages, code), false, code);
+});
+
+test("workload-identity refusals say what to do, and only the ones that can change are retryable", () => {
+  for (const code of [
+    "grant_credential_invalid",
+    "subject_token_invalid",
+    "grant_proof_invalid",
+    "grant_ambiguous",
+  ])
+    assert.equal(isRetryable(code), false, code);
+  // A rate wait and an issuer outage both pass on their own.
+  assert.equal(isRetryable("grant_session_limit_reached"), true);
+  assert.equal(isRetryable("issuer_unavailable"), true);
+  assert.match(errorMessage("grant_ambiguous"), /grant id/);
+  assert.match(errorMessage("subject_token_invalid"), /fresh one/);
+  assert.match(errorMessage("grant_proof_invalid"), /new proof/);
+  const availableAt = new Date(Date.now() + 10 * 60_000).toISOString();
+  assert.match(
+    errorMessage(
+      new DemoApiError("grant_session_limit_reached", 429, { available_at: availableAt }),
+    ),
+    /after \d\d:\d\d, \d{1,2} \p{L}{3}/u,
+  );
 });

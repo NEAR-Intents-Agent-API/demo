@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { GrantView, StatusResponse } from "@near-intents-agent-api/sdk";
+import {
+  createWorkloadKey,
+  jwkThumbprintUri as sdkThumbprintUri,
+} from "@near-intents-agent-api/sdk";
 import { accessWhen } from "../../features/funds/access/access-display";
 import { accessProblems } from "../../features/funds/access/access-form-utils";
 import { accessViews } from "../../lib/agent-api/access";
@@ -56,6 +60,7 @@ const grant = (id: string, patch: Partial<GrantView>): GrantView =>
     issued_at: "2026-10-01T00:00:00Z",
     expires_at: "2026-11-01T00:00:00Z",
     revoked_at: null,
+    credential_type: "token",
     owner_message: { credential: `commitment-${id}` },
     ...patch,
   }) as unknown as GrantView;
@@ -165,4 +170,75 @@ test("an MCP client name fits the signed label with its prefix", () => {
   // A name an OAuth client chose for itself is made signable, never cut without a mark.
   assert.equal(mcpGrantLabel("c".repeat(80)), `MCP: ${"c".repeat(56)}...`);
   assert.equal(mcpGrantLabel("Clé"), "MCP: Cl?");
+});
+
+const oidcIssuer = "https://token.actions.githubusercontent.com";
+
+test("a workload grant lists its kind and what the owner signed, and is never the dashboard's", () => {
+  const { publicJwk } = createWorkloadKey("P-256");
+  const views = accessViews(
+    [
+      grant("ci", {
+        credential_type: "oidc",
+        owner_message: {
+          credential: {
+            type: "oidc",
+            issuer: oidcIssuer,
+            audience: "https://api.example.com/v1/agents/a1",
+            claims: { repository_owner_id: "1", repository_id: "2", environment: "production" },
+          },
+        },
+      } as unknown as Partial<GrantView>),
+      grant("server", {
+        credential_type: "public_key",
+        owner_message: { credential: { type: "public_key", jwk: publicJwk } },
+      } as unknown as Partial<GrantView>),
+      grant("token", {}),
+    ],
+    // A commitment can never equal an object credential, so no workload is the dashboard's.
+    new Set(["commitment-token"]),
+    now,
+  );
+  assert.deepEqual(
+    views.map((view) => [view.grantId, view.kind, view.holder]),
+    [
+      ["ci", "oidc", "client"],
+      ["server", "public_key", "client"],
+      ["token", "token", "dashboard"],
+    ],
+  );
+  assert.deepEqual(views[0]?.binding, {
+    type: "oidc",
+    issuer: oidcIssuer,
+    platform: "GitHub Actions",
+    audience: "https://api.example.com/v1/agents/a1",
+    claims: [
+      { name: "repository_owner_id", value: "1" },
+      { name: "repository_id", value: "2" },
+      { name: "environment", value: "production" },
+    ],
+    signedKeys: [],
+  });
+  // The dashboard's thumbprint is the SDK's: it is what the workload signs its assertions with.
+  assert.deepEqual(views[1]?.binding, {
+    type: "public_key",
+    curve: "P-256",
+    thumbprint: sdkThumbprintUri(publicJwk),
+  });
+  assert.equal(views[2]?.binding, null);
+});
+
+test("a credential this build cannot read lists its kind and no binding", () => {
+  const [view] = accessViews(
+    [
+      grant("future", {
+        credential_type: "oidc",
+        owner_message: { credential: { type: "oidc", issuer: oidcIssuer, new_field: 1 } },
+      } as unknown as Partial<GrantView>),
+    ],
+    new Set(),
+    now,
+  );
+  assert.equal(view?.kind, "oidc");
+  assert.equal(view?.binding, null);
 });
