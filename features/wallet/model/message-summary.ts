@@ -1,4 +1,16 @@
-import { destinationLabel, destinationSchema } from "@/lib/agent-api/schemas";
+import {
+  destinationLabel,
+  destinationSchema,
+  parseWorkloadCredential,
+  type SignedWorkloadCredential,
+} from "@/lib/agent-api/schemas";
+import {
+  claimsText,
+  GRANT_KIND_LABEL,
+  issuerPlatform,
+  jwkThumbprint,
+  jwkThumbprintUri,
+} from "@/lib/agent-api/workload-grants";
 import { formatDelayMs } from "@/lib/format/delay";
 
 /**
@@ -124,17 +136,82 @@ export function summarizeSignedMessage(message: string): MessageSummary | null {
           emphasis: true,
         });
       break;
-    case "agent grant":
+    case "agent grant": {
       push(rows, "Grant", envelope.label, false, true);
-      push(rows, "Token commitment", envelope.credential, true);
+      const credential = collectCredential(rows, details, envelope.credential);
+      // A credential this app cannot read is never summarized as a token: only the bytes show.
+      if (!credential) return null;
       collectGrant(details);
       break;
+    }
     default:
       break;
   }
 
   push(rows, "Recipient", envelope.recipient, true);
   return { title: known.title, kind: known.kind, rows, details };
+}
+
+/**
+ * What the grant's credential binds: a token's commitment, or the identity or key of a workload.
+ * False when the credential is neither a string nor a workload credential this app reads.
+ */
+function collectCredential(rows: SummaryRow[], details: SummaryRow[], value: unknown): boolean {
+  if (typeof value === "string") {
+    push(rows, "Token commitment", value, true);
+    return true;
+  }
+  const credential = parseWorkloadCredential(value);
+  if (!credential) return false;
+  if (credential.type === "public_key") collectKey(rows, details, credential);
+  else collectIdentity(rows, details, credential);
+  return true;
+}
+
+function collectIdentity(
+  rows: SummaryRow[],
+  details: SummaryRow[],
+  credential: Extract<SignedWorkloadCredential, { type: "oidc" }>,
+): void {
+  const platform = issuerPlatform(credential.issuer);
+  const claims = Object.entries(credential.claims).map(([name, value]) => ({ name, value }));
+  push(rows, "Credential", GRANT_KIND_LABEL.oidc);
+  push(rows, "Issuer", credential.issuer, true, true);
+  push(rows, "Platform", platform);
+  push(rows, "Token audience", credential.audience, true);
+  for (const claim of claims) push(rows, `Claim ${claim.name}`, claim.value, true, true);
+  (credential.jwks?.keys ?? []).forEach((key, index) => {
+    const curve = "crv" in key ? ` ${key.crv}` : "";
+    const kid = key.kid ? `, kid ${key.kid}` : "";
+    push(
+      rows,
+      `Issuer key ${index + 1}`,
+      `${key.kty}${curve}, thumbprint ${jwkThumbprint(key)}${kid}`,
+      true,
+    );
+  });
+  details.push({
+    label: "Who may act",
+    value: `Workloads of ${credential.issuer}${platform ? ` (${platform})` : ""} whose identity token carries ${claimsText(claims)}`,
+    emphasis: true,
+  });
+}
+
+function collectKey(
+  rows: SummaryRow[],
+  details: SummaryRow[],
+  credential: Extract<SignedWorkloadCredential, { type: "public_key" }>,
+): void {
+  const { jwk } = credential;
+  push(rows, "Credential", GRANT_KIND_LABEL.public_key);
+  push(rows, "Key type", jwk.crv);
+  push(rows, "Key thumbprint", jwkThumbprintUri(jwk), true, true);
+  push(rows, "Public key", jwk.kty === "EC" ? `x ${jwk.x}, y ${jwk.y}` : `x ${jwk.x}`, true);
+  details.push({
+    label: "Who may act",
+    value: "Whoever holds the private key of this public key",
+    emphasis: true,
+  });
 }
 
 /** A grant names who may act; what it may do is the account's rules, never the grant. */

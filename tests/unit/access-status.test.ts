@@ -11,6 +11,8 @@ const grant = (overrides: Partial<AccessView>): AccessView => ({
   status: "active",
   revokedAt: null,
   holder: "dashboard",
+  kind: "token",
+  binding: null,
   ...overrides,
 });
 

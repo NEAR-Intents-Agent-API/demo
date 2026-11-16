@@ -3,7 +3,11 @@ import type {
   DestinationRule,
   GenerateIntentRequest,
   GenerateIntentResponse,
+  GrantPublicKeyJwk,
+  GrantView,
   IntentType,
+  OidcGrantCredential,
+  OidcSigningKey,
   OwnerWallet,
   Policy,
   Schedule,
@@ -443,6 +447,130 @@ export const policySchema = z.strictObject({
 assertType<Equal<z.infer<typeof policySchema>, Policy>>();
 // Optional keys pass the check above whatever their name, so the key sets are compared too.
 assertType<Equal<keyof z.infer<typeof policySchema>, keyof Policy>>();
+
+// ---- Workload grants
+
+const printableAscii = /^[\x20-\x7e]+$/;
+/** The segments a claim name pins: a top-level name, or the parts of an RFC 6901 JSON pointer. */
+function claimPath(name: string): string[] {
+  return name.startsWith("/")
+    ? name
+        .slice(1)
+        .split("/")
+        .map((segment) => segment.replaceAll("~1", "/").replaceAll("~0", "~"))
+    : [name];
+}
+const registeredClaims = new Set(["iss", "aud", "exp", "nbf", "iat", "jti"]);
+/** Names that would read an object's prototype instead of a claim. */
+const prototypeNames = new Set(["__proto__", "constructor", "prototype"]);
+
+/** A claim name or an RFC 6901 pointer into nested claims, as the API accepts a pin. */
+const oidcClaimName = z
+  .string()
+  .max(128)
+  .regex(/^(?:[A-Za-z_][A-Za-z0-9_]{0,63}|(?:\/(?:[!-.0-}]|~[01])+){1,4})$/)
+  .refine((name) => {
+    const [first, ...rest] = claimPath(name);
+    return (
+      first !== undefined &&
+      !registeredClaims.has(first) &&
+      ![first, ...rest].some((segment) => prototypeNames.has(segment))
+    );
+  }, "Registered claims cannot be pinned");
+const jwkMember = (max: number) =>
+  z
+    .string()
+    .regex(/^[A-Za-z0-9_-]+$/)
+    .max(max);
+const issuerKeyMetadata = {
+  kid: z.string().min(1).max(128).regex(printableAscii).optional(),
+  use: z.literal("sig").optional(),
+};
+
+/** An Ed25519 or P-256 public key; the API refuses any private member. */
+export const publicKeyJwkSchema = z.discriminatedUnion("kty", [
+  z.strictObject({ kty: z.literal("OKP"), crv: z.literal("Ed25519"), x: jwkMember(43) }),
+  z.strictObject({
+    kty: z.literal("EC"),
+    crv: z.literal("P-256"),
+    x: jwkMember(43),
+    y: jwkMember(43),
+  }),
+]);
+assertType<Equal<z.infer<typeof publicKeyJwkSchema>, GrantPublicKeyJwk>>();
+
+/** An issuer public key the owner signs into an OIDC grant, for an issuer the API does not fetch keys from. */
+export const oidcSigningKeySchema = z.discriminatedUnion("kty", [
+  z.strictObject({
+    kty: z.literal("RSA"),
+    n: jwkMember(1366),
+    e: jwkMember(8),
+    alg: z.enum(["RS256", "RS384", "RS512", "PS256", "PS384", "PS512"]).optional(),
+    ...issuerKeyMetadata,
+  }),
+  z.strictObject({
+    kty: z.literal("EC"),
+    crv: z.enum(["P-256", "P-384"]),
+    x: jwkMember(64),
+    y: jwkMember(64),
+    alg: z.enum(["ES256", "ES384"]).optional(),
+    ...issuerKeyMetadata,
+  }),
+  z.strictObject({
+    kty: z.literal("OKP"),
+    crv: z.literal("Ed25519"),
+    x: jwkMember(43),
+    alg: z.enum(["EdDSA", "Ed25519"]).optional(),
+    ...issuerKeyMetadata,
+  }),
+]);
+assertType<Equal<z.infer<typeof oidcSigningKeySchema>, OidcSigningKey>>();
+
+/** A workload identity the owner asks to sign: an issuer and the claims that pin one workload. */
+export const oidcCredentialSchema = z.strictObject({
+  type: z.literal("oidc"),
+  issuer: z
+    .string()
+    .max(256)
+    .regex(/^https:\/\/[!-~]+$/),
+  /** Only Microsoft Entra ID names one; for every other issuer the API adds its own. */
+  audience: z.string().min(1).max(512).regex(printableAscii).optional(),
+  claims: z
+    .record(oidcClaimName, z.string().min(1).max(256).regex(printableAscii))
+    .refine((claims) => Object.keys(claims).length >= 1 && Object.keys(claims).length <= 16),
+  jwks: z.strictObject({ keys: z.array(oidcSigningKeySchema).min(1).max(4) }).optional(),
+});
+assertType<Equal<z.infer<typeof oidcCredentialSchema>, OidcGrantCredential>>();
+
+export const publicKeyCredentialSchema = z.strictObject({
+  type: z.literal("public_key"),
+  jwk: publicKeyJwkSchema,
+});
+
+/** What the browser may ask the dashboard to prepare for a workload grant. */
+export const workloadCredentialSchema = z.discriminatedUnion("type", [
+  oidcCredentialSchema,
+  publicKeyCredentialSchema,
+]);
+
+/**
+ * A workload credential as a signed grant message states it: the API has added the audience
+ * an OIDC grant's tokens must carry.
+ */
+const signedWorkloadCredentialSchema = z.union([
+  oidcCredentialSchema.required({ audience: true }),
+  publicKeyCredentialSchema,
+]);
+export type SignedWorkloadCredential = z.infer<typeof signedWorkloadCredentialSchema>;
+assertType<
+  Equal<SignedWorkloadCredential | z.infer<typeof hex64>, GrantView["owner_message"]["credential"]>
+>();
+
+/** The credential object of a signed grant message, or null when it is not one this app reads. */
+export function parseWorkloadCredential(value: unknown): SignedWorkloadCredential | null {
+  const parsed = signedWorkloadCredentialSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
 
 // ---- Ids and status
 

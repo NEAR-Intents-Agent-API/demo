@@ -6,6 +6,7 @@ import { getDemoDatabase } from "@/lib/auth/instance";
 import { parseDemoEnv } from "@/lib/config/env";
 import type { DemoDatabase } from "@/lib/db/client";
 import { grantCredential } from "@/lib/db/schema";
+import { tokenCommitment } from "./workload-grants";
 
 /** Who in the demo holds a grant: the dashboard itself, or one MCP client. */
 export type GrantHolder = { holder: "dashboard" } | { holder: "mcp"; clientAccessId: string };
@@ -98,7 +99,9 @@ export async function heldGrant(
   // permission: an older prepared challenge may be signed after a more recent preparation.
   const grants = await client.listGrants(input.agentId);
   for (const grant of grants) {
-    const credential = byCommitment.get(grant.owner_message.credential);
+    // Only token grants have a stored token; a workload's grant never belongs to the dashboard.
+    const commitment = tokenCommitment(grant);
+    const credential = commitment === null ? undefined : byCommitment.get(commitment);
     if (credential) {
       if (grant.revoked_at !== null || Date.parse(grant.expires_at) <= now) return null;
       return {

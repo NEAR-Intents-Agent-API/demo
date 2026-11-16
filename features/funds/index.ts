@@ -6,6 +6,7 @@ export { type DestinationContext, destinationName } from "./access/destination-u
 export { signedPayloadText } from "./access/signature-utils";
 export { useAccessFlow } from "./access/use-access-flow";
 export { useGrants } from "./access/use-grants";
+export { useWorkloadGrantFlow } from "./access/use-workload-grant-flow";
 export {
   type AccessGrantView,
   type FundsResult,

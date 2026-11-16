@@ -124,6 +124,18 @@ export const errorMessages: Record<string, string> = {
   access_required:
     "Authorize dashboard first. One grant lets the dashboard act under the account's rules until it expires.",
   agent_grant_required: "This connection has no live grant. Authorize it first.",
+  grant_credential_invalid:
+    "The API cannot accept this workload grant. An OIDC issuer needs its required claims pinned (for GitHub or GitLab, the repository or project ids and a branch or environment); an issuer the API does not know needs its signing keys signed into the grant. A key must be a public Ed25519 or P-256 key. Check what you entered and try again.",
+  subject_token_invalid:
+    "The workload's identity token or key assertion was not accepted: it is malformed, expired, already used, for another audience, or no live grant on this account names its issuer or key. Request a fresh one and try again.",
+  grant_proof_invalid:
+    "The workload key's proof for this request was refused. Sign a new proof for exactly this method, URL, body and idempotency key with the key the grant was issued for.",
+  grant_ambiguous:
+    "More than one live grant accepts this workload. Send the grant id of the one to use.",
+  grant_session_limit_reached:
+    "This grant already holds the most live sessions it may. Wait for the oldest to expire, then exchange again.",
+  issuer_unavailable:
+    "The identity issuer's signing keys could not be read right now. Try again in a moment; keys already fetched keep verifying for up to an hour.",
   policy_destination_denied:
     "This action, network, address or memo is not in the account's destination rule. Add it once with one signature; the dashboard and every connected client can then use it.",
   permission_update_pending: "Permission update is pending. Check Activity before signing again.",
@@ -250,6 +262,8 @@ const timedMessages: Record<string, string> = {
   agent_unfreeze_throttled: "Unfreezing has a short wait after a freeze. Try again after {time}.",
   agent_creation_quota_exceeded:
     "The demo has reached its limit for new agent accounts in a rolling 24 hours. Try again after {time}.",
+  grant_session_limit_reached:
+    "This grant already holds the most live sessions it may. Exchange again after {time}, when the oldest ends.",
   policy_schedule_denied:
     "The account's schedule does not allow money moves at the time this would run. Nothing was sent. Try again after {time}, or change the schedule on the Rules tab.",
   withdraw_preview_limit_reached:
@@ -462,6 +476,10 @@ const PERMANENT_CODES = new Set([
   "policy_blocks_delete",
   "deletion_assets_remaining",
   "validation_failed",
+  "grant_credential_invalid",
+  "subject_token_invalid",
+  "grant_proof_invalid",
+  "grant_ambiguous",
 ]);
 
 export function isRetryable(code: string): boolean {

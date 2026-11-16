@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import {
+  createWorkloadKey,
+  jwkThumbprintUri as sdkThumbprintUri,
+} from "@near-intents-agent-api/sdk";
 import { summarizeSignedMessage } from "../../features/wallet/model/message-summary";
 
 /**
@@ -213,4 +217,102 @@ test("a destination the dashboard cannot parse is still shown as signed, never d
   const rule = summary.details.find((row) => row.label === "Where funds can go")?.value ?? "";
   assert.match(rule, /^Only: withdraw: xrp XVLhHMPHU98es4dbozjVtdWzVrDjtV5fdx1mHp98tDMoQXb/);
   assert.match(rule, /some-new-chain/);
+});
+
+const grantEnvelope = (credential: unknown) => ({
+  ...control,
+  domain: "near-intents-agent-api.agent-grant.v6",
+  label: "CI deploy bot",
+  credential,
+});
+
+test("an OIDC grant names the issuer, every pinned claim and the audience, never [object Object]", () => {
+  const summary = summarizeSignedMessage(
+    JSON.stringify(
+      grantEnvelope({
+        type: "oidc",
+        issuer: "https://token.actions.githubusercontent.com",
+        audience: "https://api.agentsonintents.com/v1/agents/a1",
+        claims: { repository_owner_id: "42", repository_id: "7", environment: "production" },
+      }),
+    ),
+  );
+  assert.ok(summary);
+  assert.equal(summary.kind, "agent grant");
+  const rows = new Map(summary.rows.map((row) => [row.label, row.value]));
+  assert.equal(rows.get("Credential"), "Workload identity (OIDC)");
+  assert.equal(rows.get("Issuer"), "https://token.actions.githubusercontent.com");
+  assert.equal(rows.get("Platform"), "GitHub Actions");
+  assert.equal(rows.get("Token audience"), "https://api.agentsonintents.com/v1/agents/a1");
+  assert.equal(rows.get("Claim repository_owner_id"), "42");
+  assert.equal(rows.get("Claim repository_id"), "7");
+  assert.equal(rows.get("Claim environment"), "production");
+  assert.equal(rows.has("Token commitment"), false);
+  const who = summary.details.find((row) => row.label === "Who may act")?.value ?? "";
+  assert.match(
+    who,
+    /Workloads of https:\/\/token\.actions\.githubusercontent\.com \(GitHub Actions\)/,
+  );
+  assert.match(who, /repository_id=7/);
+  for (const row of [...summary.rows, ...summary.details])
+    assert.ok(!row.value.includes("[object Object]"), row.label);
+});
+
+test("an unfamiliar issuer is not given a platform name, and signed issuer keys show their thumbprints", () => {
+  const key = {
+    kty: "OKP",
+    crv: "Ed25519",
+    x: createWorkloadKey("Ed25519").publicJwk.x,
+    kid: "k1",
+  };
+  const summary = summarizeSignedMessage(
+    JSON.stringify(
+      grantEnvelope({
+        type: "oidc",
+        issuer: "https://kube.example.com",
+        audience: "https://api.example.com/v1/agents/a1",
+        claims: { sub: "system:serviceaccount:ns:bot" },
+        jwks: { keys: [key] },
+      }),
+    ),
+  );
+  assert.ok(summary);
+  const rows = new Map(summary.rows.map((row) => [row.label, row.value]));
+  assert.equal(rows.has("Platform"), false);
+  assert.match(
+    rows.get("Issuer key 1") ?? "",
+    /^OKP Ed25519, thumbprint [A-Za-z0-9_-]{43}, kid k1$/,
+  );
+});
+
+test("a key-bound grant shows the key type and its RFC 9278 thumbprint", () => {
+  for (const alg of ["Ed25519", "P-256"] as const) {
+    const { publicJwk } = createWorkloadKey(alg);
+    const summary = summarizeSignedMessage(
+      JSON.stringify(grantEnvelope({ type: "public_key", jwk: publicJwk })),
+    );
+    assert.ok(summary);
+    const rows = new Map(summary.rows.map((row) => [row.label, row.value]));
+    assert.equal(rows.get("Credential"), "Workload key");
+    assert.equal(rows.get("Key type"), alg);
+    // The same value the workload signs as iss and sub, so the owner can match it to the workload.
+    assert.equal(rows.get("Key thumbprint"), sdkThumbprintUri(publicJwk));
+    assert.equal(rows.has("Token commitment"), false);
+    assert.match(
+      summary.details.find((row) => row.label === "Who may act")?.value ?? "",
+      /private key/,
+    );
+  }
+});
+
+test("a grant credential this app cannot read shows only the signed bytes", () => {
+  for (const credential of [
+    { type: "saml", issuer: "https://x.example" },
+    { type: "oidc", issuer: "https://x.example", claims: {} },
+    { type: "oidc", issuer: "https://x.example", audience: "a", claims: { sub: "s" }, extra: 1 },
+    { type: "public_key", jwk: { kty: "OKP", crv: "Ed25519", x: "x", d: "secret" } },
+    ["not", "a", "credential"],
+    null,
+  ])
+    assert.equal(summarizeSignedMessage(JSON.stringify(grantEnvelope(credential))), null);
 });

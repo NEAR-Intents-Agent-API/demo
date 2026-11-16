@@ -85,6 +85,15 @@ test("grant tokens are held per holder and resolve only to their own live grant"
       }) as unknown as GrantView;
     // The Agent API holds a live grant for the dashboard and for Claude; Cursor's was revoked.
     let grants = [
+      // A newer workload grant has an object credential: it has no stored token, and never
+      // stands in for a token grant.
+      {
+        grant_id: "grant-workload",
+        revoked_at: null,
+        expires_at: new Date(Date.now() + 60_000).toISOString(),
+        credential_type: "public_key",
+        owner_message: { credential: { type: "public_key", jwk: { kty: "OKP" } } },
+      } as unknown as GrantView,
       grantFor(dashboard.commitment),
       grantFor(forClaude.commitment),
       grantFor(stored.find((row) => row.label === "MCP: cursor")?.commitment ?? "", "revoked"),
