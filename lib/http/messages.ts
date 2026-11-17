@@ -207,7 +207,9 @@ export const errorMessages: Record<string, string> = {
   insufficient_balance: "This account does not hold enough of this token.",
   amount_too_low: "This amount is below the minimum for this route. Try a larger amount.",
   invalid_address:
-    "The recipient is not a valid address for this network, a named NEAR account that does not exist, or the provider refused it. Nothing was sent. Check it and retry.",
+    "The recipient is not a valid address for this network, or a named NEAR account that does not exist. Nothing was sent. Check it and retry.",
+  recipient_storage_unregistered:
+    "The receiving NEAR account has no storage on this token's contract, so the token cannot land there. Nothing was sent. Register its storage on that token (storage_deposit), or send to another account, then try again.",
   unsupported_token: "This token is not supported for this route right now. Try another token.",
   unsupported_chain: "This network is not supported for this move. Try another network.",
   refund_address_required:
@@ -462,6 +464,7 @@ const PERMANENT_CODES = new Set([
   "limit_orders_open",
   "amount_too_low",
   "invalid_address",
+  "recipient_storage_unregistered",
   "unsupported_token",
   "unsupported_chain",
   "refund_address_required",
