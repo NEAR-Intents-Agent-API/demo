@@ -99,6 +99,7 @@ const apiCodes = [
   "policy_revision_conflict",
   "policy_schedule_denied",
   "policy_storage_changed",
+  "policy_too_large",
   "policy_transaction_limit_exceeded",
   "provider_credential_invalid",
   "provider_policy_mismatch",
@@ -225,6 +226,7 @@ test("cooldown and refusal states offer no instant retry", () => {
     "amount_too_low",
     "invalid_address",
     "recipient_storage_unregistered",
+    "policy_too_large",
   ])
     assert.equal(isRetryable(code), false, code);
   assert.equal(isRetryable("wallet_busy"), true);
