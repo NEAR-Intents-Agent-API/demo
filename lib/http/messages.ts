@@ -189,6 +189,8 @@ export const errorMessages: Record<string, string> = {
   policy_action_denied:
     "The account's rules turn this action off. Turn it on in Rules; the dashboard and every connected client can then use it, with no new grant.",
   policy_deposit_limit: "The rules change is too large to store. Simplify the rules and try again.",
+  policy_too_large:
+    "These rules are too large to store in one write. Allow fewer assets, per-asset limits or contracts, then prepare the change again.",
   signing_policy_denied:
     "The account's rules do not list this service for NEAR sign-in. Add it under Native accounts in Rules first.",
   signing_recipient_forbidden: "Agent accounts never sign for the NEAR Intents contracts.",
@@ -465,6 +467,7 @@ const PERMANENT_CODES = new Set([
   "amount_too_low",
   "invalid_address",
   "recipient_storage_unregistered",
+  "policy_too_large",
   "unsupported_token",
   "unsupported_chain",
   "refund_address_required",

@@ -1,3 +1,5 @@
+import type { ApprovalView } from "@near-intents-agent-api/sdk";
+
 /** Provider vocabulary, made readable without changing its meaning. */
 export function humanizeRequestType(requestType: string): string {
   const words = requestType.replaceAll("_", " ").toLowerCase();
@@ -7,14 +9,9 @@ export function humanizeRequestType(requestType: string): string {
 
 /**
  * One signed vote the API recorded before provider delivery. The approval's status comes from
- * the provider. The published SDK's `ApprovalView` does not carry `votes` yet.
+ * the provider. `voter` is `near:<account>:<public_key>`, `evm:<account>` or `passkey:<account>`.
  */
-export type ApprovalVote = {
-  /** `near:<account>:<public_key>`, `evm:<account>` or `passkey:<account>`. */
-  voter: string;
-  verdict: "approve" | "reject";
-  voted_at: string;
-};
+export type ApprovalVote = ApprovalView["votes"][number];
 
 const VOTER_METHODS: Record<string, string> = {
   near: "NEAR wallet",
