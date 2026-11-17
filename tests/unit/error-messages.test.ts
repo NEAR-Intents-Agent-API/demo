@@ -110,6 +110,7 @@ const apiCodes = [
   "public_balance_exit_only",
   "rate_limited",
   "receipt_not_available",
+  "recipient_storage_unregistered",
   "refund_address_required",
   "route_unavailable",
   "sign_recipient_denied",
@@ -219,7 +220,12 @@ test("errorMessage takes a code, a plain Error or an unknown value", () => {
 });
 
 test("cooldown and refusal states offer no instant retry", () => {
-  for (const code of ["agent_unfreeze_throttled", "amount_too_low", "invalid_address"])
+  for (const code of [
+    "agent_unfreeze_throttled",
+    "amount_too_low",
+    "invalid_address",
+    "recipient_storage_unregistered",
+  ])
     assert.equal(isRetryable(code), false, code);
   assert.equal(isRetryable("wallet_busy"), true);
 });

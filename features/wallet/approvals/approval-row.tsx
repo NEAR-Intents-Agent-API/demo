@@ -9,7 +9,8 @@ import { Pending } from "@/components/shared/states";
 import { StatusPill } from "@/components/shared/status";
 import { Button } from "@/components/ui/button";
 import { accountTimestamp } from "@/lib/format/date";
-import { humanizeRequestType } from "./approval-display-utils";
+import { approvalVotes, humanizeRequestType } from "./approval-display-utils";
+import { ApprovalVotes } from "./approval-votes";
 
 export function ApprovalRow({
   approval,
@@ -42,6 +43,8 @@ export function ApprovalRow({
             </span>
           ) : null}
         </div>
+
+        <ApprovalVotes votes={approvalVotes(approval)} />
 
         <Disclosure summary="Request details">
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">

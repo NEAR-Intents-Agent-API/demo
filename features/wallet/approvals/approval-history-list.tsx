@@ -1,7 +1,8 @@
 import type { ApprovalView } from "@near-intents-agent-api/sdk";
 import { StatusPill, type StatusTone } from "@/components/shared/status";
 import { accountTimestamp } from "@/lib/format/date";
-import { humanizeRequestType } from "./approval-display-utils";
+import { approvalVotes, humanizeRequestType } from "./approval-display-utils";
+import { ApprovalVotes } from "./approval-votes";
 
 const OUTCOME: Record<
   Exclude<ApprovalView["status"], "PENDING">,
@@ -25,18 +26,21 @@ export function ApprovalHistoryList({ approvals }: { approvals: readonly Approva
           return (
             <li
               key={approval.approval_id}
-              className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm sm:px-5"
+              className="space-y-2 px-4 py-3 text-sm sm:px-5"
               data-testid="decided-approval"
             >
-              <span className="capitalize">{humanizeRequestType(approval.request_type)}</span>
-              <span className="flex items-center gap-3">
-                <StatusPill tone={outcome.tone}>{outcome.label}</StatusPill>
-                {approval.status === "EXPIRED" && approval.expires_at ? (
-                  <span className="text-xs text-muted-foreground">
-                    {accountTimestamp(approval.expires_at)}
-                  </span>
-                ) : null}
-              </span>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="capitalize">{humanizeRequestType(approval.request_type)}</span>
+                <span className="flex items-center gap-3">
+                  <StatusPill tone={outcome.tone}>{outcome.label}</StatusPill>
+                  {approval.status === "EXPIRED" && approval.expires_at ? (
+                    <span className="text-xs text-muted-foreground">
+                      {accountTimestamp(approval.expires_at)}
+                    </span>
+                  ) : null}
+                </span>
+              </div>
+              <ApprovalVotes votes={approvalVotes(approval)} />
             </li>
           );
         })}
