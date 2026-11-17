@@ -6,8 +6,8 @@ export function humanizeRequestType(requestType: string): string {
 }
 
 /**
- * One owner vote the API recorded on an approval. Typed here rather than from the SDK, whose
- * published `ApprovalView` does not carry `votes` yet.
+ * One signed vote the API recorded before provider delivery. The approval's status comes from
+ * the provider. The published SDK's `ApprovalView` does not carry `votes` yet.
  */
 export type ApprovalVote = {
   /** `near:<account>:<public_key>`, `evm:<account>` or `passkey:<account>`. */
@@ -22,7 +22,7 @@ const VOTER_METHODS: Record<string, string> = {
   passkey: "passkey",
 };
 
-/** The votes an approval reports; none when the API predates the field or nobody voted. */
+/** Signed votes recorded on the approval. Older API versions omit the field. */
 export function approvalVotes(approval: object): ApprovalVote[] {
   const votes = "votes" in approval ? approval.votes : undefined;
   if (!Array.isArray(votes)) return [];

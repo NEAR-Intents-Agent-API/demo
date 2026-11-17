@@ -2,7 +2,7 @@ import { MonoId } from "@/components/shared/identifiers";
 import { accountTimestamp } from "@/lib/format/date";
 import { type ApprovalVote, describeVoter } from "./approval-display-utils";
 
-/** Who voted on an approval and how, oldest first; nothing when no vote was recorded. */
+/** Signed vote submissions recorded by the API, oldest first. */
 export function ApprovalVotes({ votes }: { votes: readonly ApprovalVote[] }) {
   if (votes.length === 0) return null;
   return (
@@ -15,9 +15,9 @@ export function ApprovalVotes({ votes }: { votes: readonly ApprovalVote[] }) {
             className="flex flex-wrap items-center gap-1.5"
           >
             <span className="font-medium text-foreground">
-              {vote.verdict === "approve" ? "Approved" : "Rejected"}
+              {vote.verdict === "approve" ? "Recorded vote to approve" : "Recorded vote to reject"}
             </span>
-            <span>by</span>
+            <span>from</span>
             <MonoId value={account} head={10} tail={6} className="text-xs" />
             <span>
               ({method}) · {accountTimestamp(vote.voted_at)}
