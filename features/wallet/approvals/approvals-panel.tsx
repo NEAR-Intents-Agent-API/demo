@@ -1,5 +1,6 @@
 "use client";
 
+import { Callout } from "@/components/shared/callout";
 import { Loading, Unavailable } from "@/components/shared/states";
 import { ConsentDialog } from "../components/consent-dialog";
 import { ApprovalHistoryList } from "./approval-history-list";
@@ -50,6 +51,11 @@ export function ApprovalsPanel({ agentId }: { agentId: string }) {
             </ul>
           ) : null}
         </div>
+        {view.notice ? (
+          <Callout tone="warning" compact className="mx-4 mb-4 sm:mx-5">
+            {view.notice}
+          </Callout>
+        ) : null}
         {view.decided.length > 0 ? <ApprovalHistoryList approvals={view.decided} /> : null}
         {view.error && !view.decision ? (
           <p className="px-4 pb-4 text-sm text-destructive sm:px-5">{view.error}</p>

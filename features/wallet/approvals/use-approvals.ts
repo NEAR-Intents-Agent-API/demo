@@ -9,6 +9,7 @@ import { queryKeys } from "@/lib/query/keys";
 import { walletApi } from "../api";
 import type { ConsentChallenge, ConsentStage } from "../components/consent-dialog";
 import { signIntent } from "../sign-intent";
+import { needsRejectAgain, REJECT_AGAIN_NOTICE } from "./approval-display-utils";
 import {
   decidedApprovals,
   readApproval,
@@ -30,6 +31,7 @@ export function useApprovals(agentId: string) {
   const [decision, setDecision] = useState<PendingDecision | null>(null);
   const [stage, setStage] = useState<ConsentStage>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const approvals = useQuery({
     queryKey: queryKeys.approvals(agentId),
@@ -76,6 +78,7 @@ export function useApprovals(agentId: string) {
     },
     onSuccess: (result) => {
       setError(null);
+      setNotice(null);
       setDecision(result);
       setStage("idle");
     },
@@ -91,9 +94,10 @@ export function useApprovals(agentId: string) {
         input.signedData,
       );
     },
-    onSuccess: async () => {
+    onSuccess: async (step) => {
       setStage("idle");
       setDecision(null);
+      setNotice(needsRejectAgain(step.operation) ? REJECT_AGAIN_NOTICE : null);
       await queryClient.invalidateQueries({ queryKey: queryKeys.approvals(agentId) });
       await queryClient.invalidateQueries({ queryKey: queryKeys.policy(agentId) });
     },
@@ -126,6 +130,7 @@ export function useApprovals(agentId: string) {
     setDecision,
     stage,
     error,
+    notice,
     signAndVote,
   };
 }
