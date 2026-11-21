@@ -158,7 +158,9 @@ export const errorMessages: Record<string, string> = {
   wallet_sponsor_disabled: "This deployment cannot submit owner actions right now.",
   wallet_resolver_unavailable: "The owner wallet could not be checked right now. Try again.",
   near_rpc_unavailable:
-    "The NEAR network did not answer, so the recipient could not be checked. Nothing was sent; try again in a moment.",
+    "The NEAR network did not answer, so the check could not run. Nothing was sent or changed; try again in a moment.",
+  owner_verification_unavailable:
+    "The NEAR network could not confirm your wallet's key right now. Nothing was changed; try again in a moment.",
   wallet_rpc_unavailable: "The NEAR network did not answer. Try again in a moment.",
   transaction_unconfirmed:
     "The transaction was sent, but its confirmation has not been seen yet. Check Activity before trying again.",

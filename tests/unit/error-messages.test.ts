@@ -82,6 +82,7 @@ const apiCodes = [
   "owner_nonce_invalid",
   "owner_proof_invalid",
   "owner_type_unsupported",
+  "owner_verification_unavailable",
   "policy_action_denied",
   "policy_asset_denied",
   "policy_blocks_delete",
