@@ -32,7 +32,7 @@ export function ActivatedStep({
         <p className="text-sm">Ownership confirmed. Account rules installed.</p>
       </div>
       <p className="text-sm leading-6 text-muted-foreground">
-        Next, add funds. Dashboard access is optional; your client will have its own grant.
+        Next, add funds. Connected clients get their own grant.
       </p>
     </SetupFlowPanel>
   );

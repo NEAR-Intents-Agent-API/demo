@@ -10,6 +10,7 @@ import {
   humanize,
   operationActionLabel,
   operationAmountLabel,
+  operationGrantInstall,
   operationMadeBy,
   statusTone,
 } from "./operation-display-utils";
@@ -31,6 +32,7 @@ export function RequestDetails({ operation }: { operation: StatusResponse }) {
   const evidence = operationEvidence(operation);
   const amount = operationAmountLabel(operation, find);
   const asset = evidence.token ? find(evidence.token) : undefined;
+  const dashboardAccess = operationGrantInstall(operation);
   return (
     <DetailsDialog title={operationActionLabel(operation)} description="Wallet operation details.">
       <dl className="space-y-4 text-sm">
@@ -48,6 +50,7 @@ export function RequestDetails({ operation }: { operation: StatusResponse }) {
           <Field label="Provider note">{evidence.failureReason}</Field>
         ) : null}
         {amount ? <Field label="Amount">{amount}</Field> : null}
+        {dashboardAccess ? <Field label="Dashboard access">{dashboardAccess}</Field> : null}
         <Field label="Made by">{operationMadeBy(operation)}</Field>
         {evidence.executeAfter && operation.status === "QUEUED" ? (
           <Field label="Runs at">{accountTimestamp(evidence.executeAfter)}</Field>

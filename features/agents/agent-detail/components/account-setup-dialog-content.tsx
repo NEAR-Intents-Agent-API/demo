@@ -8,6 +8,7 @@ import { useDialogLocked } from "@/hooks/use-dialog-busy";
 import type { AccountSetupStep } from "../../model/tabs";
 import { ActivatedStep } from "./activated-step";
 import { FundingStep } from "./funding-step";
+import { GrantInstallNotice } from "./grant-install-notice";
 import { SetupProgress } from "./setup-progress";
 import type { SetupStep } from "./setup-progress-utils";
 
@@ -67,6 +68,13 @@ export function AccountSetupDialogContent({
   return (
     <>
       <SetupProgress steps={steps} activeStepId={step} disabled={locked} />
+      {step === "access" ? null : (
+        <GrantInstallNotice
+          agentId={agent.id}
+          hasAccess={steps.some((item) => item.id === "access" && item.done)}
+          onAuthorize={() => onStep("access")}
+        />
+      )}
       {content}
     </>
   );

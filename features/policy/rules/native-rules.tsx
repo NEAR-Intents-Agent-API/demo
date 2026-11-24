@@ -130,7 +130,7 @@ export function NativeRules({
           checked={evm.sign_message}
           onChange={(sign_message) => set({ ...rules.native, evm: { ...evm, sign_message } })}
           label="Sign messages"
-          description="Any EIP-191 message from the agent's EVM address. It never signs a NEAR Intents payload; use the switch below."
+          description="Any EIP-191 message from the agent's EVM address, except a NEAR Intents payload, which the API refuses. Use the switch below for those."
         />
         <NativeSignIntent
           chain="EVM"
@@ -173,7 +173,7 @@ export function NativeRules({
           checked={solana.sign_message}
           onChange={(sign_message) => set({ ...rules.native, solana: { ...solana, sign_message } })}
           label="Sign messages"
-          description="Any bytes from the agent's Solana address, including a 32-byte digest. That amounts to full control of the agent's Solana account in NEAR Intents; prefer sign-in or the NEAR Intents switch below."
+          description="Any bytes from the agent's Solana address, except a NEAR Intents payload or a Solana transaction, which the API refuses. A 32-byte digest cannot be inspected, so this is full control of the agent's Solana key; prefer sign-in, sign transfers or the NEAR Intents switch below."
         />
         <NativeSignIntent
           chain="Solana"

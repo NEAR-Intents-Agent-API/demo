@@ -1,4 +1,8 @@
-import { grantExpiryProblem, grantLabelProblem } from "@/lib/agent-api/access-input";
+import {
+  DASHBOARD_GRANT_LABEL,
+  grantExpiryProblem,
+  grantLabelProblem,
+} from "@/lib/agent-api/access-input";
 
 export type AccessPreset = 1 | 7 | 30;
 export type AccessDuration = AccessPreset | "custom";
@@ -10,7 +14,7 @@ export const ACCESS_DURATIONS = [
   { value: "custom", label: "Custom" },
 ] as const;
 
-export const DEFAULT_ACCESS_LABEL = "Dashboard";
+export const DEFAULT_ACCESS_LABEL = DASHBOARD_GRANT_LABEL;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

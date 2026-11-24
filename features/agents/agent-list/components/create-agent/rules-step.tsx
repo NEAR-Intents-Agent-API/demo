@@ -5,6 +5,7 @@ import { useCatalog } from "@/features/assets";
 import { RulesEditor } from "@/features/policy/index";
 import type { Rules } from "@/features/policy/model";
 import { OwnerRiskNotice } from "@/features/wallet";
+import { FIRST_GRANT_DAYS } from "@/lib/agent-api/access-input";
 import { RulesOverview } from "./rules-overview";
 
 /** Step two body: the rules this signature installs, with the editor one click away. */
@@ -52,7 +53,8 @@ export function RulesStep({
 
       <OwnerRiskNotice />
       <p className="border-t pt-3 text-xs leading-5 text-muted-foreground">
-        Rules apply to every client.
+        Rules apply to every client. The same signature gives this dashboard access for{" "}
+        {FIRST_GRANT_DAYS} days; you can revoke it at any time.
       </p>
     </div>
   );

@@ -85,14 +85,17 @@ Production: `pnpm build`, `pnpm start`, and run `pnpm db:migrate` before each de
 2. **Create an agent**: a name, rules, one signature. New agents can do everything NEAR Intents
    offers (swap, send, withdraw to any network, confidential balance); native methods stay off until
    switched on. Rules map to the account policy
-   in `features/policy/rules/rules.ts`. The dialog waits until the account is live; an
-   interrupted activation resumes.
+   in `features/policy/rules/rules.ts`. The same signature also authorizes the dashboard's first
+   grant (7 days), so the server prepares `agent_create` with a `grant`, checks it with the SDK's
+   `verifyAgentCreateIntent` before the wallet signs, and reads `grant_install` once the account
+   is live. If the API refused the grant, the account still exists and step 4 issues it. The
+   dialog waits until the account is live; an interrupted activation resumes.
 3. **Fund it.** Deposits need only the signed-in owner's session: a one-time 1Click address for a
    chosen network and token (optionally an amount), or a transfer from any NEAR Intents account.
    No grant signature is needed, and a failed or late deposit refunds into the agent's own balance.
-4. **Authorize the dashboard** to spend. Swaps, sends, withdrawals and confidential-balance moves need one
-   owner signature on a `grant_issue` for the dashboard's own grant token, valid for 1, 7 or 30
-   days. The dialog shows the live account rules: exactly what the dashboard, and every other
+4. **Authorize the dashboard** to spend. Swaps, sends, withdrawals and confidential-balance moves need
+   the dashboard's own grant token. A new account already has one from step 2; a later or renewed grant
+   is one owner signature on a `grant_issue`, valid for 1, 7 or 30 days. The dialog shows the live account rules: exactly what the dashboard, and every other
    grant, may do.
 5. **Approve destinations.** Withdrawals and sends only reach destinations the account allows. A
    new account starts with an empty "Only these" list; approving a destination is one off-chain
