@@ -44,15 +44,18 @@ function openToken(sealed: string, commitment: string): string {
   ]).toString("utf8");
 }
 
-/**
- * Creates and stores the token for one new grant, before the owner signs. Only the commitment
- * goes into the `grant_issue` intent; the grant exists once the owner's signature is submitted.
- */
-export async function prepareGrantCredential(
-  input: { userId: string; agentId: string; label: string } & GrantHolder,
+/** Keeps a grant's token, sealed, until its owner signature makes the grant exist. */
+export async function storeGrantCredential(
+  input: {
+    userId: string;
+    agentId: string;
+    label: string;
+    token: string;
+    commitment: string;
+  } & GrantHolder,
   database: DemoDatabase = getDemoDatabase(),
-): Promise<{ label: string; commitment: string }> {
-  const { token, commitment } = createGrantCredential();
+): Promise<void> {
+  const { token, commitment } = input;
   await database.db.insert(grantCredential).values({
     id: crypto.randomUUID(),
     userId: input.userId,
@@ -63,6 +66,18 @@ export async function prepareGrantCredential(
     commitment,
     sealedToken: sealToken(token, commitment),
   });
+}
+
+/**
+ * Creates and stores the token for one new grant, before the owner signs. Only the commitment
+ * goes into the `grant_issue` intent; the grant exists once the owner's signature is submitted.
+ */
+export async function prepareGrantCredential(
+  input: { userId: string; agentId: string; label: string } & GrantHolder,
+  database: DemoDatabase = getDemoDatabase(),
+): Promise<{ label: string; commitment: string }> {
+  const { token, commitment } = createGrantCredential();
+  await storeGrantCredential({ ...input, token, commitment }, database);
   return { label: input.label, commitment };
 }
 

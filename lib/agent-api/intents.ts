@@ -1,4 +1,9 @@
-import type { AgentApi, GenerateIntentRequest, SignedData } from "@near-intents-agent-api/sdk";
+import {
+  type AgentApi,
+  type GenerateIntentRequest,
+  type SignedData,
+  verifyAgentCreateIntent,
+} from "@near-intents-agent-api/sdk";
 import { and, desc, eq } from "drizzle-orm";
 import { agentApi } from "@/lib/agent-api/client";
 import { getDemoDatabase } from "@/lib/auth/instance";
@@ -12,6 +17,10 @@ export type ObserveOptions = { waitMs?: number };
 export function createOwnerIntents(database: DemoDatabase, api: AgentApi) {
   async function generate(userId: string, request: GenerateIntentRequest) {
     const generated = await api.generateIntent(request);
+    // NEAR and EVM wallets show the owner only a hash, so what it commits to is checked here,
+    // before the wallet is asked to sign anything.
+    if (request.type === "agent_create" && request.grant)
+      verifyAgentCreateIntent(generated, { grant: request.grant });
     await database.db.insert(ownerIntent).values({
       correlationId: generated.correlation_id,
       userId,

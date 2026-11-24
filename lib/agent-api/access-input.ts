@@ -4,6 +4,10 @@
  * it stays printable ASCII (a non-ASCII character once broke wallet signatures).
  */
 
+/** The dashboard grant that a new account's activation signature also authorizes. */
+export const DASHBOARD_GRANT_LABEL = "Dashboard";
+export const FIRST_GRANT_DAYS = 7;
+
 export const GRANT_LABEL_MAX = 64;
 export const GRANT_MAX_DAYS = 365;
 /** Signing takes a moment; shorter access would end before it begins. */

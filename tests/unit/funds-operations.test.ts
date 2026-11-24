@@ -8,6 +8,7 @@ import { withdrawFacts } from "../../features/funds/model/quote";
 import {
   operationActionLabel,
   operationAmountLabel,
+  operationGrantInstall,
   operationMadeBy,
   statusTone,
 } from "../../features/funds/operations/operation-display-utils";
@@ -276,4 +277,30 @@ test("native signing methods read in plain words", () => {
   assert.equal(label("solana_sign_in"), "Solana sign-in");
   assert.equal(label("solana_sign_intent"), "Solana NEAR Intents payload");
   assert.equal(label("solana_sign_transfer"), "Solana transfer");
+});
+
+test("an account's first grant reads plainly, and only for an agent_create that carried one", () => {
+  const create = (details: Record<string, unknown>) =>
+    ({ type: "agent_create", details }) as unknown as Parameters<typeof operationGrantInstall>[0];
+  assert.equal(
+    operationGrantInstall(create({ grant_install: "installed" })),
+    "Dashboard access installed with the account.",
+  );
+  assert.match(
+    operationGrantInstall(create({ grant_install: "refused:grant_credential_reused" })) ?? "",
+    /already used by another account setup/,
+  );
+  assert.match(
+    operationGrantInstall(create({ grant_install: "refused:grant_expired" })) ?? "",
+    /ended before the account went live/,
+  );
+  // No grant, not live yet, or an operation recorded before the field existed.
+  assert.equal(operationGrantInstall(create({ grant_install: null })), null);
+  assert.equal(operationGrantInstall(create({})), null);
+  assert.equal(
+    operationGrantInstall({ type: "swap", details: {} } as unknown as Parameters<
+      typeof operationGrantInstall
+    >[0]),
+    null,
+  );
 });

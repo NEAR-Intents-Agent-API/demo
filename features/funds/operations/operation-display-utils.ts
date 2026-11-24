@@ -1,4 +1,5 @@
 import type { StatusResponse } from "@near-intents-agent-api/sdk";
+import { grantInstall, grantInstallRefusal } from "@/lib/agent-api/grant-install";
 import { formatDisplay } from "@/lib/format/amount";
 import { operationEvidence } from "./operation-evidence";
 
@@ -69,6 +70,16 @@ export function operationActionLabel(operation: StatusResponse): string {
   );
   const label = Object.hasOwn(ACTION_LABELS, action) ? ACTION_LABELS[action] : undefined;
   return label ?? humanize(action);
+}
+
+/**
+ * Whether the dashboard access signed with a new account was installed, in plain words; null for
+ * an operation that carried no such grant.
+ */
+export function operationGrantInstall(operation: StatusResponse): string | null {
+  const install = grantInstall(operation);
+  if (install === null) return null;
+  return grantInstallRefusal(install) ?? "Dashboard access installed with the account.";
 }
 
 /** Who made the operation: the grant that authorised it, else the owner or a grant-free deposit. */

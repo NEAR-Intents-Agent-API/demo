@@ -1,6 +1,9 @@
+import { createGrantCredential } from "@near-intents-agent-api/sdk";
 import { z } from "zod";
+import { DASHBOARD_GRANT_LABEL, FIRST_GRANT_DAYS } from "@/lib/agent-api/access-input";
 import { listOwnedAgents } from "@/lib/agent-api/agent-list";
 import { agentApi } from "@/lib/agent-api/client";
+import { storeGrantCredential } from "@/lib/agent-api/grant-credentials";
 import { ownerIntents } from "@/lib/agent-api/intents";
 import { requireConfiguredNetwork } from "@/lib/agent-api/network";
 import { policySchema } from "@/lib/agent-api/schemas";
@@ -42,7 +45,9 @@ const createInputSchema = z.strictObject({
  * `POST /api/agents`: creates a pending agent for the signed-in owner with its first policy.
  *
  * The owner is always the identity this session authenticated with, never a browser-supplied
- * one. The response carries the single request the owner signs to make the agent live.
+ * one. The response carries the single request the owner signs to make the agent live. That
+ * signature also authorizes the dashboard's first grant: its token stays on the server, sealed
+ * under the new agent, and is only used if the API reports the grant installed.
  */
 export function POST(request: Request) {
   return withSessionMutation(
@@ -54,13 +59,30 @@ export function POST(request: Request) {
       if (!parsed.success) return bffError("validation_failed", 400);
       const owner = await demoOwnerForSession(session);
       if (!owner) return bffError("owner_identity_missing", 409);
-      return ownerIntents().generate(session.userId, {
+      const { token, commitment } = createGrantCredential();
+      const grant = {
+        label: DASHBOARD_GRANT_LABEL,
+        credential: commitment,
+        // Far past the 10 minute signing window, so the grant cannot lapse before it is installed.
+        expires_at: new Date(Date.now() + FIRST_GRANT_DAYS * 86_400_000).toISOString(),
+      };
+      const step = await ownerIntents().generate(session.userId, {
         type: "agent_create",
         name: parsed.data.name,
         external_user_id: session.userId,
         owner,
         policy: parsed.data.policy,
+        grant,
       });
+      await storeGrantCredential({
+        userId: session.userId,
+        agentId: step.generated.agent_id,
+        holder: "dashboard",
+        label: grant.label,
+        token,
+        commitment,
+      });
+      return step;
     },
     "POST /api/agents",
   );
