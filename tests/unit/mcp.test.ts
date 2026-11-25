@@ -221,6 +221,30 @@ test("MCP NEAR withdrawals arrive as native NEAR and take no `wrapped`", async (
   assert.equal("wrapped" in toolDefinitions.withdraw_preview.inputSchema.shape, false);
 });
 
+test("MCP withdrawals take no memo and send none", async () => {
+  const sent: Array<Record<string, unknown>> = [];
+  const client = {
+    withdraw: async (_agentId: string, request: Record<string, unknown>) => {
+      sent.push(request);
+      return operation;
+    },
+  } as unknown as McpAgentClient;
+  const args = {
+    chain: "xrp",
+    to: "rExampleAddress",
+    token: "nep141:xrp.omft.near",
+    amount: "1",
+    idempotencyKey: "no-memo-withdraw",
+  };
+  await runWriteTool("withdraw", args, { agentId, client });
+  assert.equal("memo" in (sent[0] ?? {}), false);
+  assert.equal(
+    toolDefinitions.withdraw.inputSchema.safeParse({ ...args, memo: "42" }).success,
+    false,
+  );
+  assert.equal("memo" in toolDefinitions.withdraw_preview.inputSchema.shape, false);
+});
+
 test("MCP deposits require an exact source asset id, never a chain or symbol", async () => {
   const shape = toolDefinitions.create_cross_chain_deposit.inputSchema;
   const base = { amount: "100", idempotencyKey: "mcp-deposit-shape" };

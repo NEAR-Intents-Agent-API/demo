@@ -20,6 +20,8 @@ export function evidenceRows(
     rows.push({ label: "Deposit transaction", value: hash(evidence.depositTxHash) });
   if (evidence.destinationTxHash)
     rows.push({ label: "Destination transaction", value: hash(evidence.destinationTxHash) });
+  if (evidence.spentAmount)
+    rows.push({ label: "Spent", value: evidenceAmount(evidence.spentAmount, token) });
   if (evidence.refundedAmount)
     rows.push({ label: "Refunded", value: evidenceAmount(evidence.refundedAmount, token) });
   if (evidence.refundTo)

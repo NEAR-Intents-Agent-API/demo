@@ -166,7 +166,7 @@ export const toolDefinitions = {
   },
   swap_quote: {
     description:
-      "Preview a swap without executing it. Rules and balance never refuse a preview: each one the live swap would fail comes back in `warnings` (policy_action_denied, policy_destination_denied, policy_asset_denied, policy_schedule_denied, a budget or limit code, unsupported_token, insufficient_balance with available_amount). Fix or report every warning before the live swap. `owner_approval` true means the live swap would wait in PENDING_APPROVAL for the owner.",
+      "Preview a swap without executing it. Rules and balance never refuse a preview: each one the live swap would fail comes back in `warnings` (policy_action_denied, policy_destination_denied, policy_asset_denied, policy_schedule_denied, a budget or limit code, unsupported_token, insufficient_balance with available_amount, below_min_amount_out when `min_amount_out` is above the quote's guaranteed `quote.min_amount_out`). Fix or report every warning before the live swap. `quote` carries `amount_in`, `min_amount_in`, `amount_out`, `min_amount_out`, `withdraw_fee`, `refund_fee`, `amount_in_usd` and `amount_out_usd`, each when the provider sent it. `owner_approval` true means the live swap would wait in PENDING_APPROVAL for the owner.",
     inputSchema: z.object({
       token_in: text,
       token_out: text,
@@ -201,7 +201,6 @@ export const toolDefinitions = {
       amount,
       chain: text,
       to: text,
-      memo: z.string().max(256).optional(),
       confidential: withdrawalBalance,
       idempotencyKey: idempotencyKey.optional(),
     }),
@@ -213,7 +212,7 @@ export const toolDefinitions = {
   },
   get_operation: {
     description:
-      "Read one operation by id. Poll this after an owner-gated write: provider approvals must be decided in the dashboard. `details.amount_out` is final and appears only on SUCCESS (or REFUNDED after a partial fill); before that, `details.expected_amount_out` is an estimate.",
+      "Read one operation by id. Poll this after an owner-gated write: provider approvals must be decided in the dashboard. `details.amount_out` is final and appears only on SUCCESS (or REFUNDED after a partial fill); before that, `details.expected_amount_out` is an estimate. `details.quote` holds the provider's figures for the request.",
     inputSchema: z.object({ operationId }),
   },
   refresh_operation: {
@@ -240,7 +239,8 @@ export const toolDefinitions = {
     inputSchema: z.object({ approvalId }),
   },
   swap: {
-    description: "Execute an Intents swap under the current provider policy.",
+    description:
+      "Execute an Intents swap under the current provider policy. A `min_amount_out` above the guaranteed output of the provider's fresh quote (`quote.min_amount_out` in swap_quote, not the estimate `quote.amount_out`) is refused with below_min_amount_out (409, nothing sent): leave 0.5 to 1% below it, then retry under a new idempotencyKey.",
     inputSchema: z
       .object({
         token_in: text,
@@ -274,14 +274,13 @@ export const toolDefinitions = {
   },
   withdraw: {
     description:
-      "Withdraw from the confidential balance to an address on another chain, or to a NEAR account with chain near; confidential false withdraws from the legacy public balance instead. NEAR (nep141:wrap.near) withdrawn to chain near always arrives as native NEAR; there is no wNEAR option. Cross-chain settles asynchronously. A near.com `nearcom:` address is not on any chain: send to it with a transfer instead.",
+      "Withdraw from the confidential balance to an address on another chain, or to a NEAR account with chain near; confidential false withdraws from the legacy public balance instead. NEAR (nep141:wrap.near) withdrawn to chain near always arrives as native NEAR; there is no wNEAR option. Cross-chain settles asynchronously. No route carries a recipient memo, so the tool takes none. A near.com `nearcom:` address is not on any chain: send to it with a transfer instead.",
     inputSchema: z
       .object({
         token: text,
         amount,
         chain: text,
         to: text,
-        memo: z.string().max(256).optional(),
         confidential: withdrawalBalance,
         async: z.boolean().default(false),
         reference,
@@ -585,7 +584,6 @@ function withdrawRequest(args: Record<string, unknown>) {
     amount: String(args.amount),
     chain: String(args.chain),
     recipient: String(args.to),
-    memo: optionalString(args.memo),
     // The confidential balance is the default; only the legacy public exit says otherwise.
     ...(args.confidential === false ? { confidential: false } : {}),
     async: Boolean(args.async),

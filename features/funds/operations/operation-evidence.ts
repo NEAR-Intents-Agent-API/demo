@@ -15,6 +15,10 @@ export type OperationEvidence = {
   /** The asset and atomic amount the provider echoed back, when it did. */
   token: string | null;
   amount: string | null;
+  /** Exact output: atomic units of the input asset the settled request spent; the rest of `max_amount_in` went back. */
+  spentAmount: string | null;
+  /** The asset the request spends: `origin_asset` of a swap, `asset` of a withdrawal. */
+  inputAsset: string | null;
   /** The route minimum in atomic units of the asset sent: a deposit's floor, or why a move was too low. */
   minAmount: string | null;
   /** Limit orders: the provider's id for the funded, resting order; null until it is placed. */
@@ -64,6 +68,13 @@ function limitOrderTerms(details: Record<string, unknown>): LimitOrderTerms | nu
   };
 }
 
+function inputAsset(details: Record<string, unknown>): string | null {
+  const request = details.request;
+  if (typeof request !== "object" || request === null) return null;
+  const terms = request as Record<string, unknown>;
+  return text(terms, "origin_asset") ?? text(terms, "asset");
+}
+
 /** Reads the wire's snake_case evidence; `tx_hash` is the move, `destination_tx_hash` the landing. */
 export function operationEvidence(
   operation: { details?: unknown } | null | undefined,
@@ -81,6 +92,8 @@ export function operationEvidence(
     token: text(details, "token"),
     amount: text(details, "amount"),
     minAmount: text(details, "min_amount"),
+    spentAmount: text(details, "amount_in"),
+    inputAsset: inputAsset(details),
     orderId: text(details, "order_id"),
     limitOrder: limitOrderTerms(details),
   };

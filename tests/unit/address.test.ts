@@ -183,7 +183,7 @@ test("destinations take the spelling the API compares", () => {
   );
 });
 
-const draft = { action: "withdraw", chain: "sol", address: "", memo: "", hasMemo: false } as const;
+const draft = { action: "withdraw", chain: "sol", address: "" } as const;
 
 test("a draft destination says what is wrong with it", () => {
   assert.throws(() => destinationFromDraft({ ...draft, chain: "" }), /Choose a network/);
@@ -193,28 +193,20 @@ test("a draft destination says what is wrong with it", () => {
     /Not a valid Solana address/,
   );
   assert.throws(
-    () =>
-      destinationFromDraft({
-        ...draft,
-        address: "11111111111111111111111111111111",
-        hasMemo: true,
-      }),
-    /Enter the memo/,
-  );
-  assert.throws(
-    () =>
-      destinationFromDraft({
-        ...draft,
-        address: "11111111111111111111111111111111",
-        hasMemo: true,
-        memo: "m".repeat(257),
-      }),
-    /Memo is at most 256 characters/,
-  );
-  assert.throws(
     () => destinationFromDraft({ ...draft, action: "confidential_transfer", address: "No Way" }),
     /Not a valid NEAR account/,
   );
+});
+
+test("a destination an owner types never carries a memo, while a stored one still parses", () => {
+  const withMemo = {
+    action: "withdraw",
+    chain: "sol",
+    address: "11111111111111111111111111111111",
+    memo: "tag-1",
+  } as const;
+  assert.throws(() => canonicalDestination(withMemo), /A withdrawal carries no memo/);
+  assert.deepEqual(destinationSchema.parse(withMemo), withMemo);
 });
 
 test("a draft destination trims the pasted address", () => {

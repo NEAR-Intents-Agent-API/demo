@@ -95,6 +95,8 @@ const destinationUnion = z.discriminatedUnion("action", [
       .min(1)
       .max(256)
       .refine((value) => value === value.trim(), "Address whitespace is not allowed"),
+    // A withdrawal carries no memo, so an entry with one matches nothing; the field stays so
+    // stored policies parse and so every new entry is signed with `memo: null`.
     memo: z.string().max(256).nullable(),
   }),
   z.strictObject({
@@ -129,12 +131,14 @@ const typedDestinationSchema = destinationUnion.superRefine((value, ctx) => {
       ? transferRecipientProblem(value.address)
       : withdrawalAddressProblem(value.chain, value.address);
   if (problem) ctx.addIssue({ code: "custom", message: problem, path: ["address"] });
+  if (value.action === "withdraw" && value.memo !== null)
+    ctx.addIssue({ code: "custom", message: "A withdrawal carries no memo", path: ["memo"] });
   checkApiRules(value, ctx);
 });
 
 /**
  * Exact identity for a destination the owner typed: canonical chain id and the address spelling
- * the API compares (see `canonicalAddressOn`); a memo is never altered. Throws a `ZodError` naming the first problem, malformed addresses included.
+ * the API compares (see `canonicalAddressOn`). Throws a `ZodError` naming the first problem, malformed addresses included.
  */
 export function canonicalDestination(input: Destination): Destination {
   if (input.action === "transfer")
@@ -150,7 +154,7 @@ export function canonicalDestination(input: Destination): Destination {
 export function destinationLabel(value: Destination): string {
   if (value.action === "transfer")
     return `transfer: ${value.confidential ? "confidential" : "intents"} account ${value.address}`;
-  return `withdraw: ${value.chain} ${value.address}${value.memo === null ? " (no memo)" : ` (memo: ${JSON.stringify(value.memo)})`}`;
+  return `withdraw: ${value.chain} ${value.address}${value.memo === null ? "" : ` (memo: ${JSON.stringify(value.memo)}, matches no withdrawal)`}`;
 }
 
 export const destinationRuleSchema = z

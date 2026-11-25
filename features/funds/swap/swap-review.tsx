@@ -1,5 +1,6 @@
-import { formatDisplay, fractionOf } from "@/lib/format/amount";
+import { formatDisplay } from "@/lib/format/amount";
 import { QuoteDetails, ReviewCard } from "../flows/review-card";
+import type { ProviderQuote } from "../model/quote";
 import type { TokenOption } from "../use-funds";
 import { SLIPPAGE_BP } from "./use-swap-flow";
 
@@ -8,16 +9,18 @@ export function SwapReview({
   to,
   atomic,
   outAtomic,
+  minimum,
   quote,
 }: {
   token: TokenOption;
   to: TokenOption;
   atomic: bigint;
   outAtomic: bigint;
-  quote: Record<string, unknown> | null;
+  /** The least the swap asks for, under the quote's guaranteed output. */
+  minimum: bigint;
+  quote: ProviderQuote | null;
 }) {
   const perUnit = (outAtomic * 10n ** BigInt(token.decimals)) / atomic;
-  const minimum = fractionOf(outAtomic, 10_000 - SLIPPAGE_BP);
   return (
     <>
       <ReviewCard

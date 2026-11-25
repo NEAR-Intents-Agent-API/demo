@@ -31,7 +31,8 @@ export function RequestDetails({ operation }: { operation: StatusResponse }) {
   const { find } = useCatalog();
   const evidence = operationEvidence(operation);
   const amount = operationAmountLabel(operation, find);
-  const asset = evidence.token ? find(evidence.token) : undefined;
+  const assetId = evidence.token ?? evidence.inputAsset;
+  const asset = assetId ? find(assetId) : undefined;
   const dashboardAccess = operationGrantInstall(operation);
   return (
     <DetailsDialog title={operationActionLabel(operation)} description="Wallet operation details.">

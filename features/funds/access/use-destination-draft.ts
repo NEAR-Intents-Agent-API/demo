@@ -14,18 +14,14 @@ export function useDestinationDraft(
   const [action, setAction] = useState<DestinationAction>(initial?.action ?? "withdraw");
   const [chain, setChain] = useState(initial?.chain ?? "");
   const [address, setAddress] = useState("");
-  const [memo, setMemo] = useState("");
-  const [hasMemo, setHasMemo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const add = () => {
     try {
-      onAdd(destinationFromDraft({ action, chain, address, memo, hasMemo }));
+      onAdd(destinationFromDraft({ action, chain, address }));
       setAddress("");
-      setMemo("");
-      setHasMemo(false);
       setError(null);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Check the network, recipient and memo.");
+      setError(cause instanceof Error ? cause.message : "Check the network and recipient.");
     }
   };
   return {
@@ -33,28 +29,17 @@ export function useDestinationDraft(
     setAction: (next: DestinationAction) => {
       setAction(next);
       setAddress("");
-      setMemo("");
-      setHasMemo(false);
       setError(null);
     },
     chain,
     setChain: (next: string) => {
       setChain(next);
-      setMemo("");
-      setHasMemo(false);
       setError(null);
     },
     address,
     setAddress,
-    memo,
-    setMemo,
-    hasMemo,
-    setHasMemo: (enabled: boolean) => {
-      setHasMemo(enabled);
-      if (!enabled) setMemo("");
-    },
     error,
     add,
-    pending: Boolean(address || memo || hasMemo),
+    pending: Boolean(address),
   };
 }

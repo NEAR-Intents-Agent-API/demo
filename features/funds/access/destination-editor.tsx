@@ -47,8 +47,7 @@ export function DestinationEditor({
               disabled ||
               !draft.address ||
               value.length >= 128 ||
-              (draft.action === "withdraw" && !draft.chain) ||
-              (draft.hasMemo && !draft.memo)
+              (draft.action === "withdraw" && !draft.chain)
             }
           >
             Add destination

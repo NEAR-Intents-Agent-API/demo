@@ -6,14 +6,24 @@ import { fractionOf } from "@/lib/format/amount";
 import { queryKeys } from "@/lib/query/keys";
 import { fundsApi } from "../api";
 import { useFunds } from "../funds-context";
-import { extractSwapPreview, isAtomic, pick } from "../model/quote";
+import { extractSwapPreview, isAtomic, type ProviderQuote } from "../model/quote";
 import { useIdempotencyKey } from "../model/use-idempotency-key";
 import { amountReason, useDebouncedValue, useSourceAmount, useTracking } from "../model/use-move";
 import { useReceiptLabels } from "../model/use-receipt-labels";
 import { type TokenOption, useFundsAction } from "../use-funds";
 
-/** Slippage the swap tolerates before the provider refuses to fill. */
+/** How far under the quote's guaranteed output the swap's minimum sits, so a fresh quote still clears it. */
 export const SLIPPAGE_BP = 100;
+
+/**
+ * The least this swap asks for. The provider judges `min_amount_out` against the guaranteed
+ * output of a fresh quote (`min_amount_out`, not the estimate `amount_out`), so the floor is
+ * taken under that figure; a quote that states no guarantee falls back to its estimate.
+ */
+export function swapMinimum(quote: ProviderQuote | null): bigint | null {
+  const base = [quote?.min_amount_out ?? null, quote?.amount_out ?? null].find(isAtomic);
+  return base ? fractionOf(BigInt(base), 10_000 - SLIPPAGE_BP) : null;
+}
 
 export type SwapRequest = {
   token_in: string;
@@ -86,7 +96,8 @@ export function useSwapFlow() {
   const { token, atomic } = source;
   const request = buildSwapRequest({ token, to, atomic, over: source.over });
   const quote = useSwapQuote(funds.agent.id, request, Boolean(funds.access));
-  const amountOut = pick(quote.data?.quote ?? null, ["amount_out", "amount_out_formatted"]);
+  const amountOut = quote.data?.quote?.amount_out ?? null;
+  const minimum = swapMinimum(quote.data?.quote ?? null);
   const key = useIdempotencyKey(JSON.stringify([request, labels.args]));
   const reason = swapReason(source, to) ?? labels.problem;
 
@@ -97,11 +108,15 @@ export function useSwapFlow() {
 
   const execute = () => {
     if (!request) return;
-    const minOut = outAtomic ? fractionOf(outAtomic, 10_000 - SLIPPAGE_BP).toString() : undefined;
     action.mutate(
       {
         tool: "swap",
-        args: { ...request, ...labels.args, min_amount_out: minOut, idempotencyKey: key },
+        args: {
+          ...request,
+          ...labels.args,
+          min_amount_out: minimum?.toString(),
+          idempotencyKey: key,
+        },
       },
       { onSuccess: (result) => track({ ...result, title }) },
     );
@@ -129,6 +144,7 @@ export function useSwapFlow() {
     request,
     quote,
     amountOut,
+    minimum,
     key,
     reason,
     tracking,

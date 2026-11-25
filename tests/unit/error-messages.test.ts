@@ -10,6 +10,7 @@ import { DemoApiError } from "../../lib/http/request";
  * the generic sentence.
  */
 const apiCodes = [
+  "above_max_amount_in",
   "agent_archived",
   "pause_before_archive",
   "unpause_before_restore",
@@ -30,6 +31,7 @@ const apiCodes = [
   "approval_not_found",
   "approval_signature_invalid",
   "approval_vote_unsupported",
+  "below_min_amount_out",
   "custody_native_balance_required",
   "database_busy",
   "delete_submission_uncertain",
@@ -114,6 +116,7 @@ const apiCodes = [
   "receipt_not_available",
   "recipient_storage_unregistered",
   "refund_address_required",
+  "request_no_longer_accepted",
   "route_unavailable",
   "sign_recipient_denied",
   "signature_invalid",
