@@ -12,6 +12,7 @@ import {
   receiptAmountLabel,
   receiptStatusLabel,
   receiptStatusTone,
+  receiptTermRows,
   receiptTypeLabel,
   receiptUsdLabel,
 } from "./receipt-display";
@@ -97,6 +98,11 @@ export function ReceiptDetails({ agentId, item }: { agentId: string; item: Recei
           </StatusPill>
         </Field>
         {amount ? <Field label="Amount">{amount}</Field> : null}
+        {receiptTermRows(item, find).map(([label, value]) => (
+          <Field key={label} label={label}>
+            {value}
+          </Field>
+        ))}
         {usd ? <Field label="Value when settled">{usd}</Field> : null}
         {"recipient" in details ? (
           <Field label="Recipient">

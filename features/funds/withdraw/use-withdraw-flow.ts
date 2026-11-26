@@ -22,7 +22,6 @@ export type WithdrawArgs = {
   to: string;
   /** Only ever `false`: the legacy public balance is the one thing a withdrawal can still name. */
   confidential?: false;
-  memo?: string;
 };
 
 /**
@@ -48,7 +47,10 @@ function useWithdrawPreview(agentId: string, args: WithdrawArgs | null, enabled:
   });
 }
 
-/** A destination approved for one kind of address makes no sense on another chain family. */
+/**
+ * A destination approved for one kind of address makes no sense on another chain family, and a
+ * withdrawal never carries a memo, so a stored entry that names one matches no request.
+ */
 type WithdrawDestination = Extract<Destination, { action: "withdraw" }>;
 
 function suitableDestinations(
@@ -57,7 +59,9 @@ function suitableDestinations(
 ): WithdrawDestination[] {
   return all.filter(
     (destination): destination is WithdrawDestination =>
-      destination.action === "withdraw" && destination.chain === canonicalChain(network ?? ""),
+      destination.action === "withdraw" &&
+      destination.memo === null &&
+      destination.chain === canonicalChain(network ?? ""),
   );
 }
 
@@ -68,7 +72,6 @@ function buildWithdrawArgs(input: {
   over: boolean;
   recipient: string | null;
   legacyPublic: boolean;
-  memo?: string;
 }): WithdrawArgs | null {
   const { token, network, atomic, over, recipient, legacyPublic } = input;
   if (!token || !network || !atomic || atomic === 0n || over || !recipient) return null;
@@ -78,7 +81,6 @@ function buildWithdrawArgs(input: {
     chain: network,
     to: recipient,
     ...(legacyPublic ? { confidential: false as const } : {}),
-    ...(input.memo === undefined ? {} : { memo: input.memo }),
   };
 }
 
@@ -129,7 +131,6 @@ export function useWithdrawFlow() {
     atomic,
     over: source.over,
     recipient: open ? recipient || null : (selected?.address ?? null),
-    ...(selected?.memo != null ? { memo: selected.memo } : {}),
     legacyPublic: lane === "public",
   });
   const preview = useWithdrawPreview(funds.agent.id, args, Boolean(funds.access));

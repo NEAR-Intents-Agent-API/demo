@@ -55,12 +55,13 @@ export function SwapFlow({ view }: { view: ReturnType<typeof useSwapFlow> }) {
 
         <FlowError error={quote.error} />
         <QuoteWarnings warnings={quote.data?.warnings ?? []} token={token} />
-        {outAtomic && token && view.to && source.atomic ? (
+        {outAtomic && view.minimum && token && view.to && source.atomic ? (
           <SwapReview
             token={token}
             to={view.to}
             atomic={source.atomic}
             outAtomic={outAtomic}
+            minimum={view.minimum}
             quote={quote.data?.quote ?? null}
           />
         ) : null}

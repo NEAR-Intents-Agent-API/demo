@@ -45,6 +45,22 @@ test("operationEvidence reads the snake_case wire fields", () => {
   assert.equal(operationEvidence(null).txHash, null);
 });
 
+test("a settled exact-output request shows the input it spent", () => {
+  const markup = renderToStaticMarkup(
+    createElement(OperationTrackerFacts, {
+      status: "SUCCESS",
+      operationId: "op_1",
+      token: { symbol: "NEAR", decimals: 24 },
+      details: { amount_in: "1010000000000000000000000", request: { origin_asset: "n" } },
+    }),
+  );
+  assert.ok(markup.includes("Spent"));
+  assert.ok(markup.includes("1.01 NEAR"));
+  assert.equal(operationEvidence({ details: { request: { origin_asset: "a" } } }).inputAsset, "a");
+  assert.equal(operationEvidence({ details: { request: { asset: "b" } } }).inputAsset, "b");
+  assert.equal(operationEvidence({ details: {} }).spentAmount, null);
+});
+
 test("tracker facts show both hashes, the refund outcome and a plain failure reason", () => {
   const markup = renderToStaticMarkup(
     createElement(OperationTrackerFacts, {

@@ -26,6 +26,10 @@ export function warningMessage(
       return warning.availableAmount && token
         ? `Only ${formatDisplay(warning.availableAmount, token.decimals)} ${token.symbol} is available, so the live request would be refused. Send less or add funds.`
         : "The account does not have enough available, so the live request would be refused. Send less or add funds.";
+    case "below_min_amount_out":
+      return "The provider's current quote guarantees less than the minimum receive, so the live request would be refused. Lower the minimum a little.";
+    case "above_max_amount_in":
+      return "The provider's current quote needs more than the most this request may spend, so the live request would be refused. Allow a little more.";
     case "high_fee":
       return "The fee is more than 5% of the amount.";
     case "asset_delivered_as_is":

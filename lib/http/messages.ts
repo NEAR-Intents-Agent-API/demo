@@ -137,7 +137,7 @@ export const errorMessages: Record<string, string> = {
   issuer_unavailable:
     "The identity issuer's signing keys could not be read right now. Try again in a moment; keys already fetched keep verifying for up to an hour.",
   policy_destination_denied:
-    "This action, network, address or memo is not in the account's destination rule. Add it once with one signature; the dashboard and every connected client can then use it.",
+    "This action, network or address is not in the account's destination rule. Add it once with one signature; the dashboard and every connected client can then use it.",
   permission_update_pending: "Permission update is pending. Check Activity before signing again.",
   policy_change_throttled:
     "Account rules were changed recently, so the next change has to wait a few minutes. Freezing the account is still available.",
@@ -214,6 +214,12 @@ export const errorMessages: Record<string, string> = {
     "The recipient is not a valid address for this network, or a named NEAR account that does not exist. Nothing was sent. Check it and retry.",
   recipient_storage_unregistered:
     "The receiving NEAR account has no storage on this token's contract, so the token cannot land there. Nothing was sent. Register its storage on that token (storage_deposit), or send to another account, then try again.",
+  above_max_amount_in:
+    "The provider's fresh quote needs more than the most this request may spend. Nothing was sent. Allow a little more, then try again.",
+  below_min_amount_out:
+    "The provider's fresh quote guarantees less than the minimum this request must deliver. Nothing was sent. Lower the minimum a little, then try again.",
+  request_no_longer_accepted:
+    "This delayed request was saved in a form the API no longer accepts, so it was not sent. Send it again.",
   unsupported_token: "This token is not supported for this route right now. Try another token.",
   unsupported_chain: "This network is not supported for this move. Try another network.",
   refund_address_required:
@@ -467,6 +473,9 @@ const PERMANENT_CODES = new Set([
   "limit_order_not_found",
   "limit_orders_open",
   "amount_too_low",
+  "above_max_amount_in",
+  "below_min_amount_out",
+  "request_no_longer_accepted",
   "invalid_address",
   "recipient_storage_unregistered",
   "policy_too_large",

@@ -4,7 +4,6 @@ import { OptionSelect } from "@/components/shared/option-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { chainInfo, useCatalog } from "@/features/assets";
-import { DestinationDraftMemo } from "./destination-draft-memo";
 import {
   DESTINATION_ACTIONS,
   type DestinationAction,
@@ -12,7 +11,7 @@ import {
 } from "./destination-utils";
 import type { useDestinationDraft } from "./use-destination-draft";
 
-/** Route, recipient and exact memo fields for one typed destination. */
+/** Route and recipient fields for one typed destination. */
 export function DestinationDraftFields({
   draft,
   initial,
@@ -66,9 +65,6 @@ export function DestinationDraftFields({
           maxLength={256}
         />
       </Label>
-      {draft.action === "withdraw" ? (
-        <DestinationDraftMemo draft={draft} disabled={disabled} />
-      ) : null}
     </div>
   );
 }

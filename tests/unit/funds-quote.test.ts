@@ -11,6 +11,7 @@ import {
   quoteEntries,
 } from "../../features/funds/model/quote";
 import { warningMessage } from "../../features/funds/model/quote-warnings";
+import { swapMinimum } from "../../features/funds/swap/use-swap-flow";
 
 const tool = {
   data: { dry: true, type: "swap", quote: { amount_out: "1248", nested: { fee: "3" } } },
@@ -20,6 +21,38 @@ test("extractQuote unwraps a tool result and a bare response", () => {
   assert.deepEqual(extractQuote(tool), { amount_out: "1248", nested: { fee: "3" } });
   assert.deepEqual(extractQuote({ quote: { a: "1" } }), { a: "1" });
   assert.equal(extractQuote("nope"), null);
+});
+
+test("a quote keeps the figures the API documents as strings and drops any other shape", () => {
+  const quote = extractQuote({
+    quote: {
+      amount_in: "1000",
+      min_amount_in: "990",
+      amount_out: "2500",
+      min_amount_out: "2475",
+      withdraw_fee: "5",
+      refund_fee: 7,
+      amount_in_usd: "1.00",
+      amount_out_usd: null,
+      route: "x",
+    },
+  });
+  assert.deepEqual(quote, {
+    amount_in: "1000",
+    min_amount_in: "990",
+    amount_out: "2500",
+    min_amount_out: "2475",
+    withdraw_fee: "5",
+    amount_in_usd: "1.00",
+    route: "x",
+  });
+});
+
+test("a swap's minimum sits under the quote's guaranteed output, not its estimate", () => {
+  assert.equal(swapMinimum({ amount_out: "10000", min_amount_out: "9900" }), 9801n);
+  assert.equal(swapMinimum({ amount_out: "10000" }), 9900n);
+  assert.equal(swapMinimum({ min_amount_out: "oops" }), null);
+  assert.equal(swapMinimum(null), null);
 });
 
 test("extractWithdrawPreview keeps the API's top-level fee next to the quote", () => {
@@ -113,6 +146,8 @@ test("every dry-run warning code reads as a sentence, never as the raw code", ()
     "policy_limit_exceeded",
     "high_fee",
     "asset_delivered_as_is",
+    "below_min_amount_out",
+    "above_max_amount_in",
   ])
     assert.doesNotMatch(warningMessage({ code }, token), /^Something went wrong/, code);
   assert.match(

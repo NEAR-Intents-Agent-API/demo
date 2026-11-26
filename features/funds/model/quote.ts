@@ -7,19 +7,46 @@
  * never assumed.
  */
 
+import type { QuoteResponse } from "@near-intents-agent-api/sdk";
+
 type Json = Record<string, unknown>;
+
+/**
+ * The provider's quote: the figures the API documents, each present only when the provider sent
+ * it, and whatever else the route adds. `amount_out` is the estimate; `min_amount_out` is the
+ * output it guarantees, the figure a `min_amount_out` request is judged against.
+ */
+export type ProviderQuote = QuoteResponse["quote"];
+
+const quoteFigures = [
+  "amount_in",
+  "min_amount_in",
+  "amount_out",
+  "min_amount_out",
+  "withdraw_fee",
+  "refund_fee",
+  "amount_in_usd",
+  "amount_out_usd",
+] as const;
+
+/** The quote with every documented figure that is not a string dropped, never half-read. */
+function readQuote(node: Json): ProviderQuote {
+  const quote: Json = { ...node };
+  for (const key of quoteFigures) if (typeof quote[key] !== "string") delete quote[key];
+  return quote as ProviderQuote;
+}
 
 const isRecord = (value: unknown): value is Json =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 /** Unwraps `{ data: { quote } }` (tool result) or `{ quote }` down to the quote object. */
-export function extractQuote(result: unknown): Json | null {
+export function extractQuote(result: unknown): ProviderQuote | null {
   let node: unknown = result;
   for (let depth = 0; depth < 3 && isRecord(node); depth += 1) {
-    if (isRecord(node.quote)) return node.quote;
+    if (isRecord(node.quote)) return readQuote(node.quote);
     node = node.data;
   }
-  return isRecord(node) ? node : null;
+  return isRecord(node) ? readQuote(node) : null;
 }
 
 /**
@@ -58,7 +85,7 @@ function readWarning(value: unknown): QuoteWarning[] {
 }
 
 /** A swap dry run: the provider's quote and the warnings beside it. */
-export type SwapPreview = { quote: Json | null; warnings: QuoteWarning[] };
+export type SwapPreview = { quote: ProviderQuote | null; warnings: QuoteWarning[] };
 
 export function extractSwapPreview(result: unknown): SwapPreview {
   return { quote: extractQuote(result), warnings: extractWarnings(result) };
@@ -69,7 +96,7 @@ export function extractSwapPreview(result: unknown): SwapPreview {
  * `receive_asset`, `min_amount_out`), the USD value it would count, and the warnings beside it.
  */
 export type OrderPreview = {
-  quote: Json | null;
+  quote: ProviderQuote | null;
   warnings: QuoteWarning[];
   /** The order's USD value, six decimals; null when the asset has no usable price. */
   spendUsd: string | null;
@@ -83,7 +110,7 @@ export function extractOrderPreview(result: unknown): OrderPreview {
     if (isRecord(node.quote)) {
       const usd = isRecord(node.spend) ? node.spend.amount_usd : null;
       return {
-        quote: node.quote,
+        quote: readQuote(node.quote),
         warnings: extractWarnings(node),
         spendUsd: typeof usd === "string" ? usd : null,
         ownerApproval: node.owner_approval === true,
@@ -151,7 +178,7 @@ export type QuoteFee = { amount_usd: string; percent: string };
  * quote's `amount_out` is in the destination chain's asset.
  */
 export type WithdrawPreview = {
-  quote: Json | null;
+  quote: ProviderQuote | null;
   fee: QuoteFee | null;
   warnings: QuoteWarning[];
 };
@@ -166,10 +193,14 @@ export function extractWithdrawPreview(result: unknown): WithdrawPreview {
   let node: unknown = result;
   for (let depth = 0; depth < 3 && isRecord(node); depth += 1) {
     if (isRecord(node.quote))
-      return { quote: node.quote, fee: quoteFee(node.fee), warnings: extractWarnings(node) };
+      return {
+        quote: readQuote(node.quote),
+        fee: quoteFee(node.fee),
+        warnings: extractWarnings(node),
+      };
     node = node.data;
   }
-  return { quote: isRecord(node) ? node : null, fee: null, warnings: [] };
+  return { quote: isRecord(node) ? readQuote(node) : null, fee: null, warnings: [] };
 }
 
 function quoteFee(value: unknown): QuoteFee | null {
@@ -198,8 +229,8 @@ export type WithdrawFacts = {
 export function withdrawFacts(preview: WithdrawPreview | null): WithdrawFacts {
   const quote = preview?.quote ?? null;
   return {
-    received: pick(quote, ["amount_out", "amount_received", "receive_amount"]),
-    minimumReceived: pick(quote, ["min_amount_out"]),
+    received: quote?.amount_out ?? null,
+    minimumReceived: quote?.min_amount_out ?? null,
     minimumAmount: pick(quote, ["min_amount"]),
     fee: preview?.fee ?? null,
   };

@@ -4,6 +4,7 @@ import type { ReceiptItem, ReceiptTerms } from "@near-intents-agent-api/sdk";
 import {
   receiptAmountLabel,
   receiptStatusLabel,
+  receiptTermRows,
   receiptUsdLabel,
 } from "../../features/funds/receipts/receipt-display";
 import { termsMismatches } from "../../lib/agent-api/receipts";
@@ -72,6 +73,71 @@ test("receipt amounts and values read in token units", () => {
     null,
   );
   assert.equal(receiptStatusLabel("UNLOGGED"), "no receipt");
+});
+
+const swapReceipt = (details: Record<string, unknown>) =>
+  ({
+    correlation_id: `op_${"b".repeat(43)}`,
+    type: "swap",
+    status: "PROVEN",
+    details: {
+      origin_asset: "nep141:usdc.near",
+      destination_asset: "nep141:usdt.near",
+      confidential: true,
+      settled_at: "2026-11-10T10:00:00.000Z",
+      ...details,
+    },
+    receipt: null,
+  }) as ReceiptItem;
+const findPair = (asset: string) =>
+  asset === "nep141:usdc.near"
+    ? { symbol: "USDC", decimals: 6 }
+    : asset === "nep141:usdt.near"
+      ? { symbol: "USDT", decimals: 6 }
+      : undefined;
+
+test("an exact-output receipt shows what it delivers and the most it could spend", () => {
+  const exactOut = swapReceipt({ amount_out: "1000000", max_amount_in: "1010000" });
+  assert.equal(receiptAmountLabel(exactOut, findPair), "up to 1.01 USDC → 1 USDT");
+  assert.deepEqual(receiptTermRows(exactOut, findPair), [
+    ["Receives exactly", "1 USDT"],
+    ["Spends at most", "1.01 USDC"],
+  ]);
+});
+
+test("an exact-input receipt copes with no amount_out and shows the minimum and delivery", () => {
+  const pending = swapReceipt({ amount: "2000000", min_amount_out: "1900000" });
+  assert.equal(receiptAmountLabel(pending, findPair), "2 USDC");
+  assert.deepEqual(receiptTermRows(pending, findPair), [["Minimum received", "1.9 USDT"]]);
+  const settled = swapReceipt({ amount: "2000000", amount_out: "1950000" });
+  assert.equal(receiptAmountLabel(settled, findPair), "2 USDC → 1.95 USDT");
+  assert.deepEqual(receiptTermRows(settled, findPair), [["Delivered", "1.95 USDT"]]);
+  assert.deepEqual(receiptTermRows(transfer, findPair), []);
+});
+
+test("a withdrawal receipt reads exact output in its own units on chain near only", () => {
+  const withdraw = (chain: string): ReceiptItem =>
+    ({
+      correlation_id: `op_${"c".repeat(43)}`,
+      type: "withdraw",
+      status: "PROVEN",
+      details: {
+        asset: "nep141:usdc.near",
+        recipient: "x",
+        chain,
+        confidential: true,
+        amount_out: "1000000",
+        max_amount_in: "1020000",
+        settled_at: "2026-11-10T10:00:00.000Z",
+      },
+      receipt: null,
+    }) as ReceiptItem;
+  assert.equal(receiptAmountLabel(withdraw("near"), findPair), "up to 1.02 USDC");
+  assert.deepEqual(receiptTermRows(withdraw("near"), findPair), [
+    ["Receives exactly", "1 USDC"],
+    ["Spends at most", "1.02 USDC"],
+  ]);
+  assert.match(receiptTermRows(withdraw("eth"), findPair)[0]?.[1] ?? "", /atomic units/);
 });
 
 test("receipt pins default to production, accept overrides and refuse a plain-HTTP log", () => {
