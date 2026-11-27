@@ -639,6 +639,7 @@ const intentTypes = [
   "agent_restore",
   "agent_delete",
   "approval_vote",
+  "payout_authorize",
 ] as const satisfies readonly IntentType[];
 assertType<Equal<(typeof intentTypes)[number], IntentType>>();
 

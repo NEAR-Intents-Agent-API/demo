@@ -40,6 +40,7 @@ const ACTION_LABELS: Readonly<Record<string, string>> = {
   grant_revoke: "Revoke access",
   execution_cancel: "Cancel operation",
   approval_vote: "Approval decision",
+  payout_authorize: "Authorize one payout",
   intents_transfer: "Transfer funds",
   confidential_transfer: "Confidential transfer",
   cross_chain_deposit: "Deposit funds",
